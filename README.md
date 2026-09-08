@@ -1,2 +1,13 @@
 # fde-hello
-Prompt-driven CI/CD hello world: GitHub push deploys to Vercel.
+
+Tiny prompt-driven CI/CD demo.
+
+Push to `main` → Vercel production deploy.
+
+## Stack
+
+Static HTML on Vercel. No framework.
+
+## Status
+
+Prototype. Built to prove GitHub → Vercel works from prompts only.
