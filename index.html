@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>John AI Smith | AI Transformation Executive</title>
-  <meta name="description" content="John AI Smith — AI Transformation Executive for private markets finance technology." />
+  <meta name="description" content="John AI Smith bio behind Clerk auth." />
   <style>
     :root {
       color-scheme: light dark;
@@ -30,146 +30,92 @@
       line-height: 1.55;
     }
     a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .wrap {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 2.5rem 1.25rem 4rem;
-    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
     header.hero {
-      display: grid;
-      gap: 1.25rem;
-      padding: 1.75rem;
-      border: 1px solid var(--line);
-      border-radius: 20px;
+      display: grid; gap: 1.25rem; padding: 1.75rem;
+      border: 1px solid var(--line); border-radius: 20px;
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
       box-shadow: 0 24px 70px rgba(0,0,0,.35);
     }
     @media (min-width: 800px) {
-      header.hero {
-        grid-template-columns: 1.4fr .9fr;
-        align-items: start;
-      }
+      header.hero { grid-template-columns: 1.4fr .9fr; align-items: start; }
     }
     .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      font-size: .8rem;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--accent-2);
-      font-weight: 650;
+      display: inline-flex; font-size: .8rem; letter-spacing: .04em;
+      text-transform: uppercase; color: var(--accent-2); font-weight: 650;
     }
-    h1 {
-      margin: .35rem 0 .5rem;
-      font-size: clamp(1.9rem, 4vw, 2.6rem);
-      line-height: 1.15;
-    }
-    .subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.05rem;
-    }
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-      margin-top: 1rem;
-    }
+    h1 { margin: .35rem 0 .5rem; font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.15; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 1.05rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
     .chip {
-      background: var(--chip);
-      border: 1px solid var(--line);
-      color: var(--text);
-      border-radius: 999px;
-      padding: .28rem .7rem;
-      font-size: .82rem;
+      background: var(--chip); border: 1px solid var(--line); color: var(--text);
+      border-radius: 999px; padding: .28rem .7rem; font-size: .82rem;
     }
     .side-card {
-      background: rgba(11,16,32,.45);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 1rem 1.1rem;
+      background: rgba(11,16,32,.45); border: 1px solid var(--line);
+      border-radius: 14px; padding: 1rem 1.1rem;
     }
     .side-card h2 {
-      margin: 0 0 .65rem;
-      font-size: .85rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: var(--muted);
-      font-weight: 650;
+      margin: 0 0 .65rem; font-size: .85rem; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted); font-weight: 650;
     }
-    .side-card ul {
-      margin: 0;
-      padding-left: 1.1rem;
-      color: var(--muted);
-    }
-    .side-card li { margin: .35rem 0; }
+    .side-card ul, .job ul { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+    .side-card li, .job li { margin: .35rem 0; }
     section {
-      margin-top: 1.5rem;
-      padding: 1.4rem 1.5rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: rgba(18,26,47,.9);
+      margin-top: 1.5rem; padding: 1.4rem 1.5rem; border: 1px solid var(--line);
+      border-radius: 16px; background: rgba(18,26,47,.9);
     }
-    section h2 {
-      margin: 0 0 .85rem;
-      font-size: 1.15rem;
-    }
+    section h2 { margin: 0 0 .85rem; font-size: 1.15rem; }
     section p { margin: 0 0 .85rem; color: var(--muted); }
     section p:last-child { margin-bottom: 0; }
-    .grid-2 {
-      display: grid;
-      gap: 1rem;
-    }
-    @media (min-width: 800px) {
-      .grid-2 { grid-template-columns: 1fr 1fr; }
-    }
-    .job {
-      padding: 1rem 0;
-      border-top: 1px solid var(--line);
-    }
+    .grid-2 { display: grid; gap: 1rem; }
+    @media (min-width: 800px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .job { padding: 1rem 0; border-top: 1px solid var(--line); }
     .job:first-of-type { border-top: 0; padding-top: 0; }
-    .job h3 {
-      margin: 0;
-      font-size: 1.02rem;
-    }
-    .job .org {
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .job .when {
-      color: var(--muted);
-      font-size: .9rem;
-      margin: .2rem 0 .55rem;
-    }
-    .job ul {
-      margin: 0;
-      padding-left: 1.15rem;
-      color: var(--muted);
-    }
-    .job li { margin: .3rem 0; }
+    .job h3 { margin: 0; font-size: 1.02rem; }
+    .job .org { color: var(--accent); font-weight: 600; }
+    .job .when { color: var(--muted); font-size: .9rem; margin: .2rem 0 .55rem; }
     .highlight {
       border-color: rgba(94,234,212,.35);
-      background:
-        linear-gradient(180deg, rgba(94,234,212,.08), transparent 40%),
-        rgba(18,26,47,.95);
+      background: linear-gradient(180deg, rgba(94,234,212,.08), transparent 40%), rgba(18,26,47,.95);
     }
-    .skills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .45rem;
+    .skills { display: flex; flex-wrap: wrap; gap: .45rem; }
+    footer { margin-top: 1.5rem; color: var(--muted); font-size: .85rem; text-align: center; }
+    #boot { min-height: 100vh; display: grid; place-items: center; color: var(--muted); }
+    #gate { min-height: 100vh; display: none; place-items: center; padding: 2rem 1rem; }
+    .gate-card {
+      width: min(420px, 100%); padding: 1.5rem; border: 1px solid var(--line);
+      border-radius: 20px; background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      box-shadow: 0 24px 70px rgba(0,0,0,.35);
     }
-    footer {
-      margin-top: 1.5rem;
-      color: var(--muted);
-      font-size: .85rem;
-      text-align: center;
-    }
+    .gate-card h1 { font-size: 1.4rem; margin: 0 0 .35rem; }
+    .gate-card p { margin: 0 0 1rem; color: var(--muted); font-size: .95rem; }
+    #app { display: none; }
+    .topbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+    #sign-in { min-height: 320px; }
   </style>
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_b3JnYW5pYy10dXJrZXktMjkxMy5jbGVyay5hY2NvdW50cy5kZXYk"
+    src="https://organic-turkey-2913.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
 </head>
 <body>
-  <div class="wrap">
+  <div id="boot">Loading secure gate...</div>
+
+  <div id="gate">
+    <div class="gate-card">
+      <div class="eyebrow">Private profile</div>
+      <h1>Sign in to continue</h1>
+      <p>John AI Smith bio is behind Clerk. Use email or Google. Turn on authenticator MFA in Clerk for 2FA.</p>
+      <div id="sign-in"></div>
+    </div>
+  </div>
+
+  <div id="app" class="wrap">
+    <div class="topbar"><div id="user-button"></div></div>
     <header class="hero">
       <div>
         <div class="eyebrow">AI Transformation Executive</div>
@@ -177,20 +123,20 @@
         <p class="subtitle">
           Senior finance-technology operator who ships AI into private-markets workflows.
           CPA. MBA. CS undergrad. ~20 years owning fund systems, close processes, and
-          transformation programs — now building agents, RAG, and MCP tooling that
+          transformation programs. Now building agents, RAG, and MCP tooling that
           change how finance teams work.
         </p>
         <div class="meta">
           <span class="chip">Greater New York</span>
-          <span class="chip">Private Markets × AI</span>
+          <span class="chip">Private Markets x AI</span>
           <span class="chip">Build + Transform</span>
-          <span class="chip">Prototype → Production discipline</span>
+          <span class="chip">Prototype to Production</span>
         </div>
       </div>
       <aside class="side-card">
         <h2>At a glance</h2>
         <ul>
-          <li>Head of Finance Technology &amp; Transformation (VP-level)</li>
+          <li>Head of Finance Technology and Transformation (VP-level)</li>
           <li>Ex-SVP, large PE platform ops</li>
           <li>Fund accounting, carry/waterfall, reporting automation</li>
           <li>Hands-on with Python agents, RAG, evals roadmap, MCP</li>
@@ -202,7 +148,7 @@
     <section class="highlight">
       <h2>AI transformation thesis</h2>
       <p>
-        John is not chasing a generic “Head of AI” title. He operates as an
+        John is not chasing a generic Head of AI title. He operates as an
         <strong style="color:var(--text)">AI-ahead Finance Transformation executive</strong>:
         domain-deep enough to specify systems precisely, technical enough to ship
         working agents, and disciplined enough to keep prototypes labeled as prototypes
@@ -211,40 +157,37 @@
       <p>
         His edge is the intersection most AI generalists lack: PE economics and close
         mechanics, vendor and system-selection judgment, audit-grade data integrity,
-        and executive credibility with CFOs and CTOs — plus working fluency in modern
+        and executive credibility with CFOs and CTOs, plus working fluency in modern
         LLM stacks (agents, retrieval, tool use, model-agnostic routing).
       </p>
     </section>
 
     <section>
       <h2>Professional experience</h2>
-
       <article class="job">
-        <h3>Head of Finance Technology &amp; Transformation <span class="org">· Northbridge Capital</span></h3>
+        <h3>Head of Finance Technology and Transformation <span class="org">· Northbridge Capital</span></h3>
         <div class="when">Current · Mid-market private equity firm</div>
         <ul>
           <li>Partners with CFO and CTO on greenfield finance technology mandate: offshore build-out, enterprise system selection, audit remediation, and AI-native workflow deployment.</li>
           <li>Owns production reporting automation for capital-account and balance workflows; encodes quarter-end rules into reliable operating procedures.</li>
-          <li>Builds internal AI enablement (statement cross-check analyzers, research skills, agent prototypes) while keeping production claims honest.</li>
+          <li>Builds internal AI enablement while keeping production claims honest.</li>
         </ul>
       </article>
-
       <article class="job">
         <h3>Senior Vice President, Finance Technology <span class="org">· Horizon Equity Partners</span></h3>
-        <div class="when">~10–13 years · Large alternative asset manager</div>
+        <div class="when">~10-13 years · Large alternative asset manager</div>
         <ul>
           <li>Led migration of GP carry and waterfall data out of legacy spreadsheets/Access into a structured fund-accounting platform.</li>
           <li>Translated unstructured financial logic into system architecture; cut quarter close from multi-week to under two weeks.</li>
-          <li>Operated deep fund-economics domain as a prerequisite to automation — not the reverse.</li>
+          <li>Operated deep fund-economics domain as a prerequisite to automation.</li>
         </ul>
       </article>
-
       <article class="job">
-        <h3>Finance Transformation / Strategic Management <span class="org">· Atlantic Securities &amp; Alpine Bank</span></h3>
+        <h3>Finance Transformation / Strategic Management <span class="org">· Atlantic Securities and Alpine Bank</span></h3>
         <div class="when">Earlier career · Global banks</div>
         <ul>
           <li>Embedded internal consultant automating finance workflows across investment banking and new-issue operations.</li>
-          <li>Led workstreams inside broader transformation programs; focused on durable process change, not slideware.</li>
+          <li>Led workstreams inside broader transformation programs; focused on durable process change.</li>
         </ul>
       </article>
     </section>
@@ -254,28 +197,27 @@
         <h2>AI systems built (selected)</h2>
         <p style="margin-bottom:.75rem">Framed as prototypes / enablement unless noted as deployed.</p>
         <ul style="margin:0;padding-left:1.15rem;color:var(--muted)">
-          <li><strong style="color:var(--text)">Portfolio / portco normalizer agent</strong> — multi-file Excel normalization, comps pull, multi-tab outputs; Flask UI with run visibility.</li>
-          <li><strong style="color:var(--text)">Model-agnostic DB agent</strong> — NL → SQL over portfolio data with provider-swappable LLM routing.</li>
-          <li><strong style="color:var(--text)">PE ADV RAG</strong> — local retrieval over Form ADV brochures with citations; chunking and hybrid-retrieval literacy.</li>
-          <li><strong style="color:var(--text)">Investment research skill set</strong> — multi-agent screening via firm research connectors.</li>
-          <li><strong style="color:var(--text)">MCP authoring track</strong> — moving from MCP consumer to authored servers (fund balance tools) as proof of production AI craft.</li>
+          <li><strong style="color:var(--text)">Portfolio / portco normalizer agent</strong> — multi-file Excel normalization, comps, multi-tab outputs; Flask UI.</li>
+          <li><strong style="color:var(--text)">Model-agnostic DB agent</strong> — NL to SQL over portfolio data with provider-swappable LLM routing.</li>
+          <li><strong style="color:var(--text)">PE ADV RAG</strong> — local retrieval over Form ADV brochures with citations.</li>
+          <li><strong style="color:var(--text)">Investment research skill set</strong> — multi-agent screening via research connectors.</li>
+          <li><strong style="color:var(--text)">MCP authoring track</strong> — from MCP consumer to authored servers as production AI craft.</li>
         </ul>
       </section>
-
       <section>
         <h2>How he works</h2>
         <ul style="margin:0;padding-left:1.15rem;color:var(--muted)">
-          <li>Learns by building things that matter to the business, not by collecting courses.</li>
+          <li>Learns by building things that matter to the business.</li>
           <li>Directs AI pair-programming; owns environment, debugging, and deployment failures.</li>
           <li>Prefers step-by-step editor work over dumped finished repos.</li>
-          <li>Demands UI, auditability, and “no invented numbers” constraints on finance agents.</li>
-          <li>Pushes back on weak logic; wants one strong recommendation, not option theater.</li>
+          <li>Demands UI, auditability, and no invented numbers on finance agents.</li>
+          <li>Pushes back on weak logic; wants one strong recommendation.</li>
         </ul>
       </section>
     </div>
 
     <section>
-      <h2>Credentials &amp; skills</h2>
+      <h2>Credentials and skills</h2>
       <p><strong style="color:var(--text)">Credentials:</strong> CPA · MBA (top program) · CS undergraduate</p>
       <div class="skills" style="margin-top:.75rem">
         <span class="chip">PE fund accounting</span>
@@ -293,13 +235,58 @@
       </div>
       <p style="margin-top:1rem">
         <strong style="color:var(--text)">Current focus:</strong> ship one internal AI system with real users,
-        an audit trail, and a quoted outcome — then scale the FDE-like operator seat inside the firm.
+        an audit trail, and a quoted outcome.
       </p>
     </section>
 
-    <footer>
-      Fictional profile for layout demo · Prompt-deployed via GitHub → Vercel · Not a real person
-    </footer>
+    <footer>Fictional profile behind Clerk auth · GitHub to Vercel · Not a real person</footer>
   </div>
+
+  <script>
+    const PUBLISHABLE_KEY = "pk_test_b3JnYW5pYy10dXJrZXktMjkxMy5jbGVyay5hY2NvdW50cy5kZXYk";
+
+    async function start() {
+      const boot = document.getElementById("boot");
+      try {
+        if (!window.Clerk) throw new Error("Clerk.js failed to load");
+        await window.Clerk.load({ publishableKey: PUBLISHABLE_KEY });
+        boot.style.display = "none";
+        render();
+        window.Clerk.addListener(function () { render(); });
+      } catch (err) {
+        boot.textContent = "Auth failed to load. In Clerk, allow origin https://fde-hello.vercel.app. " + (err && err.message ? err.message : "");
+      }
+    }
+
+    function render() {
+      var signedIn = !!(window.Clerk && window.Clerk.user);
+      var gate = document.getElementById("gate");
+      var app = document.getElementById("app");
+      var signIn = document.getElementById("sign-in");
+      var userButton = document.getElementById("user-button");
+
+      if (signedIn) {
+        gate.style.display = "none";
+        app.style.display = "block";
+        signIn.innerHTML = "";
+        delete signIn.dataset.mounted;
+        if (userButton && !userButton.dataset.mounted) {
+          window.Clerk.mountUserButton(userButton);
+          userButton.dataset.mounted = "1";
+        }
+      } else {
+        app.style.display = "none";
+        gate.style.display = "grid";
+        userButton.innerHTML = "";
+        delete userButton.dataset.mounted;
+        if (!signIn.dataset.mounted) {
+          window.Clerk.mountSignIn(signIn, { routing: "hash" });
+          signIn.dataset.mounted = "1";
+        }
+      }
+    }
+
+    window.addEventListener("load", start);
+  </script>
 </body>
 </html>
