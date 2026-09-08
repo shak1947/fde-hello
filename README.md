@@ -1,13 +1,7 @@
 # fde-hello
 
-Tiny prompt-driven CI/CD demo.
+Prompt-driven GitHub → Vercel demo.
 
-Push to `main` → Vercel production deploy.
+Current page: fictional resume/bio for **John AI Smith** (AI Transformation Executive), used to preview layout. Not a real person.
 
-## Stack
-
-Static HTML on Vercel. No framework.
-
-## Status
-
-Prototype. Built to prove GitHub → Vercel works from prompts only.
+Live: https://fde-hello.vercel.app
