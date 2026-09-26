@@ -81,7 +81,7 @@ The rubric counts that measured margin (Mermaid 4, Farm 1) plus three product-ty
 
 ## How a verdict gets earned
 
-1. **Overview** — name, ASIN or URL (link only), SKU, sell price, compare-at/list, category, BSR, reviews, rating, notes.
+1. **Overview** — name, ASIN or URL, SKU, sell price, compare-at/list, category, BSR, reviews, rating, notes. An Amazon link is rendered only for a 10-character ASIN that starts with B0. An empty field, a placeholder, or a demo id does not become an `amazon.com/dp` link. Mermaid and Farm use their real listing ids.
 2. **Competition** — add or paste leaders. The revenue bars and a suggested competition score read only the rows you entered. Baselines start with an empty table.
 3. **China / landed cost** — Mode 1 Sellerboard Products Cost, plus current kit EXW, a manual freight $/unit, Alibaba, duty (blank until HTS is confirmed), and AWD/storage, then FBA fulfillment and referral. Sellerboard presets fill cost, blended fees, and net. EXW buttons set the kit price only and do not fill freight or replace Products Cost.
 4. **Maker opportunity** — why, white space, kit angle, gift / OT angle, price band, monthly units. Annual profit is units × 12 × unit profit when those inputs exist.

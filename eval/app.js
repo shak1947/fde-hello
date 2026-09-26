@@ -271,7 +271,7 @@
     return "<section class=\"panel\" id=\"overview\" data-section><p class=\"kicker\">A · Listing</p><h2>Overview</h2>" +
       "<p class=\"intro\">What you saw when you opened the listing. The ASIN link only opens Amazon in a new tab. This page does not read it.</p>" +
       "<div class=\"fields cols-3\">" +
-      field("ASIN or listing URL", textInput("asinOrUrl", d.asinOrUrl, { max: 500, placeholder: "B0XXXXXXXX or https://www.amazon.com/dp/…" }), "span-2") +
+      field("ASIN or listing URL", textInput("asinOrUrl", d.asinOrUrl, { max: 500, placeholder: "10-character ASIN, or a full listing URL" }), "span-2") +
       field("Date scored", textInput("date", d.date, { type: "date" })) +
       field("SKU", textInput("overview.sku", o.sku, { max: 80, placeholder: "Seller SKU" })) +
       field("Category", textInput("overview.category", o.category, { max: 200, placeholder: "Optional browse path" }), "span-2") +

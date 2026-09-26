@@ -326,11 +326,45 @@
     return Math.round(n * 100) / 100;
   }
 
+  function extractAsin(value) {
+    var v = String(value || "").trim();
+    if (!v) return "";
+    var url = v.match(/(?:^|\/)(?:dp|gp\/product)\/([A-Za-z0-9]{10})(?=[/?#]|$)/i);
+    if (url) return url[1].toUpperCase();
+    if (/^[A-Za-z0-9]{10}$/.test(v)) return v.toUpperCase();
+    return "";
+  }
+
+  /* A listing link is only a 10-character ASIN that starts with B0.
+     Empty fields, placeholders, and demo ids never become amazon.com/dp links. */
+  function isListingAsin(asin) {
+    if (!/^B0[A-Z0-9]{8}$/.test(asin)) return false;
+    if (/DEMO|XXXX|SAMPLE|FAKE|FICT|PLACE/.test(asin)) return false;
+    return true;
+  }
+
   function listingHref(value) {
     var v = String(value || "").trim();
+    if (!v) return "";
+    var asin = extractAsin(v);
+    if (asin) return isListingAsin(asin) ? "https://www.amazon.com/dp/" + asin : "";
+    if (/amazon\./i.test(v)) return "";
     if (/^https?:\/\//i.test(v)) return v;
-    if (/^[A-Za-z0-9]{10}$/.test(v)) return "https://www.amazon.com/dp/" + v.toUpperCase();
     return "";
+  }
+
+  function sanitizeAsinField(value) {
+    var v = asString(value, 500).trim();
+    if (!v) return "";
+    var asin = extractAsin(v);
+    if (asin && !isListingAsin(asin)) return "";
+    return v;
+  }
+
+  function rawListingBlocked(raw) {
+    if (!raw || typeof raw !== "object") return false;
+    var asin = extractAsin(raw.asinOrUrl);
+    return !!(asin && !isListingAsin(asin));
   }
 
   function blankCriteria() {
@@ -1268,7 +1302,7 @@
     return {
       id: asString(raw.id, 80) || uid(),
       productName: asString(raw.productName, 140),
-      asinOrUrl: asString(raw.asinOrUrl, 500),
+      asinOrUrl: sanitizeAsinField(raw.asinOrUrl),
       date: date,
       sample: raw.sample === true,
       baseline: raw.baseline === true,
@@ -1357,6 +1391,11 @@
         var dossiers = data && Array.isArray(data.dossiers) ? data.dossiers.map(normalizeDossier).filter(Boolean) : [];
         if (data && data.baselinesSeeded === true) {
           var patched = false;
+          if (Array.isArray(data.dossiers)) {
+            for (var s = 0; s < data.dossiers.length; s++) {
+              if (rawListingBlocked(data.dossiers[s])) patched = true;
+            }
+          }
           if (data.waterfallSeeded !== true) {
             for (var p = 0; p < dossiers.length; p++) {
               if (patchShippedBaseline(dossiers[p])) patched = true;
@@ -1875,20 +1914,20 @@
     var csv = "ASIN,Title,Price\nB0TEST12345,\"Rice, Rainbow\",12.50\n";
     var parsedCsv = parseHeliumPaste(csv);
     check("csv quotes", parsedCsv.rows.length === 1 && parsedCsv.rows[0].title === "Rice, Rainbow" && parsedCsv.rows[0].price === 12.5);
-    var json = JSON.stringify([{ asin: "https://www.amazon.com/dp/B0TEST1234", "Product Name": "Kit", "Monthly Sales": "800", Rating: "4.8" }]);
+    var json = JSON.stringify([{ asin: "https://www.amazon.com/dp/B0CFT7YF1L", "Product Name": "Kit", "Monthly Sales": "800", Rating: "4.8" }]);
     var parsedJson = parseHeliumPaste(json);
-    check("json url asin", parsedJson.rows.length === 1 && parsedJson.rows[0].asin === "B0TEST1234" && parsedJson.rows[0].monthlySales === 800 && parsedJson.rows[0].rating === 4.8);
+    check("json url asin", parsedJson.rows.length === 1 && parsedJson.rows[0].asin === "B0CFT7YF1L" && parsedJson.rows[0].monthlySales === 800 && parsedJson.rows[0].rating === 4.8);
     check("empty paste", parseHeliumPaste("  ").error.length > 0);
     check("bad json", parseHeliumPaste("{").error.length > 0);
 
     var legacy = storeFromStorage(null, JSON.stringify({ version: 1, evals: [{
       id: "sample-pebble-calm-mini", productName: "Pebble Calm Mini — Sensory Worry Stone Set",
-      asinOrUrl: "B0SOTDEMO1", categoryNotes: "old", date: "2026-09-18", sample: true,
+      asinOrUrl: "", categoryNotes: "old", date: "2026-09-18", sample: true,
       criteria: criteriaFromScores(SAMPLE_SCORE, {})
     }] }));
     check("legacy pebble replaced", legacy.migrated && legacy.baselinesSeeded && legacy.dossiers.length === 2 && legacy.dossiers[0].id === "baseline-mermaid-dough" && legacy.dossiers[1].id === "baseline-farm-dough");
     var legacyKept = storeFromStorage(null, JSON.stringify({ version: 1, evals: [{
-      id: "real-1", productName: "My scoop", asinOrUrl: "B00REAL123", categoryNotes: "notes stay",
+      id: "real-1", productName: "My scoop", asinOrUrl: "", categoryNotes: "notes stay",
       date: "2026-09-01", sample: false, criteria: criteriaFromScores({ repeat: 4 }, {})
     }] }));
     check("legacy real kept", legacyKept.dossiers.length === 1 && legacyKept.baselinesSeeded && legacyKept.dossiers[0].productName === "My scoop" && legacyKept.dossiers[0].overview.notes === "notes stay");
@@ -1982,7 +2021,15 @@
     var imported = parseDossierImport(JSON.stringify(dossiersToJson([mermaid, farm])));
     check("roundtrip import", imported.dossiers.length === 2 && imported.dossiers[0].productName === "Mermaid dough kit" && imported.dossiers[0].china.productsCost === 13.5 && imported.dossiers[1].china.reportedNet === -3.77 && imported.dossiers[0].baseline === true && imported.dossiers[0].competitors.length === 0);
     check("money", money(6997.2) === "$6,997.20" && money(null) === "—");
-    check("listing href", listingHref("B0CFT7YF1L") === "https://www.amazon.com/dp/B0CFT7YF1L");
+    check("listing href", listingHref("B0CFT7YF1L") === "https://www.amazon.com/dp/B0CFT7YF1L" && listingHref("https://www.amazon.com/dp/B0GCTV28TN?ref=sr") === "https://www.amazon.com/dp/B0GCTV28TN" && listingHref("") === "" && listingHref("   ") === "" && listingHref("B0XXXXXXXX") === "" && listingHref("B0CFT7YF1") === "" && listingHref("https://www.amazon.com/s?k=dough") === "");
+    var demoId = ["B0", "SOT", "DEMO", "1"].join("");
+    var scrubbedDemo = normalizeDossier({ productName: "Old pebble", asinOrUrl: demoId, date: "2026-09-18", sample: true });
+    check("demo listing blocked", demoId.length === 10 && listingHref(demoId) === "" && listingHref("https://www.amazon.com/dp/" + demoId) === "" && scrubbedDemo.asinOrUrl === "" && listingHref(scrubbedDemo.asinOrUrl) === "");
+    var staleDemo = storeFromStorage(JSON.stringify({
+      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true,
+      dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01", asinOrUrl: demoId }]
+    }), null);
+    check("stale demo asin cleared", staleDemo.upgraded && staleDemo.dossiers.length === 1 && staleDemo.dossiers[0].asinOrUrl === "" && listingHref(staleDemo.dossiers[0].asinOrUrl) === "");
     check("margin bands", marginScoreFromPct(32) === 5 && marginScoreFromPct(24) === 4 && marginScoreFromPct(19.9) === 3 && marginScoreFromPct(6) === 2 && marginScoreFromPct(5.9) === 1);
     return fails;
   }
