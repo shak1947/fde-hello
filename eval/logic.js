@@ -26,7 +26,7 @@
     { id: "competition", name: "Competition density / brand strength on search", short: "Compete", weight: 3, inverse: false, core: false,
       why: "Lower competition scores higher. 5 = page one looks sparse or the brands look weak. 1 = entrenched brands own the search. Judge it from the results you looked at." },
     { id: "margin", name: "Margin headroom after FBA + ads", short: "Margin", weight: 4, inverse: false, core: false,
-      why: "Room left after FBA fees and ads, from your own estimate. 5 = comfortable headroom. 1 = fees and ads likely eat the offer. The China section can suggest this score from the landed-cost estimate." },
+      why: "Room left after FBA fees and ads, from your own estimate. 5 = comfortable headroom. 1 = fees and ads likely eat the offer. The China section suggests this score from Sellerboard net when that field is filled, otherwise from the landed-cost estimate." },
     { id: "returns", name: "Returns / damage risk (inverse)", short: "Returns", weight: 3, inverse: true, core: false,
       why: "Inverse: 5 = low return and damage risk. 1 = fragile, messy, or a high-return category." },
     { id: "season", name: "Seasonality risk (inverse)", short: "Season", weight: 2, inverse: true, core: false,
@@ -63,39 +63,41 @@
     competition: 3, margin: 4, returns: 4, season: 3, sensory: 5, channel: 4
   };
 
-  var SAMPLE_NOTES = {
-    repeat: "Refill rice is the repurchase. The tin and cards stay; a family using a sensory bin can restock inside a year. Fictional sample.",
-    gift: "Tin, scoop, and activity cards read as a birthday or teacher gift. A plain bag of dyed rice does not.",
-    size: "Planned as a small tin and about 1 lb of fill — mailer class, not a 5 lb sack.",
-    repack: "Loose dyed rice moves into our tin with a scoop and a card set. No glass, no electronics, no sealed clamshell.",
-    moat: "Custom tin print, a three-blend recipe, and activity cards. The factory can still sell dyed rice; it cannot hand over this kit without the plate and the cards. Rubric score 4. The broader barrier index stays Conditional because reviews and ads are softer.",
-    reviews: "Treated as a young listing with tens of reviews, not thousands. No live review count was pulled.",
-    competition: "Rainbow-oat fillers own a lot of the search. Score 3: crowded, but a giftable kit is not the same offer as a 2 lb commodity bag.",
-    margin: "From the landed-cost estimate on this page: about 34% contribution, about 24% after a 10% TACOS assumption. Score 4. Manual inputs, not a fee quote.",
-    returns: "Dry grain, low breakage. Dye transfer and “too messy” reviews are the watchout, so this is not a 5.",
-    season: "Gift demand peaks in Q4. Bins get used all year. Not a pure seasonal.",
-    sensory: "Direct sensory-bin / OT fit for Sensationally OT.",
-    channel: "The same tin can sit on Shopify and Walmart. Not built for Amazon only."
+  /* Locked 2026-09-26 from Pricing & Inventory / Listings / Shopify / Sellerboard.
+     China EXW/FOB vs freight is not in this snapshot. $13.50 and $14.00 are all-in
+     Products Cost. Do not split them. Referral 15% is a planning rate, not a
+     measured slice of the blended fees. */
+  var BASELINES = {
+    asOf: "2026-09-26",
+    source: "Pricing & Inventory / Listings / Shopify / Sellerboard",
+    mermaid: {
+      id: "baseline-mermaid-dough",
+      productName: "Mermaid dough kit",
+      asin: "B0CFT7YF1L",
+      sku: "KIT-MERMAID",
+      price: 39.95,
+      listPrice: null,
+      productsCost: 13.5,
+      amazonFeesBlended: 14.12,
+      reportedNet: 8.9
+    },
+    farm: {
+      id: "baseline-farm-dough",
+      productName: "Farm dough",
+      asin: "B0GCTV28TN",
+      sku: "35-ZREI-MJZW",
+      price: 39.95,
+      listPrice: 49.95,
+      productsCost: 14,
+      amazonFeesBlended: 18,
+      reportedNet: -3.77
+    }
   };
 
-  var BULK_SCORE = {
-    repeat: 3, gift: 2, size: 3, repack: 2, moat: 2, reviews: 2,
-    competition: 2, margin: 3, returns: 4, season: 3, sensory: 3, channel: 2
-  };
-
-  var BULK_NOTES = {
-    repeat: "People do buy more filler, but there is no branded refill. Any dyed rice replaces it. About a year if a bin habit exists, with no lock-in.",
-    gift: "A bulk bag is a supply, not a gift. Weak buy-for-others story.",
-    size: "A 2 lb bag is shippable and still heavier and less giftable than a tin kit.",
-    repack: "You can sticker a poly bag. You are not building a kit, so the repack does not create a new offer.",
-    moat: "Open-catalog dyed rice. Any seller with the same factory can list it next week.",
-    reviews: "Leaders already have thousands of reviews. A new commodity ASIN starts from zero against them.",
-    competition: "Head-on with Rainbow Oats style listings. Score 2: the leader is real, and we would be the same product.",
-    margin: "Unit cost is cheap, so contribution looks fine until a commodity TACOS assumption (about 22%). After ads the headroom is ordinary — score 3.",
-    returns: "Dry rice, low breakage. Messy-play complaints still happen.",
-    season: "Year-round bin use with a Q4 bump.",
-    sensory: "On-theme for OT, but it is the commodity version of the theme, not a Sensationally OT kit.",
-    channel: "A bulk bag can be listed elsewhere. Nothing about it is built for more than one marketplace."
+  var FICTIONAL_IDS = {
+    "sample-pebble-calm-mini": true,
+    "sample-calm-bin-kit": true,
+    "sample-bulk-rainbow-rice": true
   };
 
   function uid() {
@@ -233,6 +235,9 @@
       amazonInbound: null,
       packaging: null,
       spoilagePct: null,
+      productsCost: null,
+      amazonFeesBlended: null,
+      reportedNet: null,
       referralPct: 15,
       tacosPct: null,
       notes: ""
@@ -242,7 +247,9 @@
   function blankOverview() {
     return {
       category: "",
+      sku: "",
       price: null,
+      listPrice: null,
       bsr: "",
       reviewCount: null,
       rating: null,
@@ -272,6 +279,7 @@
       asinOrUrl: "",
       date: todayISO(),
       sample: false,
+      baseline: false,
       createdAt: now,
       updatedAt: now,
       overview: blankOverview(),
@@ -297,142 +305,99 @@
     };
   }
 
-  function sampleCalmBin() {
-    var d = blankDossier();
-    d.id = "sample-calm-bin-kit";
-    d.productName = "Calm Bin — OT Sensory Rice Kit";
-    d.asinOrUrl = "B0SOTDEMO1";
-    d.date = "2026-09-18";
-    d.sample = true;
-    d.createdAt = "2026-09-18T15:00:00.000Z";
-    d.updatedAt = "2026-09-18T18:00:00.000Z";
-    d.overview = {
-      category: "Toys & Games · sensory bin filler / OT gift kit",
-      price: 24.99,
-      bsr: "18,400 in Toys & Games",
-      reviewCount: 86,
-      rating: 4.6,
-      fbaFees: 6.15,
-      notes: "Fictional sample for Sensationally OT. Not a real ASIN. Stats are hand-built so the desk has a story on first visit — they are not a Helium 10 or Amazon pull. Position: a giftable tin (dyed rice blend, wooden scoop, four activity cards, refill pouch) against rainbow-oats and loose sensory rice."
+  function baselineCriteria(marginScore, marginNote) {
+    var scores = { repeat: 4, gift: 4, sensory: 5, margin: marginScore };
+    var notes = {
+      repeat: "Product-type starter, not a Sellerboard measure. Dough is a consumable; repurchase timing is not in the 2026-09-26 snapshot. Score 4 is the about-a-year middle of this row.",
+      gift: "Product-type starter, not a Sellerboard measure. Giftability was not in the snapshot. Score 4 is a placeholder, not a measured gift rate.",
+      sensory: "Product-type starter, not a sales measure. This is a Sensationally OT dough product.",
+      margin: marginNote
     };
-    d.competitors = [
-      compRow({ id: "c-oats", asin: "B0OATS0001", title: "Rainbow Oats Sensory Bin Filler, 2 lb", price: 19.99, monthlySales: 3200, reviews: 8400, rating: 4.7, bsr: "1,120" }),
-      compRow({ id: "c-rice", asin: "B0RICE0002", title: "Dyed Sensory Rice Rainbow, 1.5 lb", price: 16.49, monthlySales: 2100, reviews: 3100, rating: 4.5, bsr: "2,860" }),
-      compRow({ id: "c-kit", asin: "B0KIT00003", title: "Complete OT Sensory Bin Kit", price: 32.99, monthlySales: 640, reviews: 1260, rating: 4.6, bsr: "6,400" }),
-      compRow({ id: "c-bulk", asin: "B0BULK0004", title: "Bulk Colored Rice, 3 lb value bag", price: 18.99, monthlySales: 1500, reviews: 4200, rating: 4.3, bsr: "1,980" }),
-      compRow({ id: "c-jars", asin: "B0JARS0005", title: "Mini Calm Jars, set of 3", price: 22.5, monthlySales: 280, reviews: 190, rating: 4.4, bsr: "24,100" })
-    ];
-    d.china = {
-      unitCost: 4.1,
-      costBasis: "EXW",
-      moq: 500,
-      shippingMode: "sea",
-      freightPerUnit: 0.95,
-      dutyPct: 6.5,
-      amazonInbound: 0.55,
-      packaging: 0.48,
-      spoilagePct: 3,
-      referralPct: 15,
-      tacosPct: 10,
-      notes: "Planning rates, not a freight quote. EXW covers dyed rice, printed tin, scoop, and a card set at MOQ 500. Sea freight is a per-unit planning number. Duty uses unit + freight as a stand-in customs value."
-    };
-    d.maker = {
-      why: "Parents and OTs already buy sensory filler. The repurchase is the rice, and the thing they gift is a tin with a job to do. A plain rainbow-oats bag captures the habit and none of the gift.",
-      whitespace: "Leaders sell bulk dyed grain in a poly bag. Few sell a small-parts-conscious tin, a scoop, activity cards, and a refill pouch as one OT-framed kit.",
-      kitAngle: "Three-texture blend (rice, oat, lentil), laminated cards, wooden scoop, custom tin print. Not a single SKU of loose rice.",
-      giftOtAngle: "Birthday, teacher, and “sensory diet starter” gift. On-brand for Sensationally OT. Refill pouch is the reason to come back inside a year.",
-      priceBandLow: 22,
-      priceBandHigh: 28,
-      monthlyUnits: 280,
-      shareNote: "280 units is about 3.6% of this tracked set (7,720 units a month), not of all of Amazon. Year-1 plan, not a rank we expect to hold against Rainbow Oats."
-    };
+    var criteria = criteriaFromScores(scores, notes);
+    var unknown = "Not in the 2026-09-26 Sellerboard snapshot.";
+    for (var i = 0; i < criteria.length; i++) {
+      if (criteria[i].score == null) criteria[i].notes = unknown;
+    }
+    return criteria;
+  }
+
+  function fillBaselineShell(d, spec) {
+    d.id = spec.id;
+    d.productName = spec.productName;
+    d.asinOrUrl = spec.asin;
+    d.date = BASELINES.asOf;
+    d.sample = false;
+    d.baseline = true;
+    d.createdAt = "2026-09-26T15:00:00.000Z";
+    d.competitors = [];
+    d.overview.sku = spec.sku;
+    d.overview.price = spec.price;
+    d.overview.listPrice = spec.listPrice;
+    d.overview.category = "";
+    d.overview.bsr = "";
+    d.overview.reviewCount = null;
+    d.overview.rating = null;
+    d.overview.fbaFees = null;
+    d.china.unitCost = null;
+    d.china.freightPerUnit = null;
+    d.china.dutyPct = null;
+    d.china.amazonInbound = null;
+    d.china.packaging = null;
+    d.china.spoilagePct = null;
+    d.china.moq = null;
+    d.china.productsCost = spec.productsCost;
+    d.china.amazonFeesBlended = spec.amazonFeesBlended;
+    d.china.reportedNet = spec.reportedNet;
+    d.china.referralPct = 15;
+    d.china.tacosPct = null;
+    d.maker.monthlyUnits = null;
+    d.maker.priceBandLow = null;
+    d.maker.priceBandHigh = null;
     d.moat = blankMoat();
-    var calmScores = { brand: 3, custom: 5, exclusive: 4, reviews: 3, tacos: 3, copy: 4, regulatory: 4, capital: 4 };
-    var calmMoatNotes = {
-      brand: "Wordmark planned. No patent. Enough to brand the tin, not enough to stop a lookalike.",
-      custom: "Print plate, card set, and a three-blend recipe. Harder to copy as one factory SKU.",
-      exclusive: "MOQ locks the print plate. The factory can still sell undyed or generically dyed rice.",
-      reviews: "Rainbow Oats is in the thousands of reviews. We do not need to match that if the kit is a different search, but we also cannot ignore it.",
-      tacos: "Gift kits can convert on a tighter ad set than commodity filler. Still a PPC category.",
-      copy: "Tin art and cards slow a straight copy. The grain itself will be copied.",
-      regulatory: "Dyed food-contact grain, small parts, CPSIA / Prop 65 watchouts. No battery, no magnet. Documentable if we do the work.",
-      capital: "MOQ 500 by sea is a modest first buy for this price point."
-    };
-    d.moat.scores = calmScores;
-    d.moat.notes = calmMoatNotes;
-    d.moat.barriersForOthers = "A copycat can buy dyed rice this week. They cannot match the tin print, the card set, and a Sensationally OT gift story without art, a plate, and a brand parents already trust. The review wall on commodity filler is the real barrier — for them and for us.";
-    d.moat.ourPlan = "Own the kit, not the grain. Keep the plate and the card artwork exclusive to our PO. Launch against “sensory gift” and “OT bin kit” terms, not only “rainbow oats.” Sell the refill pouch so the second purchase does not depend on winning the commodity keyword.";
-    d.criteria = criteriaFromScores(SAMPLE_SCORE, SAMPLE_NOTES);
+    d.moat.barriersForOthers = "Not scored. Competitor review walls, supplier exclusivity, and copy risk are not in the 2026-09-26 cost snapshot.";
+  }
+
+  function sampleMermaid() {
+    var spec = BASELINES.mermaid;
+    var d = blankDossier();
+    fillBaselineShell(d, spec);
+    d.updatedAt = "2026-09-26T18:00:00.000Z";
+    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Sell $39.95. Products Cost $13.50 is all-in — China EXW/FOB and freight are not broken out. Sep MTD Amazon fees about $14.12 per unit. Sep MTD net about +$8.90 per unit (about 22% of price). Healthy baseline. No BSR, review count, or competitor sales in this snapshot.";
+    d.china.notes = "Sellerboard Products Cost $13.50 overrides any China + freight build-up. Leave China EXW/FOB and freight blank until an invoice parse. Referral 15% is a planning rate and is not added on top of the blended Amazon fees. The gap between price − Products Cost − blended fees and the reported net is not broken out — do not assign it to ads.";
+    d.maker.why = "Healthy baseline. Sep 2026 MTD Sellerboard net about +$8.90 per unit on a $39.95 sell price after Products Cost $13.50 and Amazon fees about $14.12.";
+    d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
+    d.moat.ourPlan = "Use this listing as the healthy comparison unit: net about +$8.90 per unit. Keep the $13.50 Products Cost whole until an invoice splits China and freight.";
+    d.criteria = baselineCriteria(4, "Sep 2026 MTD Sellerboard net +$8.90 on a $39.95 sell price (about 22% of price). Products Cost $13.50 all-in. Amazon fees about $14.12 per unit blended. Score 4 is the 20%+ band on that net. The gap versus price minus cost minus blended fees is not an ad-cost measure.");
     return d;
   }
 
-  function sampleBulkRice() {
+  function sampleFarm() {
+    var spec = BASELINES.farm;
     var d = blankDossier();
-    d.id = "sample-bulk-rainbow-rice";
-    d.productName = "Bulk Rainbow Rice — Commodity 2 lb";
-    d.asinOrUrl = "B0SOTDEMO2";
-    d.date = "2026-09-18";
-    d.sample = true;
-    d.createdAt = "2026-09-18T16:00:00.000Z";
-    d.updatedAt = "2026-09-18T16:00:00.000Z";
-    d.overview = {
-      category: "Toys & Games · sensory bin filler, commodity bag",
-      price: 17.99,
-      bsr: "9,800 in Toys & Games",
-      reviewCount: 40,
-      rating: 4.2,
-      fbaFees: 5.4,
-      notes: "Second fictional sample: the me-too version of the same aisle. Use it to compare against Calm Bin. Cheap grain, no kit, no gift, no moat. Not a real ASIN and not a live pull."
-    };
-    d.competitors = [
-      compRow({ id: "b-oats", asin: "B0OATS0001", title: "Rainbow Oats Sensory Bin Filler, 2 lb", price: 19.99, monthlySales: 3200, reviews: 8400, rating: 4.7, bsr: "1,120" }),
-      compRow({ id: "b-rice", asin: "B0RICE0002", title: "Dyed Sensory Rice Rainbow, 1.5 lb", price: 16.49, monthlySales: 2100, reviews: 3100, rating: 4.5, bsr: "2,860" }),
-      compRow({ id: "b-bulk", asin: "B0BULK0004", title: "Bulk Colored Rice, 3 lb value bag", price: 18.99, monthlySales: 1500, reviews: 4200, rating: 4.3, bsr: "1,980" })
-    ];
-    d.china = {
-      unitCost: 1.35,
-      costBasis: "EXW",
-      moq: 2000,
-      shippingMode: "sea",
-      freightPerUnit: 0.7,
-      dutyPct: 6.5,
-      amazonInbound: 0.4,
-      packaging: 0.15,
-      spoilagePct: 2,
-      referralPct: 15,
-      tacosPct: 22,
-      notes: "Planning rates for a stickered poly bag. Higher MOQ because the unit is cheap. TACOS is punitive on purpose: commodity filler usually buys the click."
-    };
-    d.maker = {
-      why: "Included as the contrast case. The aisle is real, the unit is cheap, and that is not a reason to source it. There is no gift, no refill brand, and no reason a buyer picks us over Rainbow Oats.",
-      whitespace: "There isn’t a useful wedge. White space would have to be price, and the leader can follow price down.",
-      kitAngle: "None. A poly bag of dyed rice is the product.",
-      giftOtAngle: "OT-adjacent only because the grain is used in bins. It is not a gift and it is not a Sensationally OT kit.",
-      priceBandLow: 15,
-      priceBandHigh: 20,
-      monthlyUnits: 400,
-      shareNote: "400 units would be a real buy against leaders who already move thousands. That volume is the expensive way to learn the listing is a commodity."
-    };
-    d.moat = blankMoat();
-    d.moat.scores = { brand: 1, custom: 1, exclusive: 1, reviews: 1, tacos: 2, copy: 1, regulatory: 3, capital: 2 };
-    d.moat.notes = {
-      brand: "No brand a buyer can ask for.",
-      custom: "No mold, print, or kit.",
-      exclusive: "Any trading company will sell the same rice.",
-      reviews: "Catching 8,400 reviews with a me-too bag is the whole ballgame, and we would still be undifferentiated.",
-      tacos: "Expect to buy rank. A 22% TACOS assumption is in the China section for that reason.",
-      copy: "This is the copy. Shipping it does not create a barrier.",
-      regulatory: "Same dye and small-parts questions as any sensory rice, without a brand to absorb a complaint.",
-      capital: "MOQ 2,000 of a slow-differentiated bag ties cash up in something we cannot brand."
-    };
-    d.moat.barriersForOthers = "Almost none. The barrier is the leaders’ reviews, and it blocks us more than it blocks the next seller.";
-    d.moat.ourPlan = "Do not source this as a Sensationally OT product. If the grain is useful, it belongs inside the Calm Bin kit as a refill, not as its own listing.";
-    d.criteria = criteriaFromScores(BULK_SCORE, BULK_NOTES);
+    fillBaselineShell(d, spec);
+    d.updatedAt = "2026-09-26T17:00:00.000Z";
+    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Sell $39.95, compare-at/list $49.95. SKU 35-ZREI-MJZW. Products Cost $14.00 is all-in — China EXW/FOB and freight are not broken out. Sep MTD Amazon fees about $18 per unit blended. Ads are high; ad dollars are not broken out. Sep MTD net about −$3.77 per unit. Underwater at current ads and fees.";
+    d.china.notes = "Sellerboard Products Cost $14.00 overrides any China + freight build-up. Leave China EXW/FOB and freight blank until an invoice parse. Referral 15% is a planning rate and is not added on top of the blended Amazon fees. Ads are described as high only — there is no TACOS dollar in this snapshot. The gap versus reported net is not an ad-cost measure.";
+    d.maker.why = "Underwater at current ads and fees. Sep 2026 MTD Sellerboard net about −$3.77 per unit on a $39.95 sell price (compare-at $49.95) after Products Cost $14.00 and Amazon fees about $18 per unit. A reorder is Conditional until that stack changes.";
+    d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
+    d.moat.ourPlan = "At current ads and fees the unit is underwater (net about −$3.77). Treat a reorder as Conditional until the fee and ad stack changes. Do not split the $14 Products Cost into China versus freight until an invoice is parsed.";
+    d.criteria = baselineCriteria(1, "Sep 2026 MTD Sellerboard net −$3.77 on a $39.95 sell price (compare-at $49.95). Products Cost $14.00 all-in. Amazon fees about $18 per unit blended. Ads are high; ad dollars are not broken out. Score 1 because the net is under 6% of price.");
     return d;
   }
 
   function sampleLibrary() {
-    return [sampleCalmBin(), sampleBulkRice()];
+    return [sampleMermaid(), sampleFarm()];
+  }
+
+  function applySellerboardPreset(dossier, key) {
+    var spec = BASELINES[key];
+    if (!spec || !dossier || !dossier.china || !dossier.overview) return null;
+    dossier.china.productsCost = spec.productsCost;
+    dossier.china.amazonFeesBlended = spec.amazonFeesBlended;
+    dossier.china.reportedNet = spec.reportedNet;
+    if (dossier.overview.price == null) dossier.overview.price = spec.price;
+    if (spec.listPrice != null && dossier.overview.listPrice == null) dossier.overview.listPrice = spec.listPrice;
+    return spec;
   }
 
   function scoreSummary(criteria) {
@@ -515,6 +480,17 @@
     return null;
   }
 
+  function commercialStatus(econ) {
+    if (!econ) return null;
+    if (econ.reportedNet != null && econ.price != null && econ.price > 0) {
+      if (econ.reportedNet < 0) return { id: "underwater", label: "Underwater" };
+      if (econ.marginPctUsed >= 20) return { id: "healthy", label: "Healthy" };
+      return { id: "thin", label: "Thin" };
+    }
+    if (econ.afterAds != null && econ.afterAds < 0) return { id: "underwater", label: "Underwater" };
+    return null;
+  }
+
   function economics(d) {
     var overview = d && d.overview ? d.overview : {};
     var china = d && d.china ? d.china : {};
@@ -529,6 +505,9 @@
     var spoilagePct = numOrNull(china.spoilagePct);
     var referralPct = numOrNull(china.referralPct);
     var tacosPct = numOrNull(china.tacosPct);
+    var productsCost = numOrNull(china.productsCost);
+    var blended = numOrNull(china.amazonFeesBlended);
+    var reportedNet = numOrNull(china.reportedNet);
     var moq = numOrNull(china.moq);
     var monthlyUnits = numOrNull(maker.monthlyUnits);
     var result = {
@@ -542,6 +521,9 @@
       spoilagePct: spoilagePct,
       referralPct: referralPct,
       tacosPct: tacosPct,
+      productsCost: productsCost,
+      amazonFeesBlended: blended,
+      reportedNet: reportedNet,
       moq: moq,
       monthlyUnits: monthlyUnits,
       costBasis: china.costBasis === "FOB" ? "FOB" : "EXW",
@@ -550,9 +532,17 @@
       customs: null,
       duty: null,
       preBuffer: null,
+      buildUp: null,
+      coreStack: null,
+      cogs: null,
+      cogsSource: null,
       referral: null,
+      referralApplied: false,
+      feeStack: null,
+      feeSource: null,
       contribution: null,
       contributionPct: null,
+      unexplainedGap: null,
       adPerUnit: null,
       afterAds: null,
       afterAdsPct: null,
@@ -565,35 +555,70 @@
       marginBasis: null,
       marginPctUsed: null,
       marginScore: null,
-      blanksAsZero: false
+      blanksAsZero: false,
+      commercial: null,
+      gapVsMermaidCost: null,
+      gapVsFarmCost: null
     };
-    if (unit == null) return result;
-    var freightUsed = freight == null ? 0 : freight;
-    var dutyUsed = dutyPct == null ? 0 : dutyPct;
-    var inboundUsed = inbound == null ? 0 : inbound;
-    var packUsed = packaging == null ? 0 : packaging;
-    var spoilUsed = spoilagePct == null ? 0 : spoilagePct;
-    result.blanksAsZero = freight == null || dutyPct == null || inbound == null || packaging == null || spoilagePct == null;
-    var customs = unit + freightUsed;
-    var duty = customs * dutyUsed / 100;
-    var preBuffer = customs + duty + inboundUsed + packUsed;
-    var landed = preBuffer * (1 + spoilUsed / 100);
-    result.customs = customs;
-    result.duty = duty;
-    result.preBuffer = preBuffer;
-    result.landed = landed;
-    if (moq != null && moq > 0) result.cashTied = moq * landed;
-    if (price != null && price > 0 && fba != null) {
-      var refPct = referralPct == null ? 0 : referralPct;
-      var referral = price * refPct / 100;
-      var contribution = price - referral - fba - landed;
-      result.referral = referral;
-      result.contribution = contribution;
-      result.contributionPct = contribution / price * 100;
-      if (tacosPct != null) {
+    var hasBuild = unit != null || freight != null;
+    if (hasBuild) {
+      var unitUsed = unit == null ? 0 : unit;
+      var freightUsed = freight == null ? 0 : freight;
+      var dutyUsed = dutyPct == null ? 0 : dutyPct;
+      var inboundUsed = inbound == null ? 0 : inbound;
+      var packUsed = packaging == null ? 0 : packaging;
+      var spoilUsed = spoilagePct == null ? 0 : spoilagePct;
+      result.blanksAsZero = unit == null || freight == null || dutyPct == null || inbound == null || packaging == null || spoilagePct == null;
+      var customs = unitUsed + freightUsed;
+      var duty = customs * dutyUsed / 100;
+      var coreStack = customs + duty + inboundUsed;
+      var preBuffer = coreStack + packUsed;
+      var buildUp = preBuffer * (1 + spoilUsed / 100);
+      result.customs = customs;
+      result.duty = duty;
+      result.coreStack = coreStack;
+      result.preBuffer = preBuffer;
+      result.buildUp = buildUp;
+      result.landed = buildUp;
+      result.gapVsMermaidCost = buildUp - BASELINES.mermaid.productsCost;
+      result.gapVsFarmCost = buildUp - BASELINES.farm.productsCost;
+    }
+    if (productsCost != null) {
+      result.cogs = productsCost;
+      result.cogsSource = "sellerboard";
+    } else if (hasBuild) {
+      result.cogs = result.buildUp;
+      result.cogsSource = "buildup";
+    }
+    if (moq != null && moq > 0 && result.cogs != null) result.cashTied = moq * result.cogs;
+    if (price != null && price > 0 && result.cogs != null) {
+      if (blended != null) {
+        result.feeStack = blended;
+        result.feeSource = "blended";
+        result.referralApplied = false;
+      } else {
+        var refPct = referralPct == null ? 0 : referralPct;
+        var fbaUsed = fba == null ? 0 : fba;
+        result.referral = price * refPct / 100;
+        result.feeStack = result.referral + fbaUsed;
+        result.feeSource = "components";
+        result.referralApplied = true;
+      }
+      result.contribution = price - result.cogs - result.feeStack;
+      result.contributionPct = result.contribution / price * 100;
+      if (result.feeSource === "components" && tacosPct != null) {
         result.adPerUnit = price * tacosPct / 100;
-        result.afterAds = contribution - result.adPerUnit;
+        result.afterAds = result.contribution - result.adPerUnit;
         result.afterAdsPct = result.afterAds / price * 100;
+      }
+    }
+    if (reportedNet != null && price != null && price > 0) {
+      result.marginBasis = "Sellerboard net";
+      result.marginPctUsed = reportedNet / price * 100;
+      result.marginScore = marginScoreFromPct(result.marginPctUsed);
+      if (result.contribution != null) result.unexplainedGap = result.contribution - reportedNet;
+    } else if (result.contribution != null) {
+      if (tacosPct != null && result.afterAdsPct != null) {
         result.marginBasis = "after TACOS";
         result.marginPctUsed = result.afterAdsPct;
       } else {
@@ -601,18 +626,20 @@
         result.marginPctUsed = result.contributionPct;
       }
       result.marginScore = marginScoreFromPct(result.marginPctUsed);
-      if (result.cashTied != null && contribution > 0) result.breakevenUnits = Math.ceil(result.cashTied / contribution);
-      if (result.cashTied != null && result.afterAds != null && result.afterAds > 0) {
-        result.breakevenAfterAds = Math.ceil(result.cashTied / result.afterAds);
-      }
-      if (monthlyUnits != null && monthlyUnits >= 0) {
-        result.monthlyRevenuePlan = monthlyUnits * price;
-        result.annualContribution = monthlyUnits * 12 * contribution;
-        result.annualAfterAds = monthlyUnits * 12 * (result.afterAds == null ? contribution : result.afterAds);
-      }
-    } else if (price != null && price > 0 && monthlyUnits != null && monthlyUnits >= 0) {
-      result.monthlyRevenuePlan = monthlyUnits * price;
     }
+    if (result.cashTied != null && result.contribution != null && result.contribution > 0) {
+      result.breakevenUnits = Math.ceil(result.cashTied / result.contribution);
+    }
+    if (reportedNet == null && result.cashTied != null && result.afterAds != null && result.afterAds > 0) {
+      result.breakevenAfterAds = Math.ceil(result.cashTied / result.afterAds);
+    }
+    var unitProfit = reportedNet != null ? reportedNet : (result.afterAds != null ? result.afterAds : result.contribution);
+    if (monthlyUnits != null && monthlyUnits >= 0 && price != null && price > 0) {
+      result.monthlyRevenuePlan = monthlyUnits * price;
+      if (result.contribution != null) result.annualContribution = monthlyUnits * 12 * result.contribution;
+      if (unitProfit != null) result.annualAfterAds = monthlyUnits * 12 * unitProfit;
+    }
+    result.commercial = commercialStatus(result);
     return result;
   }
 
@@ -690,13 +717,20 @@
     var comp = competitionInsight(d.competitors);
     var moat = moatSummary(d.moat);
     var parts = [];
+    if (d.baseline) parts.push("Sellerboard baseline dated " + BASELINES.asOf + ". China EXW/FOB and freight are not broken out. Competitor rows are empty until a Helium 10 paste.");
     if (d.sample) parts.push("Fictional sample.");
+    if (econ.commercial && econ.commercial.id === "healthy") {
+      parts.push("Healthy baseline: Sellerboard net " + money(econ.reportedNet) + " per unit (" + pct(econ.marginPctUsed) + " of the sell price).");
+    } else if (econ.commercial && econ.commercial.id === "underwater" && econ.reportedNet != null) {
+      parts.push("Underwater at current ads and fees: Sellerboard net " + money(econ.reportedNet) + " per unit. Treat a reorder as Conditional until that stack changes.");
+    }
     if (rubric.hundredths == null) {
       parts.push("The rubric has no counted scores yet, so there is no GO, Conditional, or Pass.");
     } else {
       var strong = rubric.band.id === "go" ? " (Strong GO)" : "";
       parts.push("Verdict " + rubric.band.label + strong + " at " + formatHundredths(rubric.hundredths) + ".");
     }
+    if (d.baseline) parts.push("Repeat, gift, and OT-fit on this baseline are product-type starters, not Sellerboard measures. The measured margin row is the Sellerboard net. Competition, reviews, size, repack, moat, and the China split are unknown.");
     var coreBits = [];
     ["repeat", "gift", "size", "repack", "moat"].forEach(function (id) {
       var c = findCriterion(d, id);
@@ -708,15 +742,24 @@
     } else {
       parts.push("No competitor revenue yet. Add leaders or paste a Helium 10 export before treating competition as known.");
     }
-    if (econ.landed != null && econ.contribution != null) {
-      var marginLine = "Landed estimate " + money(econ.landed) + ". Contribution " + money(econ.contribution) + " (" + pct(econ.contributionPct) + ")";
-      if (econ.afterAds != null) marginLine += "; after " + pct(econ.tacosPct).replace("%", "") + "% TACOS " + money(econ.afterAds) + " (" + pct(econ.afterAdsPct) + ")";
-      marginLine += ". Calculator suggests margin score " + econ.marginScore + " (" + econ.marginBasis + "); the rubric says " + scoreText(findCriterion(d, "margin")) + ".";
+    if (econ.cogs != null && econ.contribution != null) {
+      var costLabel = econ.cogsSource === "sellerboard" ? "Sellerboard Products Cost " : "Landed build-up ";
+      var feeLabel = econ.feeSource === "blended" ? "Blended Amazon fees " : "Referral plus FBA fulfillment ";
+      var marginLine = costLabel + money(econ.cogs) + ". " + feeLabel + money(econ.feeStack) + ". Price minus those is " + money(econ.contribution) + " (" + pct(econ.contributionPct) + ").";
+      if (econ.reportedNet != null) {
+        marginLine += " Reported net " + money(econ.reportedNet) + " (" + pct(econ.marginPctUsed) + ").";
+        if (econ.unexplainedGap != null) marginLine += " Gap " + money(econ.unexplainedGap) + " is not broken out and is not an ad-cost measure.";
+      } else if (econ.afterAds != null) {
+        marginLine += " After " + pct(econ.tacosPct) + " TACOS " + money(econ.afterAds) + " (" + pct(econ.afterAdsPct) + ").";
+      }
+      marginLine += " Calculator suggests margin score " + econ.marginScore + " (" + econ.marginBasis + "); the rubric says " + scoreText(findCriterion(d, "margin")) + ".";
       parts.push(marginLine);
-    } else if (econ.landed != null) {
-      parts.push("Landed estimate " + money(econ.landed) + ". Add a target price and an FBA fee to see contribution.");
+    } else if (econ.cogs != null) {
+      parts.push((econ.cogsSource === "sellerboard" ? "Sellerboard Products Cost " : "Landed build-up ") + money(econ.cogs) + ". Add a sell price to see contribution.");
+    } else if (econ.reportedNet != null) {
+      parts.push("Sellerboard net " + money(econ.reportedNet) + ". Products Cost is empty, so contribution is not estimated.");
     } else {
-      parts.push("China unit cost is empty, so landed cost is not estimated yet.");
+      parts.push("China EXW/FOB, freight, and Sellerboard Products Cost are empty, so unit cost is not estimated yet.");
     }
     if (moat.hundredths != null) {
       parts.push("Barrier index " + formatHundredths(moat.hundredths) + " (" + moat.band.label + "). That rounds to rubric moat score " + suggestMoatRubricScore(moat) + "; entered score is " + scoreText(findCriterion(d, "moat")) + ".");
@@ -738,6 +781,7 @@
     lines.push("# " + name);
     if (rubric.hundredths == null) lines.push("Verdict: not scored");
     else lines.push("Verdict: **" + rubric.band.label + (rubric.band.id === "go" ? " (Strong GO)" : "") + " " + formatHundredths(rubric.hundredths) + "**");
+    if (d.baseline) lines.push("Sellerboard baseline " + BASELINES.asOf + ". Real listing. China versus freight is not split. Competitor table is paste-only and starts empty.");
     if (d.sample) lines.push("FICTIONAL SAMPLE. Not a real Amazon listing and not a Helium 10 or Amazon pull.");
     lines.push("");
     lines.push("## Decision");
@@ -745,12 +789,14 @@
     lines.push("");
     lines.push("## Overview");
     lines.push("- ASIN/URL: " + ((d.asinOrUrl || "").trim() || "(none)"));
+    lines.push("- SKU: " + ((d.overview.sku || "").trim() || "(none)"));
     lines.push("- Date: " + (d.date || ""));
     lines.push("- Category: " + ((d.overview.category || "").trim() || "(none)"));
-    lines.push("- Price: " + money(d.overview.price));
+    lines.push("- Sell price: " + money(d.overview.price));
+    lines.push("- Compare-at / list: " + money(d.overview.listPrice));
     lines.push("- BSR: " + ((d.overview.bsr || "").trim() || "(none)"));
     lines.push("- Reviews / rating: " + (d.overview.reviewCount == null ? "—" : formatInt(d.overview.reviewCount)) + " / " + (d.overview.rating == null ? "—" : String(d.overview.rating)));
-    lines.push("- FBA fees (manual): " + money(d.overview.fbaFees));
+    lines.push("- FBA fulfillment (manual): " + money(d.overview.fbaFees));
     if ((d.overview.notes || "").trim()) lines.push("- Notes: " + d.overview.notes.trim());
     lines.push("");
     lines.push("## Competition");
@@ -772,20 +818,24 @@
     }
     lines.push("");
     lines.push("## China / landed cost (ESTIMATE)");
-    lines.push("Manual inputs. Not a freight quote and not a customs ruling. Blank cost lines count as zero once a unit cost is entered. Duty uses unit cost + freight per unit as a stand-in customs value. Spoilage is a buffer on that subtotal.");
-    if (econ.unit == null) lines.push("Unit cost not entered.");
-    else {
-      lines.push("- " + econ.costBasis + " unit " + money(econ.unit) + ", " + econ.shippingMode + " freight " + money(econ.freight) + "/unit, duty " + (econ.dutyPct == null ? "—" : pct(econ.dutyPct)) + ", Amazon inbound " + money(econ.inbound) + ", packaging " + money(econ.packaging) + ", spoilage buffer " + (econ.spoilagePct == null ? "—" : pct(econ.spoilagePct)));
-      lines.push("- Customs stand-in " + money(econ.customs) + " · duty " + money(econ.duty) + " · before buffer " + money(econ.preBuffer) + " · landed " + money(econ.landed));
-      lines.push("- Referral " + (econ.referralPct == null ? "blank (counted as 0%)" : pct(econ.referralPct)) + " = " + money(econ.referral) + " · FBA " + money(econ.fba));
-      lines.push("- Contribution " + money(econ.contribution) + " (" + pct(econ.contributionPct) + ")");
-      if (econ.tacosPct != null) lines.push("- After " + pct(econ.tacosPct) + " TACOS: " + money(econ.afterAds) + " (" + pct(econ.afterAdsPct) + ") per unit");
-      else lines.push("- TACOS not entered, so after-ads profit is not estimated.");
-      if (econ.cashTied != null) lines.push("- MOQ cash at landed cost: " + money(econ.cashTied));
-      if (econ.breakevenUnits != null) lines.push("- Breakeven units at contribution (before ads): " + formatInt(econ.breakevenUnits));
-      if (econ.breakevenAfterAds != null) lines.push("- Breakeven units after TACOS: " + formatInt(econ.breakevenAfterAds));
-      if ((d.china.notes || "").trim()) lines.push("- Notes: " + d.china.notes.trim());
-    }
+    lines.push("Manual inputs. Not a freight quote and not a customs ruling. Sellerboard Products Cost overrides the build-up when it is filled. Otherwise blank duty, AWD/storage, packaging, and spoilage count as zero once China EXW/FOB or freight is entered. Duty uses China cost + freight per unit as a stand-in customs value. A build-up can be compared with Mermaid Products Cost $13.50 and Farm Products Cost $14.00. Those two figures are all-in Sellerboard costs, not a China versus freight split.");
+    if (econ.productsCost != null) lines.push("- Sellerboard Products Cost (override): " + money(econ.productsCost));
+    if (econ.buildUp != null) {
+      lines.push("- " + econ.costBasis + " " + money(econ.unit) + " + " + econ.shippingMode + " freight " + money(econ.freight) + "/unit + duty " + money(econ.duty) + " + AWD/storage " + money(econ.inbound) + " + packaging " + money(econ.packaging) + " → build-up " + money(econ.buildUp));
+      lines.push("- Build-up versus Mermaid $13.50: " + money(econ.gapVsMermaidCost) + ". Versus Farm $14.00: " + money(econ.gapVsFarmCost) + ".");
+    } else if (econ.productsCost == null) lines.push("China EXW/FOB, freight, and Sellerboard Products Cost are blank.");
+    if (econ.feeSource === "blended") lines.push("- Blended Amazon fees " + money(econ.feeStack) + ". Referral " + (econ.referralPct == null ? "(blank)" : pct(econ.referralPct)) + " is not added on top.");
+    else if (econ.contribution != null) lines.push("- Referral " + (econ.referralPct == null ? "blank (counted as 0%)" : pct(econ.referralPct)) + " = " + money(econ.referral) + " · FBA fulfillment " + money(econ.fba));
+    if (econ.contribution != null) lines.push("- Contribution before the unexplained gap: " + money(econ.contribution) + " (" + pct(econ.contributionPct) + ")");
+    if (econ.reportedNet != null) {
+      lines.push("- Sellerboard net: " + money(econ.reportedNet) + " (" + pct(econ.marginPctUsed) + " of price)");
+      if (econ.unexplainedGap != null) lines.push("- Gap versus contribution: " + money(econ.unexplainedGap) + ". Not broken out. Do not assign it to ads.");
+    } else if (econ.tacosPct != null) lines.push("- After " + pct(econ.tacosPct) + " TACOS: " + money(econ.afterAds) + " (" + pct(econ.afterAdsPct) + ") per unit");
+    else if (econ.contribution != null) lines.push("- TACOS not entered, and Sellerboard net is blank, so after-ads profit is not a separate line.");
+    if (econ.cashTied != null) lines.push("- MOQ cash at the cost used above: " + money(econ.cashTied));
+    if (econ.breakevenUnits != null) lines.push("- Breakeven units at contribution: " + formatInt(econ.breakevenUnits));
+    if (econ.breakevenAfterAds != null) lines.push("- Breakeven units after TACOS: " + formatInt(econ.breakevenAfterAds));
+    if ((d.china.notes || "").trim()) lines.push("- Notes: " + d.china.notes.trim());
     lines.push("");
     lines.push("## Maker opportunity");
     lines.push("- Why: " + ((d.maker.why || "").trim() || "(empty)"));
@@ -909,11 +959,14 @@
       asinOrUrl: asString(raw.asinOrUrl, 500),
       date: date,
       sample: raw.sample === true,
+      baseline: raw.baseline === true,
       createdAt: asString(raw.createdAt, 40) || base.createdAt,
       updatedAt: asString(raw.updatedAt || raw.savedAt, 40) || base.updatedAt,
       overview: {
         category: asString(overviewIn.category, 200),
+        sku: asString(overviewIn.sku, 80),
         price: clampNum(overviewIn.price, 0, 100000),
+        listPrice: clampNum(overviewIn.listPrice, 0, 100000),
         bsr: asString(overviewIn.bsr, 80),
         reviewCount: clampNum(overviewIn.reviewCount, 0, 100000000),
         rating: clampNum(overviewIn.rating, 0, 5),
@@ -931,6 +984,9 @@
         amazonInbound: clampNum(chinaIn.amazonInbound, 0, 100000),
         packaging: clampNum(chinaIn.packaging, 0, 100000),
         spoilagePct: clampNum(chinaIn.spoilagePct, 0, 100),
+        productsCost: clampNum(chinaIn.productsCost, 0, 100000),
+        amazonFeesBlended: clampNum(chinaIn.amazonFeesBlended, 0, 100000),
+        reportedNet: clampNum(chinaIn.reportedNet, -100000, 100000),
         referralPct: clampNum(chinaIn.referralPct, 0, 100),
         tacosPct: clampNum(chinaIn.tacosPct, 0, 100),
         notes: asString(chinaIn.notes, 2000)
@@ -950,9 +1006,30 @@
     };
   }
 
+  function isShippedFiction(raw) {
+    return !!(raw && raw.sample === true && FICTIONAL_IDS[raw.id]);
+  }
+
   function isUntouchedPebble(raw) {
     return raw && raw.id === "sample-pebble-calm-mini" && raw.sample === true
       && raw.productName === "Pebble Calm Mini — Sensory Worry Stone Set";
+  }
+
+  function seedBaselines(dossiers) {
+    var replaced = false;
+    var kept = [];
+    var list = Array.isArray(dossiers) ? dossiers : [];
+    for (var i = 0; i < list.length; i++) {
+      if (isShippedFiction(list[i])) { replaced = true; continue; }
+      kept.push(list[i]);
+    }
+    var lib = sampleLibrary();
+    for (var j = lib.length - 1; j >= 0; j--) {
+      var exists = false;
+      for (var k = 0; k < kept.length; k++) if (kept[k].id === lib[j].id) exists = true;
+      if (!exists) kept.unshift(lib[j]);
+    }
+    return { dossiers: kept, replaced: replaced };
   }
 
   function storeFromStorage(rawV2, rawV1) {
@@ -960,9 +1037,21 @@
       try {
         var data = JSON.parse(rawV2);
         var dossiers = data && Array.isArray(data.dossiers) ? data.dossiers.map(normalizeDossier).filter(Boolean) : [];
-        return { version: 1, dossiers: dossiers, migrated: false, fresh: false };
+        if (data && data.baselinesSeeded === true) {
+          return { version: 1, dossiers: dossiers, baselinesSeeded: true, migrated: false, fresh: false, replacedFiction: false };
+        }
+        var seeded = seedBaselines(dossiers);
+        return {
+          version: 1,
+          dossiers: seeded.dossiers,
+          baselinesSeeded: true,
+          migrated: false,
+          upgraded: true,
+          fresh: false,
+          replacedFiction: seeded.replaced
+        };
       } catch (err) {
-        return { version: 1, dossiers: sampleLibrary(), migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
     if (rawV1 != null && rawV1 !== "") {
@@ -972,23 +1061,26 @@
         var kept = [];
         var sawPebble = false;
         for (var i = 0; i < evals.length; i++) {
-          if (isUntouchedPebble(evals[i])) { sawPebble = true; continue; }
+          if (isUntouchedPebble(evals[i]) || isShippedFiction(evals[i])) { sawPebble = true; continue; }
           var d = normalizeDossier(evals[i]);
           if (d) kept.push(d);
         }
-        if (!kept.length) return { version: 1, dossiers: sampleLibrary(), migrated: true, fresh: false, replacedSample: sawPebble };
-        return { version: 1, dossiers: kept, migrated: true, fresh: false };
+        if (!kept.length) {
+          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
+        }
+        return { version: 1, dossiers: kept, baselinesSeeded: true, migrated: true, fresh: false, replacedFiction: false };
       } catch (err2) {
-        return { version: 1, dossiers: sampleLibrary(), migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
-    return { version: 1, dossiers: sampleLibrary(), migrated: false, fresh: true };
+    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, migrated: false, fresh: true };
   }
 
   function duplicateDossier(d) {
     var copy = clone(normalizeDossier(d));
     copy.id = uid();
     copy.sample = false;
+    copy.baseline = false;
     var name = (copy.productName || "Untitled").trim() + " copy";
     copy.productName = name.slice(0, 140);
     var now = new Date().toISOString();
@@ -1203,10 +1295,10 @@
         d.overview.bsr, d.overview.reviewCount == null ? "" : d.overview.reviewCount,
         d.overview.rating == null ? "" : d.overview.rating,
         d.overview.fbaFees == null ? "" : d.overview.fbaFees,
-        econ.landed == null ? "" : econ.landed.toFixed(2),
+        (econ.cogs != null ? econ.cogs : econ.landed) == null ? "" : (econ.cogs != null ? econ.cogs : econ.landed).toFixed(2),
         econ.contribution == null ? "" : econ.contribution.toFixed(2),
         econ.contributionPct == null ? "" : econ.contributionPct.toFixed(2),
-        econ.afterAds == null ? "" : econ.afterAds.toFixed(2),
+        (econ.reportedNet != null ? econ.reportedNet : econ.afterAds) == null ? "" : (econ.reportedNet != null ? econ.reportedNet : econ.afterAds).toFixed(2),
         econ.afterAdsPct == null ? "" : econ.afterAdsPct.toFixed(2),
         d.maker.monthlyUnits == null ? "" : d.maker.monthlyUnits,
         econ.annualAfterAds == null ? "" : econ.annualAfterAds.toFixed(2),
@@ -1313,13 +1405,12 @@
     }
     check("sample hand total 185/43", handNum === 185 && handDen === 43);
 
-    var calm = sampleCalmBin();
-    var sample = scoreSummary(calm.criteria);
-    check("sample num", sample.num === 185);
-    check("sample den", sample.den === 43);
-    check("sample hundredths", sample.hundredths === 430);
-    check("sample band", sample.band && sample.band.id === "go");
-    check("sample drags", sample.drags.map(function (d) { return d.id; }).join(",") === "reviews,competition,season,moat,margin,returns,channel");
+    var hand = scoreSummary(criteriaFromScores(SAMPLE_SCORE, {}));
+    check("sample num", hand.num === 185);
+    check("sample den", hand.den === 43);
+    check("sample hundredths", hand.hundredths === 430);
+    check("sample band", hand.band && hand.band.id === "go");
+    check("sample drags", hand.drags.map(function (d) { return d.id; }).join(",") === "reviews,competition,season,moat,margin,returns,channel");
 
     var all5 = blankCriteria();
     for (var a = 0; a < all5.length; a++) all5[a].score = 5;
@@ -1357,34 +1448,55 @@
     var one = scoreSummary(partial);
     check("single criterion", one.num === 25 && one.den === 5 && one.hundredths === 500 && one.band.id === "go");
 
-    var econ = economics(calm);
-    check("calm landed", Math.abs(econ.landed - 6.6004975) < 1e-6);
-    check("calm contribution positive", econ.contribution > 8 && econ.contribution < 8.6);
-    check("calm margin score 4", econ.marginScore === 4);
-    check("calm breakeven", econ.breakevenUnits > 0 && econ.breakevenAfterAds > econ.breakevenUnits);
-    check("calm annual", econ.annualAfterAds > 0);
-    var moat = moatSummary(calm.moat);
-    check("calm moat 3.75", moat.hundredths === 375 && moat.band.id === "conditional");
-    check("calm moat suggest 4", suggestMoatRubricScore(moat) === 4);
-    var comp = competitionInsight(calm.competitors);
-    check("calm competition 3", comp && comp.score === 3 && comp.share > 0.4 && comp.share < 0.45);
-    var brief = decisionBrief(calm);
-    check("brief has GO", brief.indexOf("GO") >= 0);
-    check("brief has barrier", brief.indexOf("3.75") >= 0);
-    var summary = executiveSummary(calm);
-    check("summary title", summary.indexOf("# Calm Bin") === 0);
-    check("summary estimate", summary.indexOf("ESTIMATE") >= 0);
-    check("summary fictional", summary.indexOf("FICTIONAL SAMPLE") >= 0);
+    var mermaid = sampleMermaid();
+    var mermaidScore = scoreSummary(mermaid.criteria);
+    var mermaidEcon = economics(mermaid);
+    check("mermaid competitors empty", mermaid.competitors.length === 0 && competitionInsight(mermaid.competitors) == null);
+    check("mermaid no china split", mermaid.china.unitCost == null && mermaid.china.freightPerUnit == null && mermaid.china.dutyPct == null);
+    check("mermaid products cost", mermaidEcon.cogsSource === "sellerboard" && mermaidEcon.cogs === 13.5 && mermaidEcon.referralApplied === false);
+    check("mermaid fees", mermaidEcon.feeStack === 14.12 && mermaidEcon.feeSource === "blended");
+    check("mermaid contribution", Math.abs(mermaidEcon.contribution - 12.33) < 0.001);
+    check("mermaid net", mermaidEcon.reportedNet === 8.9 && mermaidEcon.marginScore === 4 && mermaidEcon.commercial.id === "healthy");
+    check("mermaid gap", Math.abs(mermaidEcon.unexplainedGap - 3.43) < 0.001);
+    check("mermaid rubric conditional", mermaidScore.num === 71 && mermaidScore.den === 17 && mermaidScore.hundredths === 418 && mermaidScore.band.id === "conditional");
+    check("mermaid no units", mermaid.maker.monthlyUnits == null && mermaidEcon.annualAfterAds == null);
+    var mermaidBrief = decisionBrief(mermaid);
+    check("mermaid brief healthy", mermaidBrief.indexOf("Healthy baseline") >= 0 && mermaidBrief.indexOf("not an ad-cost") >= 0);
+    var mermaidSummary = executiveSummary(mermaid);
+    check("mermaid title", mermaidSummary.indexOf("# Mermaid dough kit") === 0);
+    check("mermaid summary estimate", mermaidSummary.indexOf("ESTIMATE") >= 0 && mermaidSummary.indexOf("FICTIONAL SAMPLE") < 0);
+    check("mermaid sku", mermaid.overview.sku === "KIT-MERMAID" && mermaid.asinOrUrl === "B0CFT7YF1L" && mermaid.overview.price === 39.95);
 
-    var bulk = sampleBulkRice();
-    var bulkScore = scoreSummary(bulk.criteria);
-    check("bulk pass", bulkScore.num === 110 && bulkScore.hundredths === 256 && bulkScore.band.id === "pass");
-    var bulkComp = competitionInsight(bulk.competitors);
-    check("bulk competition 2", bulkComp && bulkComp.score === 2);
-    var bulkEcon = economics(bulk);
-    check("bulk margin score 3", bulkEcon.marginScore === 3);
-    var bulkMoat = moatSummary(bulk.moat);
-    check("bulk moat pass", bulkMoat.band.id === "pass" && suggestMoatRubricScore(bulkMoat) === 2);
+    var farm = sampleFarm();
+    var farmScore = scoreSummary(farm.criteria);
+    var farmEcon = economics(farm);
+    check("farm products cost", farmEcon.cogs === 14 && farmEcon.feeStack === 18 && farmEcon.reportedNet === -3.77);
+    check("farm contribution", Math.abs(farmEcon.contribution - 7.95) < 0.001);
+    check("farm gap", Math.abs(farmEcon.unexplainedGap - 11.72) < 0.001);
+    check("farm underwater", farmEcon.marginScore === 1 && farmEcon.commercial.id === "underwater");
+    check("farm rubric conditional", farmScore.num === 59 && farmScore.den === 17 && farmScore.hundredths === 347 && farmScore.band.id === "conditional");
+    check("farm list", farm.overview.listPrice === 49.95 && farm.overview.sku === "35-ZREI-MJZW" && farm.asinOrUrl === "B0GCTV28TN");
+    check("farm no tacos", farm.china.tacosPct == null && farmEcon.afterAds == null);
+    var farmBrief = decisionBrief(farm);
+    check("farm brief conditional", farmBrief.indexOf("Underwater") >= 0 && farmBrief.indexOf("Conditional") >= 0);
+    check("money negative", money(-3.77) === "-$3.77");
+
+    var buildup = blankDossier();
+    buildup.overview.price = 39.95;
+    buildup.china.unitCost = 10;
+    buildup.china.freightPerUnit = 3.5;
+    buildup.china.referralPct = null;
+    var buildEcon = economics(buildup);
+    check("buildup matches mermaid cost", Math.abs(buildEcon.buildUp - 13.5) < 1e-9 && Math.abs(buildEcon.gapVsMermaidCost) < 1e-9 && buildEcon.cogsSource === "buildup");
+    buildup.china.productsCost = 14;
+    var overrideEcon = economics(buildup);
+    check("products cost overrides buildup", overrideEcon.cogs === 14 && overrideEcon.cogsSource === "sellerboard" && Math.abs(overrideEcon.buildUp - 13.5) < 1e-9);
+    var preset = blankDossier();
+    preset.china.unitCost = 4;
+    applySellerboardPreset(preset, "farm");
+    check("preset leaves china split", preset.china.unitCost === 4 && preset.china.freightPerUnit == null && preset.china.productsCost === 14 && preset.china.reportedNet === -3.77 && preset.overview.price === 39.95 && preset.overview.listPrice === 49.95);
+    var moatBlank = moatSummary(mermaid.moat);
+    check("baseline moat unscored", moatBlank.hundredths == null);
 
     var tsv = "ASIN\tProduct Title\tPrice\tMonthly Sales\tASIN Revenue\tReview Count\tRating\tSales Rank\nB0TEST12345\tRainbow Oats\t$19.99\t1,200\t23988\t50\t4.5\t1,200";
     var parsed = parseHeliumPaste(tsv);
@@ -1403,22 +1515,32 @@
       asinOrUrl: "B0SOTDEMO1", categoryNotes: "old", date: "2026-09-18", sample: true,
       criteria: criteriaFromScores(SAMPLE_SCORE, {})
     }] }));
-    check("legacy pebble replaced", legacy.migrated && legacy.dossiers.length === 2 && legacy.dossiers[0].id === "sample-calm-bin-kit");
+    check("legacy pebble replaced", legacy.migrated && legacy.baselinesSeeded && legacy.dossiers.length === 2 && legacy.dossiers[0].id === "baseline-mermaid-dough" && legacy.dossiers[1].id === "baseline-farm-dough");
     var legacyKept = storeFromStorage(null, JSON.stringify({ version: 1, evals: [{
       id: "real-1", productName: "My scoop", asinOrUrl: "B00REAL123", categoryNotes: "notes stay",
       date: "2026-09-01", sample: false, criteria: criteriaFromScores({ repeat: 4 }, {})
     }] }));
-    check("legacy real kept", legacyKept.dossiers.length === 1 && legacyKept.dossiers[0].productName === "My scoop" && legacyKept.dossiers[0].overview.notes === "notes stay");
-    check("fresh seeds", storeFromStorage(null, null).fresh && storeFromStorage(null, null).dossiers.length === 2);
+    check("legacy real kept", legacyKept.dossiers.length === 1 && legacyKept.baselinesSeeded && legacyKept.dossiers[0].productName === "My scoop" && legacyKept.dossiers[0].overview.notes === "notes stay");
+    check("fresh seeds", storeFromStorage(null, null).fresh && storeFromStorage(null, null).baselinesSeeded && storeFromStorage(null, null).dossiers.length === 2);
+    var upgraded = storeFromStorage(JSON.stringify({
+      version: 1,
+      dossiers: [
+        { id: "sample-calm-bin-kit", productName: "Calm Bin", sample: true, date: "2026-09-18" },
+        { id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }
+      ]
+    }), null);
+    check("upgrade drops fiction once", upgraded.upgraded && upgraded.replacedFiction && upgraded.baselinesSeeded && upgraded.dossiers.length === 3 && upgraded.dossiers[0].id === "baseline-mermaid-dough" && upgraded.dossiers[2].id === "kept-real");
+    var deleted = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    check("seed flag sticks", deleted.baselinesSeeded && !deleted.upgraded && deleted.dossiers.length === 1 && deleted.dossiers[0].id === "kept-real");
 
     var blankEcon = economics(blankDossier());
     check("blank landed null", blankEcon.landed == null && blankEcon.contribution == null);
-    var csvOut = dossiersToCsv([calm]);
-    check("csv has product and competitor", csvOut.indexOf("product,") >= 0 && csvOut.indexOf("B0OATS0001") >= 0 && csvOut.indexOf("criterion,") >= 0);
-    var imported = parseDossierImport(JSON.stringify(dossiersToJson([calm, bulk])));
-    check("roundtrip import", imported.dossiers.length === 2 && imported.dossiers[0].productName.indexOf("Calm Bin") === 0);
+    var csvOut = dossiersToCsv([mermaid]);
+    check("csv has product and criterion", csvOut.indexOf("product,") >= 0 && csvOut.indexOf("Mermaid dough kit") >= 0 && csvOut.indexOf("criterion,") >= 0 && csvOut.indexOf("B0CFT7YF1L") >= 0 && csvOut.indexOf("13.50") >= 0 && csvOut.indexOf("8.90") >= 0);
+    var imported = parseDossierImport(JSON.stringify(dossiersToJson([mermaid, farm])));
+    check("roundtrip import", imported.dossiers.length === 2 && imported.dossiers[0].productName === "Mermaid dough kit" && imported.dossiers[0].china.productsCost === 13.5 && imported.dossiers[1].china.reportedNet === -3.77 && imported.dossiers[0].baseline === true && imported.dossiers[0].competitors.length === 0);
     check("money", money(6997.2) === "$6,997.20" && money(null) === "—");
-    check("listing href", listingHref("B0SOTDEMO1") === "https://www.amazon.com/dp/B0SOTDEMO1");
+    check("listing href", listingHref("B0CFT7YF1L") === "https://www.amazon.com/dp/B0CFT7YF1L");
     check("margin bands", marginScoreFromPct(32) === 5 && marginScoreFromPct(24) === 4 && marginScoreFromPct(19.9) === 3 && marginScoreFromPct(6) === 2 && marginScoreFromPct(5.9) === 1);
     return fails;
   }
@@ -1430,6 +1552,7 @@
     MOAT_ITEMS: MOAT_ITEMS,
     LINKED_CRITERIA: LINKED_CRITERIA,
     SAMPLE_SCORE: SAMPLE_SCORE,
+    BASELINES: BASELINES,
     clampWeight: clampWeight,
     clampScore: clampScore,
     hundredthsOf: hundredthsOf,
@@ -1442,9 +1565,11 @@
     listingHref: listingHref,
     blankCriteria: blankCriteria,
     blankDossier: blankDossier,
-    sampleCalmBin: sampleCalmBin,
-    sampleBulkRice: sampleBulkRice,
+    sampleMermaid: sampleMermaid,
+    sampleFarm: sampleFarm,
     sampleLibrary: sampleLibrary,
+    applySellerboardPreset: applySellerboardPreset,
+    commercialStatus: commercialStatus,
     scoreSummary: scoreSummary,
     formatPull: formatPull,
     moatSummary: moatSummary,

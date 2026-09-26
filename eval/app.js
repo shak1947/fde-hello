@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,10 +34,10 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
-      if ((store.fresh || store.migrated) && !storageBlocked) persist();
+      if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
     }
     try { mathFails = L.selfCheck(); }
     catch (err) { mathFails = [String(err && err.message ? err.message : err)]; }
@@ -140,8 +140,8 @@
     var html = "";
     if (mathFails.length) html += "<div class=\"banner error\">Scoring self-check failed: " + esc(mathFails.join("; ")) + "</div>";
     if (storageBlocked) html += "<div class=\"banner error\">This browser blocked local save. You can still edit, but a refresh will clear it.</div>";
-    if (store.migrated && store.replacedSample) {
-      html += "<div class=\"banner\">The old Pebble Calm scorecard was replaced with two fictional dossiers so the desk has a full example.</div>";
+    if (store.replacedFiction || store.replacedSample) {
+      html += "<div class=\"banner\">Fictional samples were replaced with the 2026-09-26 Mermaid and Farm Sellerboard baselines. Competitor rows stay empty until you paste Helium 10.</div>";
     } else if (store.migrated) {
       html += "<div class=\"banner\">Saved scorecards are now dossiers. Competition, China cost, and moat notes start empty until you fill them. Rubric scores were kept.</div>";
     }
@@ -156,22 +156,27 @@
     var list = sorted();
     var cards = "";
     if (!list.length) {
-      cards = "<p class=\"empty\">No products yet. Start a dossier, or restore the fictional samples.</p>";
+      cards = "<p class=\"empty\">No products yet. Start a dossier, or restore the Sellerboard baselines.</p>";
     } else {
       cards = list.map(cardHtml).join("");
     }
+    var anyBaseline = list.some(function (d) { return d.baseline; });
     var anySample = list.some(function (d) { return d.sample; });
-    var sampleNote = anySample
-      ? "<div class=\"banner\"><strong>Sample data is fictional.</strong> Open Calm Bin for a full GO file: rainbow-oats competitors, a China landed estimate, a maker plan, and a Conditional moat. Bulk Rainbow Rice is the same aisle scored as a Pass. When you have a real export, paste Helium 10 into Competition. Live Amazon and Helium 10 pulls are not connected.</div>"
-      : "";
+    var sampleNote = "";
+    if (anyBaseline) {
+      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on a $13.50 Products Cost. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. China versus freight is not split. Competitor tables are empty until you paste Helium 10. Repeat, gift, and OT-fit scores are product-type starters, not Sellerboard measures.</div>";
+    }
+    if (anySample) {
+      sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
+    }
     return "<div class=\"wrap\"><main id=\"main\">" +
       "<header class=\"hero\"><div>" +
       "<p class=\"eyebrow\">Sensationally OT · sourcing desk</p>" +
       "<h1>Product dossiers</h1>" +
-      "<p class=\"subtitle\">One page per product for an Amazon FBA decision: who already sells it, what it costs landed from China, where a maker wedge exists, and whether the moat earns a GO. You type the numbers or paste a Helium 10 export.</p>" +
+      "<p class=\"subtitle\">One page per product for an Amazon FBA decision: Sellerboard cost and net, a China build-up when you have the split, competitors you paste from Helium 10, and Shak’s rubric. Mermaid is the healthy baseline. Farm is underwater at current ads and fees.</p>" +
       "<div class=\"meta\"><span class=\"chip\">Manual + paste</span><span class=\"chip\">GO at 4.20</span><span class=\"chip\">Saved in this browser</span><a class=\"chip\" href=\"/\">Site home</a></div>" +
       "<div class=\"hero-actions\"><button type=\"button\" class=\"primary lg\" data-action=\"new\">New product</button>" +
-      "<button type=\"button\" data-action=\"restore-samples\">Restore samples</button>" +
+      "<button type=\"button\" data-action=\"restore-samples\">Restore baselines</button>" +
       "<button type=\"button\" data-action=\"export-json\">Export JSON</button>" +
       "<button type=\"button\" data-action=\"export-csv\">Export CSV</button>" +
       "<button type=\"button\" data-action=\"import-json\">Import JSON</button>" +
@@ -179,7 +184,7 @@
       "<aside class=\"side-card\"><h2>How a verdict gets earned</h2><ol>" +
       "<li><strong>Overview</strong> — the listing you opened</li>" +
       "<li><strong>Competition</strong> — Helium-style rows, typed or pasted</li>" +
-      "<li><strong>China cost</strong> — landed estimate and contribution</li>" +
+      "<li><strong>China cost</strong> — Sellerboard Products Cost, or a China + freight build-up</li>" +
       "<li><strong>Maker</strong> — wedge, gift, realistic units</li>" +
       "<li><strong>Moat</strong> — barriers, then a barrier index</li>" +
       "<li><strong>Rubric</strong> — Shak’s weights. GO at 4.20, Conditional from 3.40, Pass below</li>" +
@@ -197,16 +202,22 @@
     var band = rubric.band ? rubric.band.id : "none";
     var bandLabel = rubric.band ? rubric.band.label : "Unscored";
     var avg = rubric.hundredths == null ? "—" : L.formatHundredths(rubric.hundredths);
-    var revenue = econ.monthlyRevenuePlan == null ? "No unit plan yet" : L.money(econ.monthlyRevenuePlan) + " / mo plan";
-    var landed = econ.landed == null ? "Landed —" : "Landed " + L.money(econ.landed);
+    var netLine = econ.reportedNet != null
+      ? "Net " + L.money(econ.reportedNet)
+      : (econ.monthlyRevenuePlan == null ? "No unit plan yet" : L.money(econ.monthlyRevenuePlan) + " / mo plan");
+    var costLine = econ.cogs == null ? "Cost —" : (econ.cogsSource === "sellerboard" ? "Products Cost " : "Landed ") + L.money(econ.cogs);
     var moatLine = moat.hundredths == null ? "Moat not scored" : "Moat " + L.formatHundredths(moat.hundredths) + " " + moat.band.label;
     var checked = comparePick.indexOf(d.id) >= 0 ? " checked" : "";
     var asin = (d.asinOrUrl || "").trim() || "No ASIN";
+    var sku = (d.overview.sku || "").trim();
+    var status = econ.commercial;
     return "<article class=\"product-card\"><div class=\"badges\">" +
-      "<span class=\"band " + band + "\">" + esc(bandLabel) + " " + esc(avg) + "</span>" +
+      (status ? "<span class=\"band " + status.id + "\">" + esc(status.label) + "</span>" : "") +
+      "<span class=\"band " + band + "\">Rubric " + esc(bandLabel) + " " + esc(avg) + "</span>" +
+      (d.baseline ? "<span class=\"chip\">Sellerboard " + esc(L.BASELINES.asOf) + "</span>" : "") +
       (d.sample ? "<span class=\"chip\">Fictional sample</span>" : "") +
       "</div><h3><button type=\"button\" class=\"card-title\" data-action=\"open\" data-id=\"" + esc(d.id) + "\">" + esc(d.productName || "Untitled product") + "</button></h3>" +
-      "<div class=\"facts\"><div>" + esc(asin) + "</div><div>" + esc(revenue) + " · " + esc(landed) + "</div><div>" + esc(moatLine) + "</div><div>Updated " + esc(formatWhen(d.updatedAt)) + "</div></div>" +
+      "<div class=\"facts\"><div>" + esc(asin) + (sku ? " · " + esc(sku) : "") + "</div><div>" + esc(netLine) + " · " + esc(costLine) + "</div><div>" + esc(moatLine) + "</div><div>Updated " + esc(formatWhen(d.updatedAt)) + "</div></div>" +
       "<div class=\"row-actions\"><button type=\"button\" class=\"primary\" data-action=\"open\" data-id=\"" + esc(d.id) + "\">Open</button>" +
       "<button type=\"button\" data-action=\"duplicate\" data-id=\"" + esc(d.id) + "\">Duplicate</button>" +
       "<button type=\"button\" class=\"danger\" data-action=\"delete\" data-id=\"" + esc(d.id) + "\">Delete</button></div>" +
@@ -218,12 +229,12 @@
     if (!d) {
       return "<div class=\"wrap\"><main id=\"main\"><div class=\"panel\"><h1>Product not found</h1><p class=\"intro\">That dossier is not in this browser.</p><button type=\"button\" class=\"primary\" data-action=\"back\">Back to library</button></div>" + footer() + "</main></div>";
     }
-    var autofocus = !d.productName && !d.sample;
+    var autofocus = !d.productName && !d.sample && !d.baseline;
     return "<div class=\"wrap\"><a class=\"skip\" href=\"#overview\">Skip to dossier</a>" +
       "<div class=\"sticky-stack\"><div class=\"identity\">" +
       "<div class=\"identity-main\"><button type=\"button\" class=\"texty\" data-action=\"back\">← Library</button>" +
       textInput("productName", d.productName, { max: 140, placeholder: "Product name", autofocus: autofocus }).replace("input ", "input class=\"name-input\" ") +
-      "<p class=\"fine\" style=\"margin:.2rem 0 0\"><span id=\"asin-slot\"></span> · <span id=\"save-state\"></span></p></div>" +
+      "<p class=\"fine\" style=\"margin:.2rem 0 0\"><span id=\"asin-slot\"></span> · <span id=\"sku-slot\"></span> · <span id=\"save-state\"></span></p></div>" +
       "<div class=\"identity-score\"><p class=\"avg\" id=\"verdict-avg\">—</p><p><span class=\"band none\" id=\"verdict-band\">Unscored</span></p><p class=\"fine\" id=\"verdict-formula\"></p></div>" +
       "<div class=\"identity-actions\"><button type=\"button\" class=\"primary\" data-action=\"copy\">Copy summary</button>" +
       "<button type=\"button\" data-action=\"export-json-one\">JSON</button>" +
@@ -236,11 +247,12 @@
       navBtn("maker", "Maker") + navBtn("moat", "Moat") + navBtn("rubric", "Rubric") +
       "</nav></div><main id=\"main\">" + banners() +
       "<div class=\"banner\" id=\"sample-banner\"><strong>Fictional sample.</strong> ASINs, sales, reviews, and costs on this page were written for the demo. They are not a Helium 10 or Amazon pull. Replace them before you treat the file as a sourcing decision. <div><button type=\"button\" data-action=\"clear-sample\">This is a real product</button></div></div>" +
+      "<div class=\"banner\" id=\"baseline-banner\"><strong>Sellerboard baseline, 2026-09-26.</strong> Products Cost is all-in. China EXW/FOB and freight are blank on purpose. Blended Amazon fees replace referral plus FBA fulfillment. The gap to reported net is not an ad cost. Competitor rows stay empty until you paste Helium 10. Repeat, gift, and OT-fit are starters, not measured scores.</div>" +
       "<section class=\"panel decision\" aria-label=\"Decision\"><p class=\"kicker\">Decision</p><p id=\"decision-text\"></p>" +
       "<div class=\"kpis\">" +
-      kpi("kpi-landed", "Landed") + kpi("kpi-contrib", "Contribution") + kpi("kpi-ads", "After ads") +
-      kpi("kpi-break", "Breakeven") + kpi("kpi-moat", "Moat index") + kpi("kpi-plan", "Plan revenue") +
-      "</div><p class=\"fine\">Dollar figures are estimates from the numbers on this page.</p></section>" +
+      kpi("kpi-cogs", "Products cost") + kpi("kpi-fees", "Amazon fees") + kpi("kpi-contrib", "Contribution") +
+      kpi("kpi-net", "Sellerboard net") + kpi("kpi-gap", "Not broken out") + kpi("kpi-moat", "Moat index") +
+      "</div><p class=\"fine\">Sellerboard net is the Sep 2026 MTD figure when that field is filled. Contribution is sell price minus Products Cost minus fees, before the unexplained gap.</p></section>" +
       overviewSection(d) + competitionSection(d) + chinaSection(d) + makerSection(d) + moatSection(d) + rubricSection(d) +
       "<details class=\"summary-box\"><summary>Executive summary preview</summary><pre class=\"summary\" id=\"summary-preview\"></pre></details>" +
       footer() + "</main></div>";
@@ -261,13 +273,14 @@
       "<div class=\"fields cols-3\">" +
       field("ASIN or listing URL", textInput("asinOrUrl", d.asinOrUrl, { max: 500, placeholder: "B0XXXXXXXX or https://www.amazon.com/dp/…" }), "span-2") +
       field("Date scored", textInput("date", d.date, { type: "date" })) +
-      field("Category", textInput("overview.category", o.category, { max: 200, placeholder: "Toys & Games · sensory bin" }), "span-3") +
-      field("Target price ($)", textInput("overview.price", o.price, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "24.99" })) +
-      field("BSR", textInput("overview.bsr", o.bsr, { max: 80, placeholder: "18,400 in Toys & Games" })) +
+      field("SKU", textInput("overview.sku", o.sku, { max: 80, placeholder: "Seller SKU" })) +
+      field("Category", textInput("overview.category", o.category, { max: 200, placeholder: "Optional browse path" }), "span-2") +
+      field("Sell price ($)", textInput("overview.price", o.price, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "39.95" })) +
+      field("Compare-at / list ($)", textInput("overview.listPrice", o.listPrice, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional" })) +
+      field("BSR", textInput("overview.bsr", o.bsr, { max: 80, placeholder: "Only if you looked it up" })) +
       field("Review count", textInput("overview.reviewCount", o.reviewCount, { type: "number", kind: "int", min: 0, step: "1" })) +
       field("Rating", textInput("overview.rating", o.rating, { type: "number", kind: "rating", min: 0, maxNum: 5, step: "0.1" })) +
-      field("FBA fees estimate ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Fulfillment, manual" })) +
-      field("Notes", area("overview.notes", o.notes, "Who it is for, what you noticed, what you are not claiming"), "span-3") +
+      field("Notes", area("overview.notes", o.notes, "What this snapshot does and does not include"), "span-3") +
       "</div></section>";
   }
 
@@ -286,7 +299,7 @@
   }
 
   function competitorRowsHtml(d) {
-    if (!d.competitors.length) return "<p class=\"empty\" id=\"comp-empty\">No competitors yet. Add the listings that show up when you search, or paste an export.</p>";
+    if (!d.competitors.length) return "<p class=\"empty\" id=\"comp-empty\">No competitor rows. Paste a Helium 10 export or add listings you looked up. The Sellerboard baselines do not include competitor sales.</p>";
     return d.competitors.map(function (row, index) {
       return "<article class=\"comp-card\" data-row=\"" + esc(row.id) + "\"><div class=\"comp-top\"><strong>Competitor " + (index + 1) + "</strong>" +
         "<button type=\"button\" class=\"danger\" data-action=\"remove-comp\" data-comp-id=\"" + esc(row.id) + "\">Remove</button></div>" +
@@ -315,21 +328,28 @@
 
   function chinaSection(d) {
     var c = d.china;
+    var o = d.overview;
     return "<section class=\"panel\" id=\"china\" data-section><p class=\"kicker\">C · Landed cost</p><h2>China / landed cost <span class=\"stamp\">ESTIMATE</span></h2>" +
-      "<p class=\"intro\">A planning calculator, not a freight quote and not a customs ruling. Duty uses unit cost + freight per unit as a stand-in customs value. Spoilage is a buffer on that subtotal: landed = (unit + freight + duty + inbound + packaging) × (1 + buffer). Blank cost lines count as zero once a unit cost is entered. Contribution = target price − referral − FBA fees − landed.</p>" +
+      "<p class=\"intro\">Planning calculator, not a freight quote. Sellerboard Products Cost overrides the build-up. Otherwise China EXW/FOB + freight + duty + AWD/storage (packaging and spoilage optional, blank as zero) can be compared with Mermaid $13.50 and Farm $14.00. Those two numbers are all-in Products Cost — this page does not split them. Blended Amazon fees, when filled, replace referral plus FBA fulfillment. Referral ~15% stays a planning rate. Ads / TACOS is optional and is not the unexplained gap.</p>" +
+      "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button></div>" +
+      "<p class=\"fine\">Presets fill Products Cost, blended fees, and reported net. They leave China EXW/FOB and freight alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank.</p>" +
       "<div class=\"split\"><div class=\"fields cols-3\">" +
-      field("Unit cost ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "EXW or FOB" })) +
+      field("Sellerboard Products Cost ($)", textInput("china.productsCost", c.productsCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "All-in override" }), "span-3") +
+      field("China EXW/FOB ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual, not split yet" })) +
       field("Cost basis", selectBox("china.costBasis", c.costBasis, [["EXW", "EXW"], ["FOB", "FOB"]])) +
-      field("MOQ (units)", textInput("china.moq", c.moq, { type: "number", kind: "int", min: 0, step: "1" })) +
+      field("Freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual" })) +
+      field("Duty %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Blank = 0 in the build-up" })) +
+      field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual" })) +
       field("Shipping mode", selectBox("china.shippingMode", c.shippingMode, [["sea", "Sea"], ["air", "Air"]])) +
-      field("Freight per unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Your planning rate" })) +
-      field("Duty / tariff %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1" })) +
-      field("Amazon inbound ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01" })) +
-      field("Packaging ($)", textInput("china.packaging", c.packaging, { type: "number", kind: "money", min: 0, step: "0.01" })) +
-      field("Spoilage buffer %", textInput("china.spoilagePct", c.spoilagePct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1" })) +
-      field("Amazon referral %", textInput("china.referralPct", c.referralPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "15 is common" })) +
-      field("TACOS assumption %", textInput("china.tacosPct", c.tacosPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Optional ad %" })) +
-      field("Cost notes", area("china.notes", c.notes, "Quote date, supplier, what the unit cost includes"), "span-3") +
+      field("MOQ (units)", textInput("china.moq", c.moq, { type: "number", kind: "int", min: 0, step: "1" })) +
+      field("Packaging ($)", textInput("china.packaging", c.packaging, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional" })) +
+      field("Spoilage buffer %", textInput("china.spoilagePct", c.spoilagePct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Optional" })) +
+      field("Blended Amazon fees ($)", textInput("china.amazonFeesBlended", c.amazonFeesBlended, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Sep MTD, per unit" })) +
+      field("FBA fulfillment ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Used only without blended fees" })) +
+      field("Referral %", textInput("china.referralPct", c.referralPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "~15 planning rate" })) +
+      field("Ads / TACOS % (optional)", textInput("china.tacosPct", c.tacosPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Not the Sellerboard gap" })) +
+      field("Sellerboard net ($ / unit)", textInput("china.reportedNet", c.reportedNet, { type: "number", kind: "signed", step: "0.01", placeholder: "Sep MTD, can be negative" })) +
+      field("Cost notes", area("china.notes", c.notes, "What Products Cost includes, and what is still unsplit"), "span-3") +
       "</div><div class=\"result-card\" id=\"econ-out\"></div></div></section>";
   }
 
@@ -460,9 +480,12 @@
     var metrics = [
       ["Verdict", function (d, s) { return s.band ? s.band.label : "—"; }],
       ["Weighted average", function (d, s) { return s.hundredths == null ? "—" : L.formatHundredths(s.hundredths); }],
-      ["Price", function (d) { return L.money(d.overview.price); }],
-      ["Landed estimate", function (d) { return L.money(L.economics(d).landed); }],
+      ["Sell price", function (d) { return L.money(d.overview.price); }],
+      ["Compare-at / list", function (d) { return L.money(d.overview.listPrice); }],
+      ["Products cost / landed", function (d) { var e = L.economics(d); return e.cogs == null ? "—" : L.money(e.cogs); }],
+      ["Amazon fees", function (d) { var e = L.economics(d); return e.feeStack == null ? "—" : L.money(e.feeStack); }],
       ["Contribution", function (d) { var e = L.economics(d); return e.contribution == null ? "—" : L.money(e.contribution) + " (" + L.pct(e.contributionPct) + ")"; }],
+      ["Sellerboard net", function (d) { var e = L.economics(d); return e.reportedNet == null ? "—" : L.money(e.reportedNet) + (e.marginPctUsed == null ? "" : " (" + L.pct(e.marginPctUsed) + ")"); }],
       ["After TACOS", function (d) { var e = L.economics(d); return e.afterAds == null ? "—" : L.money(e.afterAds) + " (" + L.pct(e.afterAdsPct) + ")"; }],
       ["Monthly units", function (d) { return L.formatInt(d.maker.monthlyUnits); }],
       ["Plan revenue / mo", function (d) { return L.money(L.economics(d).monthlyRevenuePlan); }],
@@ -510,6 +533,8 @@
     if (kind === "percent" || kind === "rating") {
       var cap = kind === "rating" ? 5 : 100;
       n = Math.min(cap, Math.max(0, n));
+    } else if (kind === "signed") {
+      if (n < -100000) n = -100000;
     } else if (n < 0) n = 0;
     if (n > 1000000000) n = 1000000000;
     return n;
@@ -626,6 +651,10 @@
     }
     var sample = document.getElementById("sample-banner");
     if (sample) sample.hidden = !d.sample;
+    var baseline = document.getElementById("baseline-banner");
+    if (baseline) baseline.hidden = !d.baseline;
+    var skuSlot = document.getElementById("sku-slot");
+    if (skuSlot) skuSlot.textContent = (d.overview.sku || "").trim() ? "SKU " + d.overview.sku.trim() : "No SKU";
     var decision = document.getElementById("decision-text");
     if (decision) decision.textContent = L.decisionBrief(d);
     paintKpis(d, econ, moat);
@@ -674,15 +703,19 @@
   }
 
   function paintKpis(d, econ, moat) {
-    setKpi("kpi-landed", econ.landed == null ? "—" : L.money(econ.landed), econ.landed == null ? "Need unit cost" : econ.costBasis + " · " + econ.shippingMode);
-    var contribNote = econ.contributionPct == null ? "Need price, FBA, unit" : L.pct(econ.contributionPct) + " of price";
+    var costNote = econ.cogs == null ? "Need Products Cost or China + freight" : (econ.cogsSource === "sellerboard" ? "Sellerboard override" : "Build-up");
+    setKpi("kpi-cogs", econ.cogs == null ? "—" : L.money(econ.cogs), costNote);
+    var feeNote = econ.feeStack == null ? "Blended, or referral + FBA" : (econ.feeSource === "blended" ? "Blended, referral not added" : "Referral + FBA fulfillment");
+    setKpi("kpi-fees", econ.feeStack == null ? "—" : L.money(econ.feeStack), feeNote);
+    var contribNote = econ.contributionPct == null ? "Need price and cost" : L.pct(econ.contributionPct) + " before the gap";
     setKpi("kpi-contrib", econ.contribution == null ? "—" : L.money(econ.contribution), contribNote, econ.contribution != null && econ.contribution < 0 ? "is-bad" : "");
-    setKpi("kpi-ads", econ.afterAds == null ? "—" : L.money(econ.afterAds), econ.tacosPct == null ? "TACOS not set" : L.pct(econ.afterAdsPct) + " after " + L.pct(econ.tacosPct));
-    var be = econ.breakevenAfterAds != null ? L.formatInt(econ.breakevenAfterAds) + " u" : (econ.breakevenUnits != null ? L.formatInt(econ.breakevenUnits) + " u" : "—");
-    var beNote = econ.breakevenAfterAds != null ? "After TACOS" : (econ.breakevenUnits != null ? "Before ads" : "Need positive margin");
-    setKpi("kpi-break", be, beNote);
+    var netKlass = econ.commercial ? econ.commercial.id : "";
+    var netNote = econ.reportedNet == null ? "Optional Sep MTD net" : (econ.marginPctUsed == null ? "" : L.pct(econ.marginPctUsed) + " of price");
+    setKpi("kpi-net", econ.reportedNet == null ? "—" : L.money(econ.reportedNet), netNote, netKlass);
+    var gapNote = econ.unexplainedGap == null ? (econ.afterAds == null ? "Not an ad cost" : L.pct(econ.afterAdsPct) + " after TACOS") : "Do not assign to ads";
+    var gapValue = econ.unexplainedGap != null ? L.money(econ.unexplainedGap) : (econ.afterAds == null ? "—" : L.money(econ.afterAds));
+    setKpi("kpi-gap", gapValue, gapNote);
     setKpi("kpi-moat", moat.hundredths == null ? "—" : L.formatHundredths(moat.hundredths), moat.band ? moat.band.label : "Score the barriers", moat.band ? moat.band.id : "");
-    setKpi("kpi-plan", econ.monthlyRevenuePlan == null ? "—" : L.money(econ.monthlyRevenuePlan), d.maker.monthlyUnits == null ? "Need units and price" : L.formatInt(d.maker.monthlyUnits) + " units / mo");
   }
 
   function line(label, value, total) {
@@ -690,32 +723,47 @@
   }
 
   function econHtml(econ) {
-    if (econ.unit == null) {
-      return "<h3>Landed estimate</h3><p class=\"empty\">Enter a unit cost. The other lines can stay blank and will count as zero.</p>";
+    if (econ.cogs == null && econ.buildUp == null && econ.reportedNet == null) {
+      return "<h3>Cost stack</h3><p class=\"empty\">Enter China EXW/FOB or freight, or a Sellerboard Products Cost. Duty, AWD/storage, packaging, and spoilage stay zero until you fill them.</p>";
     }
-    var html = "<h3>Landed estimate <span class=\"stamp\">ESTIMATE</span></h3><ul class=\"lines\">";
-    html += line(econ.costBasis + " unit", L.money(econ.unit));
-    html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · blank as $0" : ""), L.money(econ.freight || 0));
-    html += line("Duty " + (econ.dutyPct == null ? "0%" : L.pct(econ.dutyPct)) + " of " + L.money(econ.customs), L.money(econ.duty));
-    html += line("Amazon inbound" + (econ.inbound == null ? " · blank as $0" : ""), L.money(econ.inbound || 0));
-    html += line("Packaging" + (econ.packaging == null ? " · blank as $0" : ""), L.money(econ.packaging || 0));
-    html += line("Before spoilage buffer", L.money(econ.preBuffer));
-    html += line("Landed after " + (econ.spoilagePct == null ? "0%" : L.pct(econ.spoilagePct)) + " buffer", L.money(econ.landed), true);
+    var html = "<h3>Cost stack <span class=\"stamp\">ESTIMATE</span></h3><ul class=\"lines\">";
+    if (econ.productsCost != null) html += line("Sellerboard Products Cost", L.money(econ.productsCost), true);
+    if (econ.buildUp != null) {
+      html += line(econ.costBasis + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
+      html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · blank as $0" : ""), L.money(econ.freight || 0));
+      html += line("Duty " + (econ.dutyPct == null ? "0%" : L.pct(econ.dutyPct)) + " of " + L.money(econ.customs), L.money(econ.duty));
+      html += line("AWD/storage" + (econ.inbound == null ? " · blank as $0" : ""), L.money(econ.inbound || 0));
+      html += line("Packaging" + (econ.packaging == null ? " · blank as $0" : ""), L.money(econ.packaging || 0));
+      html += line("Build-up after " + (econ.spoilagePct == null ? "0%" : L.pct(econ.spoilagePct)) + " spoilage", L.money(econ.buildUp), econ.productsCost == null);
+      html += line("Versus Mermaid Products Cost $13.50", L.money(econ.gapVsMermaidCost));
+      html += line("Versus Farm Products Cost $14.00", L.money(econ.gapVsFarmCost));
+    }
+    if (econ.productsCost != null && econ.buildUp != null) {
+      html += line("Cost used", "Products Cost overrides the build-up");
+    }
     if (econ.contribution != null) {
-      html += line("Referral " + (econ.referralPct == null ? "(blank, counted as 0%)" : L.pct(econ.referralPct)), L.money(econ.referral));
-      html += line("FBA fees", L.money(econ.fba));
+      if (econ.feeSource === "blended") html += line("Blended Amazon fees", L.money(econ.feeStack));
+      else {
+        html += line("Referral " + (econ.referralPct == null ? "(blank, counted as 0%)" : L.pct(econ.referralPct)), L.money(econ.referral));
+        html += line("FBA fulfillment", L.money(econ.fba));
+      }
       html += line("Contribution at " + L.money(econ.price), L.money(econ.contribution) + " · " + L.pct(econ.contributionPct), true);
-      if (econ.afterAds != null) html += line("After " + L.pct(econ.tacosPct) + " TACOS", L.money(econ.afterAds) + " · " + L.pct(econ.afterAdsPct), true);
-      if (econ.cashTied != null) html += line("Cash tied at MOQ, landed", L.money(econ.cashTied));
-      if (econ.breakevenUnits != null) html += line("Breakeven units, before ads", L.formatInt(econ.breakevenUnits));
+      if (econ.afterAds != null && econ.reportedNet == null) html += line("After " + L.pct(econ.tacosPct) + " TACOS", L.money(econ.afterAds) + " · " + L.pct(econ.afterAdsPct), true);
+      if (econ.cashTied != null) html += line("Cash tied at MOQ", L.money(econ.cashTied));
+      if (econ.breakevenUnits != null) html += line("Breakeven units at contribution", L.formatInt(econ.breakevenUnits));
       else if (econ.contribution <= 0) html += line("Breakeven units", "No — contribution is not positive");
       if (econ.breakevenAfterAds != null) html += line("Breakeven units, after TACOS", L.formatInt(econ.breakevenAfterAds));
-    } else {
-      html += line("Contribution", "Add target price and FBA fees");
+    } else if (econ.cogs != null) {
+      html += line("Contribution", "Add a sell price");
+    }
+    if (econ.reportedNet != null) {
+      html += line("Sellerboard net", L.money(econ.reportedNet) + (econ.marginPctUsed == null ? "" : " · " + L.pct(econ.marginPctUsed)), true);
+      if (econ.unexplainedGap != null) html += line("Gap vs contribution", L.money(econ.unexplainedGap) + " · not an ad cost");
     }
     html += "</ul>";
-    if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled freight, duty, inbound, packaging, or spoilage counted as zero.</p>";
-    html += "<p class=\"fine\">Not a live freight quote. Air vs sea only labels the freight you typed.</p>";
+    if (econ.feeSource === "blended") html += "<p class=\"fine\">Referral " + (econ.referralPct == null ? "is blank" : L.pct(econ.referralPct) + " is a planning rate") + " and is not added on top of blended fees.</p>";
+    if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled China, freight, duty, AWD/storage, packaging, or spoilage counted as zero in the build-up.</p>";
+    html += "<p class=\"fine\">Not a live freight quote. $13.50 and $14.00 are Sellerboard all-in costs, not a China versus freight recipe.</p>";
     return html;
   }
 
@@ -822,10 +870,10 @@
     else compCard += "<p>Tracked set suggests <strong>" + comp.score + "</strong>. " + esc(comp.reason) + "</p>" + applyButton("competition", comp.score, compEntered);
     compCard += "</article>";
     var marginCard = "<article class=\"insight" + gapClass(marginSuggest, marginEntered) + "\"><h3>Margin</h3>";
-    if (marginSuggest == null) marginCard += "<p>Need unit cost, target price, and FBA fees.</p>";
+    if (marginSuggest == null) marginCard += "<p>Need a Sellerboard net and a sell price, or a cost stack with a sell price.</p>";
     else {
       marginCard += "<p>Calculator suggests <strong>" + marginSuggest + "</strong> from " + esc(L.pct(econ.marginPctUsed)) + " " + esc(econ.marginBasis) + " (" + esc(L.marginBandLabel(marginSuggest)) + ").</p>";
-      marginCard += "<p class=\"fine\">Bands on that percent of price: 32%+ is 5, 20%+ is 4, 12%+ is 3, 6%+ is 2, under 6% is 1. TACOS is used when you enter it.</p>";
+      marginCard += "<p class=\"fine\">Bands on that percent of price: 32%+ is 5, 20%+ is 4, 12%+ is 3, 6%+ is 2, under 6% is 1. Sellerboard net wins when it is filled. Otherwise TACOS is used when you enter it. The gap between contribution and Sellerboard net is not an ad cost.</p>";
       marginCard += applyButton("margin", marginSuggest, marginEntered);
     }
     marginCard += "</article>";
@@ -1048,10 +1096,26 @@
       for (var i = 0; i < samples.length; i++) {
         if (!byId(samples[i].id)) { store.dossiers.push(samples[i]); added++; }
       }
-      if (!added) { toast("Samples are already in the library"); return; }
+      store.baselinesSeeded = true;
+      if (!added) { toast("Baselines are already in the library"); return; }
       persist();
-      toast("Samples restored");
+      toast("Baselines restored");
       render();
+      return;
+    }
+    if (action === "preset-mermaid" || action === "preset-farm") {
+      var hostPreset = current();
+      if (!hostPreset) return;
+      var presetKey = action === "preset-farm" ? "farm" : "mermaid";
+      var spec = L.BASELINES[presetKey];
+      var dirty = hostPreset.china.productsCost != null || hostPreset.china.amazonFeesBlended != null || hostPreset.china.reportedNet != null;
+      var same = hostPreset.china.productsCost === spec.productsCost && hostPreset.china.amazonFeesBlended === spec.amazonFeesBlended && hostPreset.china.reportedNet === spec.reportedNet;
+      if (dirty && !same && !confirm("Replace Products Cost, blended fees, and Sellerboard net with the " + spec.productName + " snapshot? China EXW/FOB and freight stay as they are.")) return;
+      L.applySellerboardPreset(hostPreset, presetKey);
+      touch(hostPreset);
+      persist();
+      render();
+      toast(spec.productName + " costs applied");
       return;
     }
     if (action === "export-json") { exportJson(exportList(sorted())); return; }

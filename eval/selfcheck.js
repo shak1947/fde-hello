@@ -4,25 +4,33 @@ if (fails.length) {
   console.error("FAIL\n" + fails.join("\n"));
   process.exit(1);
 }
-var calm = L.sampleCalmBin();
-var econ = L.economics(calm);
-var comp = L.competitionInsight(calm.competitors);
-var moat = L.moatSummary(calm.moat);
+var mermaid = L.sampleMermaid();
+var farm = L.sampleFarm();
+var mermaidEcon = L.economics(mermaid);
+var farmEcon = L.economics(farm);
 console.log("ok");
 console.log(JSON.stringify({
-  landed: econ.landed,
-  contribution: econ.contribution,
-  contributionPct: econ.contributionPct,
-  afterAds: econ.afterAds,
-  afterAdsPct: econ.afterAdsPct,
-  breakeven: econ.breakevenUnits,
-  breakevenAds: econ.breakevenAfterAds,
-  annual: econ.annualAfterAds,
-  annualContrib: econ.annualContribution,
-  cash: econ.cashTied,
-  share: comp.share,
-  tracked: comp.trackedRevenue,
-  units: comp.trackedUnits,
-  moat: L.formatHundredths(moat.hundredths),
-  planRev: econ.monthlyRevenuePlan
+  mermaid: {
+    cogs: mermaidEcon.cogs,
+    fees: mermaidEcon.feeStack,
+    contribution: mermaidEcon.contribution,
+    net: mermaidEcon.reportedNet,
+    gap: mermaidEcon.unexplainedGap,
+    marginPct: mermaidEcon.marginPctUsed,
+    score: L.scoreSummary(mermaid.criteria).hundredths,
+    band: L.scoreSummary(mermaid.criteria).band.id,
+    status: mermaidEcon.commercial.id
+  },
+  farm: {
+    cogs: farmEcon.cogs,
+    fees: farmEcon.feeStack,
+    contribution: farmEcon.contribution,
+    net: farmEcon.reportedNet,
+    gap: farmEcon.unexplainedGap,
+    marginPct: farmEcon.marginPctUsed,
+    score: L.scoreSummary(farm.criteria).hundredths,
+    band: L.scoreSummary(farm.criteria).band.id,
+    status: farmEcon.commercial.id,
+    listPrice: farm.overview.listPrice
+  }
 }, null, 2));

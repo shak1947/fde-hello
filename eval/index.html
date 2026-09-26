@@ -164,7 +164,9 @@
     .band { font-weight: 750; }
     .band.go { color: var(--go); border-color: rgba(94, 234, 212, .45); background: rgba(94, 234, 212, .12); }
     .band.conditional { color: var(--warn); border-color: rgba(252, 211, 77, .45); background: rgba(252, 211, 77, .1); }
-    .band.pass { color: var(--bad); border-color: rgba(253, 164, 175, .45); background: rgba(253, 164, 175, .1); }
+    .band.pass, .band.underwater { color: var(--bad); border-color: rgba(253, 164, 175, .45); background: rgba(253, 164, 175, .1); }
+    .band.healthy { color: var(--go); border-color: rgba(94, 234, 212, .45); background: rgba(94, 234, 212, .12); }
+    .band.thin { color: var(--warn); border-color: rgba(252, 211, 77, .45); background: rgba(252, 211, 77, .1); }
     .band.none { color: var(--muted); }
     .meter { height: 4px; background: #1c2744; border-radius: 99px; overflow: hidden; margin: .55rem 0 .15rem; }
     .meter > span { display: block; height: 100%; width: 0; background: var(--line); }
@@ -192,9 +194,9 @@
     .kpi span { display: block; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
     .kpi strong { display: block; margin-top: .15rem; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
     .kpi em { display: block; margin-top: .1rem; color: var(--muted); font-style: normal; font-size: .75rem; }
-    .kpi.go strong { color: var(--go); }
-    .kpi.conditional strong { color: var(--warn); }
-    .kpi.pass strong, .kpi.is-bad strong { color: var(--bad); }
+    .kpi.go strong, .kpi.healthy strong { color: var(--go); }
+    .kpi.conditional strong, .kpi.thin strong { color: var(--warn); }
+    .kpi.pass strong, .kpi.underwater strong, .kpi.is-bad strong { color: var(--bad); }
     .fields { display: grid; gap: .7rem; }
     @media (min-width: 800px) {
       .fields.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
