@@ -17,4 +17,4 @@ Live: https://fde-hello.vercel.app
 
 ## Amazon Ads portal
 
-[Invite-only Amazon Advertising desk](https://fde-hello.vercel.app/ads) for an offshore consultant on Shakeel Amir’s Sensationally OT account. Scope is Amazon Ads only: campaigns, keywords, budgets, and on/off, with confirmation and an audit log. Setup, env vars, the denylist, and `ads.sensationallyot.com` DNS are in [ads-portal/README.md](ads-portal/README.md). `/` and `/eval` are unchanged.
+[Password-gated Amazon Advertising desk](https://fde-hello.vercel.app/ads) for an offshore consultant on Shakeel Amir’s Sensationally OT account. Scope is Amazon Ads only: campaigns, keywords, budgets, and on/off, with confirmation and an audit log. Set `ADS_PORTAL_PASSWORD` in the Vercel project environment (do not commit the value). Setup, env vars, the denylist, and `ads.sensationallyot.com` DNS are in [ads-portal/README.md](ads-portal/README.md). `/` and `/eval` are unchanged.

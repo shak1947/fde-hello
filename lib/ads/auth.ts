@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { devBypassEnabled } from "./mode";
+import { passwordConfigured, readCookie, verifySession } from "./password-gate";
 import type { Actor } from "./types";
 
 export const DEFAULT_CLERK_PUBLISHABLE_KEY =
@@ -48,18 +49,27 @@ export async function verifySessionToken(token: string, deps: VerifyDeps = {}): 
 export async function actorFromRequest(request: Request): Promise<Actor | null> {
   const header = request.headers.get("authorization") || "";
   const token = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
-  if (!token) return null;
-  if (token === "dev" && devBypassEnabled()) return { id: "local-dev", label: "Local dev bypass" };
-  try {
-    const payload = await verifySessionToken(token);
-    const userId = String(payload.sub);
-    const email = await resolveEmail(userId, payload);
-    const allow = allowedEmails();
-    if (allow.length && (!email || !allow.includes(email.toLowerCase()))) return null;
-    return { id: userId, label: email || `Clerk ${userId}` };
-  } catch {
-    return null;
+  const cookieOk = verifySession(readCookie(request.headers.get("cookie")));
+  if (token === "dev" && devBypassEnabled()) {
+    if (passwordConfigured() && !cookieOk) return null;
+    return { id: "local-dev", label: "Local dev bypass" };
   }
+  if (!passwordConfigured() || !cookieOk) return null;
+  if (token) {
+    try {
+      const payload = await verifySessionToken(token);
+      const userId = String(payload.sub);
+      const email = await resolveEmail(userId, payload);
+      const allow = allowedEmails();
+      if (allow.length && (!email || !allow.includes(email.toLowerCase()))) {
+        return { id: "shared-gate", label: "Shared password" };
+      }
+      return { id: userId, label: email || `Clerk ${userId}` };
+    } catch {
+      return { id: "shared-gate", label: "Shared password" };
+    }
+  }
+  return { id: "shared-gate", label: "Shared password" };
 }
 
 function allowedEmails(): string[] {

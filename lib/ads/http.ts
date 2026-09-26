@@ -6,7 +6,7 @@ export async function requireActor(request: Request): Promise<Actor | NextRespon
   const actor = await actorFromRequest(request);
   if (!actor) {
     return NextResponse.json(
-      { error: "Sign in required. This portal is invite-only." },
+      { error: "Sign in required." },
       { status: 401 },
     );
   }

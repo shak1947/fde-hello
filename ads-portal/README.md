@@ -68,7 +68,8 @@ Copy `.env.example` to `.env.local` for local work. In Vercel, add the same name
 | `AMAZON_ADS_TOKEN_URL` | Optional. Default `https://api.amazon.com/auth/o2/token` |
 | `ADS_PORTAL_MODEL` | AI Gateway model. Default `openai/gpt-6-luna` |
 | `AI_GATEWAY_API_KEY` | Only needed off Vercel. Deployed functions use OIDC. |
-| `ADS_PORTAL_DEV_BYPASS` | Local only. Value `1` skips Clerk when `VERCEL` is unset. Ignored on Vercel. |
+| `ADS_PORTAL_PASSWORD` | Shared password for the portal. Set it in Vercel → project **fde-hello** → Settings → Environment Variables for **Production** and **Preview**, then redeploy. The server compares the sign-in form to this value and sets an httpOnly session cookie. If the variable is missing, the portal stays closed. Do not commit the value. |
+| `ADS_PORTAL_DEV_BYPASS` | Local API tests only. Value `1` accepts `Authorization: Bearer dev` when `VERCEL` is unset. Ignored on Vercel. The password cookie is still required when `ADS_PORTAL_PASSWORD` is set. |
 
 Live mode turns on only when client id, secret, refresh token, and profile id are all set. The same confirm step still guards writes. See `/ads/connect` in the running app.
 
@@ -76,15 +77,16 @@ Amazon calls use Sponsored Products v3 (`application/vnd.spCampaign.v3+json` and
 
 ## Login gate
 
-1. Clerk Dashboard → the fde-hello application.
-2. Configure → Restrictions → enable **Restricted** so strangers cannot sign up.
-3. Users → **Invite** → consultant email.
-4. Allowed origins must include every host that serves the portal:
-   - `https://fde-hello.vercel.app`
-   - the Vercel preview URL
-   - `https://ads.sensationallyot.com` once DNS is live
-5. The consultant opens `/ads` and uses the invite email. The sign-in widget’s sign-up link goes to `/ads/invite-only`, which does not create an account.
-6. Session tokens are checked against that Clerk instance’s JWKS. API routes return 401 without a valid session.
+The portal is closed until `ADS_PORTAL_PASSWORD` is set on the server.
+
+1. Vercel → project **fde-hello** → Settings → Environment Variables.
+2. Add `ADS_PORTAL_PASSWORD` for Production and Preview. Paste the password only in that Vercel field. Do not put it in git, this README, or logs.
+3. Redeploy so the new variable is picked up.
+4. Open `/ads`. The app redirects to `/ads/enter`.
+5. A wrong password is rejected. A match sets an httpOnly session cookie (`sot_ads_gate`) and opens the desk. The password is not sent to the browser bundle.
+6. Sign out clears the cookie. API routes under `/api/ads` (except login, logout, and health) return 401 without that cookie.
+
+Clerk remains available as an extra invite list if you want it later: Restricted mode, invite the consultant, and allow the portal origins (`https://fde-hello.vercel.app`, the preview URL, and `https://ads.sensationallyot.com`). The shared password is enough for v1. A Clerk session does not open the desk without the password cookie.
 
 The existing `/` bio keeps its own Clerk widget. `/eval` stays public.
 
@@ -101,8 +103,8 @@ Goal: `https://ads.sensationallyot.com` opens this portal.
 
    If the domain already uses Vercel nameservers, adding the domain in the dashboard is enough and Vercel writes the record.
 3. Wait until Vercel shows the domain as valid.
-4. Add `https://ads.sensationallyot.com` to Clerk allowed origins.
-5. `proxy.ts` rewrites `/` on an `ads.*` host to the portal. Every other host still serves the John AI Smith page at `/` and the scorecard at `/eval`.
+4. `proxy.ts` sends `/` on an `ads.*` host through the same password gate, then to the portal. Every other host still serves the John AI Smith page at `/` and the scorecard at `/eval`.
+5. If you also use Clerk, add `https://ads.sensationallyot.com` to the allowed origins.
 
 ## Local
 
@@ -112,9 +114,9 @@ npm test
 npm run dev
 ```
 
-Open `http://localhost:3000/ads`. With `ADS_PORTAL_DEV_BYPASS=1` in `.env.local` (and without `VERCEL`), the sign-in card offers **Enter local simulator**.
+Open `http://localhost:3000/ads`. Set `ADS_PORTAL_PASSWORD` in `.env.local` (gitignored) to the same value you stored in Vercel, then sign in at `/ads/enter`. Without that variable the desk stays closed.
 
-`npm test` covers the denylist, confirm-before-write, audit CSV, formula-safe CSV, Amazon path guard, and Clerk token checks.
+`npm test` covers the denylist, confirm-before-write, audit CSV, formula-safe CSV, Amazon path guard, Clerk token checks, and the password gate. The tests use a dummy password in the process environment only.
 
 ## Existing pages
 

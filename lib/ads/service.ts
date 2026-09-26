@@ -31,6 +31,7 @@ export async function workspace(actor: Actor) {
   }));
   return {
     mode,
+    actorLabel: actor.label,
     spendOwner: "Shakeel Amir",
     account: "Sensationally OT",
     simulated: mode === "dry-run",

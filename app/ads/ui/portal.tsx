@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Campaign = {
   campaignId: string;
@@ -36,6 +36,7 @@ type AuditEvent = {
 
 type Workspace = {
   mode: "dry-run" | "live";
+  actorLabel?: string;
   spendOwner: string;
   account: string;
   connectHint: string;
@@ -53,21 +54,9 @@ const SUGGESTIONS = [
   "Add exact keyword sensory chew to SOT Brand Defense at $1.25",
 ];
 
-export function AdsPortal({
-  publishableKey,
-  scriptSrc,
-}: {
-  publishableKey: string;
-  scriptSrc: string;
-}) {
-  const signInRef = useRef<HTMLDivElement>(null);
-  const userButtonRef = useRef<HTMLDivElement>(null);
-  const tokenRef = useRef<() => Promise<string | null>>(async () => null);
-  const [phase, setPhase] = useState<"loading" | "signed-out" | "ready" | "error">("loading");
-  const [bootError, setBootError] = useState("");
-  const [allowDev, setAllowDev] = useState(false);
-  const [devEntry, setDevEntry] = useState(false);
-  const [who, setWho] = useState("");
+export function AdsPortal() {
+  const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
+  const [who, setWho] = useState("Shared password");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [lines, setLines] = useState<ChatLine[]>([
     {
@@ -92,101 +81,40 @@ export function AdsPortal({
   const authed = phase === "ready";
 
   const authHeaders = useCallback(async () => {
-    const token = await tokenRef.current();
-    if (!token) throw new Error("Sign in required.");
-    return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    return { "Content-Type": "application/json" };
   }, []);
 
   const refresh = useCallback(async () => {
     const headers = await authHeaders();
     const response = await fetch("/api/ads/workspace", { headers, cache: "no-store" });
     const body = await response.json();
+    if (response.status === 401) throw new Error(body.error || "Sign in required.");
     if (!response.ok) throw new Error(body.error || "Could not load campaigns.");
+    setWho(body.actorLabel || "Shared password");
     setWorkspace(body);
     setCampaignId((current) => current || body.campaigns[0]?.campaignId || "");
   }, [authHeaders]);
 
   useEffect(() => {
-    fetch("/api/ads/health")
-      .then((response) => response.json())
-      .then((body) => setAllowDev(Boolean(body.devBypass)))
-      .catch(() => setAllowDev(false));
-  }, []);
-
-  useEffect(() => {
-    if (devEntry) {
-      tokenRef.current = async () => "dev";
-      setWho("Local dev bypass");
-      setPhase("ready");
-      return;
-    }
     let cancelled = false;
-    const script = document.createElement("script");
-    script.src = scriptSrc;
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.dataset.clerkPublishableKey = publishableKey;
-    script.onload = async () => {
-      try {
-        if (!window.Clerk) throw new Error("Clerk did not load.");
-        await window.Clerk.load({ publishableKey });
+    refresh()
+      .then(() => {
+        if (!cancelled) setPhase("ready");
+      })
+      .catch((err: unknown) => {
         if (cancelled) return;
-        const render = () => {
-          if (!window.Clerk || cancelled) return;
-          const user = window.Clerk.user;
-          if (user) {
-            tokenRef.current = async () => window.Clerk?.session?.getToken() ?? null;
-            setWho(user.primaryEmailAddress?.emailAddress || user.fullName || user.id);
-            setPhase("ready");
-            if (userButtonRef.current && !userButtonRef.current.dataset.mounted) {
-              window.Clerk.mountUserButton(userButtonRef.current);
-              userButtonRef.current.dataset.mounted = "1";
-            }
-          } else {
-            tokenRef.current = async () => null;
-            setPhase("signed-out");
-            const node = signInRef.current;
-            if (node && !node.dataset.mounted) {
-              window.Clerk.mountSignIn(node, {
-                routing: "hash",
-                signUpUrl: "/ads/invite-only",
-                appearance: {
-                  variables: {
-                    colorBackground: "#121a2f",
-                    colorText: "#e8eefc",
-                    colorPrimary: "#7aa2ff",
-                    colorInputBackground: "#0b1020",
-                    colorInputText: "#e8eefc",
-                  },
-                },
-              });
-              node.dataset.mounted = "1";
-            }
-          }
-        };
-        window.Clerk.addListener(render);
-        render();
-      } catch (err) {
-        if (!cancelled) {
-          setPhase("error");
-          setBootError(err instanceof Error ? err.message : "Auth failed to load.");
+        const message = err instanceof Error ? err.message : "Load failed.";
+        if (/sign in required/i.test(message)) {
+          window.location.assign("/ads/enter");
+          return;
         }
-      }
-    };
-    script.onerror = () => {
-      setPhase("error");
-      setBootError("Clerk could not be loaded. Allow this site origin in the Clerk dashboard.");
-    };
-    document.body.appendChild(script);
+        setPhase("error");
+        setError(message);
+      });
     return () => {
       cancelled = true;
     };
-  }, [devEntry, publishableKey, scriptSrc]);
-
-  useEffect(() => {
-    if (!authed) return;
-    refresh().catch((err: unknown) => setError(err instanceof Error ? err.message : "Load failed."));
-  }, [authed, refresh]);
+  }, [refresh]);
 
   async function send(text: string) {
     const message = text.trim();
@@ -287,27 +215,19 @@ export function AdsPortal({
     [workspace],
   );
 
+  async function signOut() {
+    await fetch("/api/ads/logout", { method: "POST" });
+    window.location.assign("/ads/enter");
+  }
+
   if (!authed) {
     return (
       <main className="gate">
         <section className="gate-card">
-          <p className="eyebrow">Sensationally OT · Invite only</p>
+          <p className="eyebrow">Sensationally OT</p>
           <h1>Amazon Ads desk</h1>
-          <p className="muted">
-            Offshore consultant access for Shakeel Amir’s Amazon Advertising account. Sign in with the
-            email Shak invited. Public sign-up is not offered here.
-          </p>
-          {phase === "loading" ? <p className="muted">Loading sign-in…</p> : null}
-          {phase === "error" ? <p className="muted">{bootError}</p> : null}
-          <div id="sign-in" ref={signInRef} />
-          <p className="muted">
-            Need an invite? <a href="/ads/invite-only">How invitations work</a>
-          </p>
-          {allowDev ? (
-            <button className="btn-ghost" type="button" onClick={() => setDevEntry(true)}>
-              Enter local simulator
-            </button>
-          ) : null}
+          <p className="muted">{phase === "error" ? error || "Could not open the desk." : "Checking access…"}</p>
+          {phase === "error" ? <a href="/ads/enter">Back to sign-in</a> : null}
         </section>
       </main>
     );
@@ -334,12 +254,9 @@ export function AdsPortal({
           <a className="chip" href="/ads/connect">
             Connect Ads API
           </a>
-          <div ref={userButtonRef} />
-          {devEntry ? (
-            <button className="btn-ghost" type="button" onClick={() => window.location.reload()}>
-              Leave simulator
-            </button>
-          ) : null}
+          <button className="btn-ghost" type="button" onClick={() => void signOut()}>
+            Sign out
+          </button>
         </div>
       </header>
 

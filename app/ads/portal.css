@@ -42,6 +42,7 @@ button { cursor: pointer; }
   box-shadow: var(--shadow);
 }
 .gate-card { width: min(460px, 100%); padding: 1.4rem; }
+.gate-card form { display: grid; gap: 0.8rem; margin-top: 1rem; }
 .eyebrow {
   margin: 0; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--accent-2); font-weight: 700;
