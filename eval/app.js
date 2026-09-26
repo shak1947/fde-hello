@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -164,7 +164,7 @@
     var anySample = list.some(function (d) { return d.sample; });
     var sampleNote = "";
     if (anyBaseline) {
-      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on a $13.50 Products Cost. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. China versus freight is not split. Competitor tables are empty until you paste Helium 10. Repeat, gift, and OT-fit scores are product-type starters, not Sellerboard measures.</div>";
+      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on Products Cost $13.50. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. The Oct 2023 Greatwall invoice (EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty) is a second stack and is not added on top of Products Cost. Competitor tables stay empty until you paste Helium 10.</div>";
     }
     if (anySample) {
       sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
@@ -173,7 +173,7 @@
       "<header class=\"hero\"><div>" +
       "<p class=\"eyebrow\">Sensationally OT · sourcing desk</p>" +
       "<h1>Product dossiers</h1>" +
-      "<p class=\"subtitle\">One page per product for an Amazon FBA decision: Sellerboard cost and net, a China build-up when you have the split, competitors you paste from Helium 10, and Shak’s rubric. Mermaid is the healthy baseline. Farm is underwater at current ads and fees.</p>" +
+      "<p class=\"subtitle\">One page per product for an Amazon FBA decision: Sellerboard cost and net, or a Greatwall invoice rebuild, competitors you paste from Helium 10, and Shak’s rubric. Mermaid is the healthy baseline. Farm is Conditional at current ads and fees.</p>" +
       "<div class=\"meta\"><span class=\"chip\">Manual + paste</span><span class=\"chip\">GO at 4.20</span><span class=\"chip\">Saved in this browser</span><a class=\"chip\" href=\"/\">Site home</a></div>" +
       "<div class=\"hero-actions\"><button type=\"button\" class=\"primary lg\" data-action=\"new\">New product</button>" +
       "<button type=\"button\" data-action=\"restore-samples\">Restore baselines</button>" +
@@ -184,7 +184,7 @@
       "<aside class=\"side-card\"><h2>How a verdict gets earned</h2><ol>" +
       "<li><strong>Overview</strong> — the listing you opened</li>" +
       "<li><strong>Competition</strong> — Helium-style rows, typed or pasted</li>" +
-      "<li><strong>China cost</strong> — Sellerboard Products Cost, or a China + freight build-up</li>" +
+      "<li><strong>China cost</strong> — Sellerboard Products Cost, or the Greatwall EXW + freight rebuild</li>" +
       "<li><strong>Maker</strong> — wedge, gift, realistic units</li>" +
       "<li><strong>Moat</strong> — barriers, then a barrier index</li>" +
       "<li><strong>Rubric</strong> — Shak’s weights. GO at 4.20, Conditional from 3.40, Pass below</li>" +
@@ -247,12 +247,12 @@
       navBtn("maker", "Maker") + navBtn("moat", "Moat") + navBtn("rubric", "Rubric") +
       "</nav></div><main id=\"main\">" + banners() +
       "<div class=\"banner\" id=\"sample-banner\"><strong>Fictional sample.</strong> ASINs, sales, reviews, and costs on this page were written for the demo. They are not a Helium 10 or Amazon pull. Replace them before you treat the file as a sourcing decision. <div><button type=\"button\" data-action=\"clear-sample\">This is a real product</button></div></div>" +
-      "<div class=\"banner\" id=\"baseline-banner\"><strong>Sellerboard baseline, 2026-09-26.</strong> Products Cost is all-in. China EXW/FOB and freight are blank on purpose. Blended Amazon fees replace referral plus FBA fulfillment. The gap to reported net is not an ad cost. Competitor rows stay empty until you paste Helium 10. Repeat, gift, and OT-fit are starters, not measured scores.</div>" +
+      "<div class=\"banner\" id=\"baseline-banner\"><strong>Sellerboard baseline, 2026-09-26.</strong> Mode 1 uses Products Cost. Mode 2 is the Oct 2023 Greatwall invoice and is not added on top of that cost. Blended Amazon fees replace referral plus FBA fulfillment. Duty is blank until the HTS is confirmed. The gap to reported net is not an ad cost. Competitor rows stay empty until you paste Helium 10.</div>" +
       "<section class=\"panel decision\" aria-label=\"Decision\"><p class=\"kicker\">Decision</p><p id=\"decision-text\"></p>" +
       "<div class=\"kpis\">" +
       kpi("kpi-cogs", "Products cost") + kpi("kpi-fees", "Amazon fees") + kpi("kpi-contrib", "Contribution") +
       kpi("kpi-net", "Sellerboard net") + kpi("kpi-gap", "Not broken out") + kpi("kpi-moat", "Moat index") +
-      "</div><p class=\"fine\">Sellerboard net is the Sep 2026 MTD figure when that field is filled. Contribution is sell price minus Products Cost minus fees, before the unexplained gap.</p></section>" +
+      "</div><p class=\"fine\">Sellerboard net is the Sep 2026 MTD figure when that field is filled. Contribution uses Products Cost when that override is filled, so invoice freight is not added again.</p></section>" +
       overviewSection(d) + competitionSection(d) + chinaSection(d) + makerSection(d) + moatSection(d) + rubricSection(d) +
       "<details class=\"summary-box\"><summary>Executive summary preview</summary><pre class=\"summary\" id=\"summary-preview\"></pre></details>" +
       footer() + "</main></div>";
@@ -329,27 +329,34 @@
   function chinaSection(d) {
     var c = d.china;
     var o = d.overview;
+    var gw = L.GREATWALL;
+    var fee = L.FEE_MODEL;
     return "<section class=\"panel\" id=\"china\" data-section><p class=\"kicker\">C · Landed cost</p><h2>China / landed cost <span class=\"stamp\">ESTIMATE</span></h2>" +
-      "<p class=\"intro\">Planning calculator, not a freight quote. Sellerboard Products Cost overrides the build-up. Otherwise China EXW/FOB + freight + duty + AWD/storage (packaging and spoilage optional, blank as zero) can be compared with Mermaid $13.50 and Farm $14.00. Those two numbers are all-in Products Cost — this page does not split them. Blended Amazon fees, when filled, replace referral plus FBA fulfillment. Referral ~15% stays a planning rate. Ads / TACOS is optional and is not the unexplained gap.</p>" +
-      "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button></div>" +
-      "<p class=\"fine\">Presets fill Products Cost, blended fees, and reported net. They leave China EXW/FOB and freight alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank.</p>" +
+      "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Mode 2</strong> rebuilds Greatwall " + esc(gw.invoice) + " (Oct 2023): EXW + sea freight + Alibaba + duty + AWD/storage, then the fee model (referral + FBA). Do not add Mode 2 freight on top of Products Cost. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed — that code is often 0% MFN and is not entered as a rate. Blended Amazon fees, when filled, replace referral plus FBA.</p>" +
+      "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button><button type=\"button\" data-action=\"preset-invoice\">Load Greatwall waterfall</button></div>" +
+      "<p class=\"fine\">Sellerboard presets fill Products Cost, blended fees, and reported net. They leave the invoice lines alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank. The Greatwall button fills EXW " + L.money(gw.exw) + ", sea freight " + L.money(gw.seaFreight) + ", Alibaba " + L.money(gw.alibabaFee) + " (" + L.money(gw.beforeDuty) + " before duty), clears duty back to blank, and sets FBA fulfillment to " + L.money(fee.fba) + ". It does not change Products Cost.</p>" +
       "<div class=\"split\"><div class=\"fields cols-3\">" +
-      field("Sellerboard Products Cost ($)", textInput("china.productsCost", c.productsCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "All-in override" }), "span-3") +
-      field("China EXW/FOB ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual, not split yet" })) +
+      field("Mode 1 · Sellerboard Products Cost ($)", textInput("china.productsCost", c.productsCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Override: 13.50 Mermaid / 14 Farm" }), "span-3") +
+      field("Mode 2 · Kit EXW ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "10.65 Greatwall" })) +
       field("Cost basis", selectBox("china.costBasis", c.costBasis, [["EXW", "EXW"], ["FOB", "FOB"]])) +
-      field("Freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual" })) +
-      field("Duty %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Blank = 0 in the build-up" })) +
-      field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual" })) +
+      field("Sea freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "4.24" })) +
+      field("Alibaba fee / unit ($)", textInput("china.alibabaFee", c.alibabaFee, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "0.35" })) +
+      field("Duty %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Blank until HTS confirmed" })) +
+      field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Not on the invoice" })) +
       field("Shipping mode", selectBox("china.shippingMode", c.shippingMode, [["sea", "Sea"], ["air", "Air"]])) +
+      field("Weight (lb)", textInput("china.weightLb", c.weightLb, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "3.3" })) +
+      field("Length (in)", textInput("china.lengthIn", c.lengthIn, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "13.39" })) +
+      field("Width (in)", textInput("china.widthIn", c.widthIn, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "8.47" })) +
+      field("Height (in)", textInput("china.heightIn", c.heightIn, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "2.76" })) +
       field("MOQ (units)", textInput("china.moq", c.moq, { type: "number", kind: "int", min: 0, step: "1" })) +
       field("Packaging ($)", textInput("china.packaging", c.packaging, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional" })) +
       field("Spoilage buffer %", textInput("china.spoilagePct", c.spoilagePct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Optional" })) +
       field("Blended Amazon fees ($)", textInput("china.amazonFeesBlended", c.amazonFeesBlended, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Sep MTD, per unit" })) +
-      field("FBA fulfillment ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Used only without blended fees" })) +
+      field("FBA fulfillment ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "7.38 fee model" })) +
       field("Referral %", textInput("china.referralPct", c.referralPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "~15 planning rate" })) +
       field("Ads / TACOS % (optional)", textInput("china.tacosPct", c.tacosPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Not the Sellerboard gap" })) +
       field("Sellerboard net ($ / unit)", textInput("china.reportedNet", c.reportedNet, { type: "number", kind: "signed", step: "0.01", placeholder: "Sep MTD, can be negative" })) +
-      field("Cost notes", area("china.notes", c.notes, "What Products Cost includes, and what is still unsplit"), "span-3") +
+      field("Cost notes", area("china.notes", c.notes, "Which mode is in use, and what is still unreconciled"), "span-3") +
       "</div><div class=\"result-card\" id=\"econ-out\"></div></div></section>";
   }
 
@@ -723,37 +730,21 @@
   }
 
   function econHtml(econ) {
-    if (econ.cogs == null && econ.buildUp == null && econ.reportedNet == null) {
-      return "<h3>Cost stack</h3><p class=\"empty\">Enter China EXW/FOB or freight, or a Sellerboard Products Cost. Duty, AWD/storage, packaging, and spoilage stay zero until you fill them.</p>";
+    var gw = L.GREATWALL;
+    var fee = L.FEE_MODEL;
+    var html = "<h3>Two cost modes <span class=\"stamp\">ESTIMATE</span></h3>";
+    html += "<p class=\"fine\">Mode 1 is Sellerboard Products Cost. Mode 2 rebuilds the Oct 2023 Greatwall invoice, then referral and FBA. If Mode 1 is filled, Mode 2 freight is not added again.</p>";
+    if (econ.doubleFreight) {
+      html += "<p class=\"callout-warn\"><strong>Do not add freight twice.</strong> Products Cost is the cost in use. The EXW, sea freight, and Alibaba lines are the invoice rebuild, not a second charge.</p>";
     }
-    var html = "<h3>Cost stack <span class=\"stamp\">ESTIMATE</span></h3><ul class=\"lines\">";
-    if (econ.productsCost != null) html += line("Sellerboard Products Cost", L.money(econ.productsCost), true);
-    if (econ.buildUp != null) {
-      html += line(econ.costBasis + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
-      html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · blank as $0" : ""), L.money(econ.freight || 0));
-      html += line("Duty " + (econ.dutyPct == null ? "0%" : L.pct(econ.dutyPct)) + " of " + L.money(econ.customs), L.money(econ.duty));
-      html += line("AWD/storage" + (econ.inbound == null ? " · blank as $0" : ""), L.money(econ.inbound || 0));
-      html += line("Packaging" + (econ.packaging == null ? " · blank as $0" : ""), L.money(econ.packaging || 0));
-      html += line("Build-up after " + (econ.spoilagePct == null ? "0%" : L.pct(econ.spoilagePct)) + " spoilage", L.money(econ.buildUp), econ.productsCost == null);
-      html += line("Versus Mermaid Products Cost $13.50", L.money(econ.gapVsMermaidCost));
-      html += line("Versus Farm Products Cost $14.00", L.money(econ.gapVsFarmCost));
-    }
-    if (econ.productsCost != null && econ.buildUp != null) {
-      html += line("Cost used", "Products Cost overrides the build-up");
-    }
-    if (econ.contribution != null) {
-      if (econ.feeSource === "blended") html += line("Blended Amazon fees", L.money(econ.feeStack));
-      else {
-        html += line("Referral " + (econ.referralPct == null ? "(blank, counted as 0%)" : L.pct(econ.referralPct)), L.money(econ.referral));
-        html += line("FBA fulfillment", L.money(econ.fba));
-      }
+    html += "<h3>Mode 1 · Sellerboard" + (econ.activeMode === "sellerboard" ? " · in use" : "") + "</h3><ul class=\"lines\">";
+    if (econ.productsCost != null) html += line("Products Cost override", L.money(econ.productsCost), true);
+    else html += line("Products Cost", "Blank");
+    if (econ.feeSource === "blended") html += line("Blended Amazon fees", L.money(econ.feeStack));
+    if (econ.activeMode === "sellerboard" && econ.contribution != null) {
       html += line("Contribution at " + L.money(econ.price), L.money(econ.contribution) + " · " + L.pct(econ.contributionPct), true);
       if (econ.afterAds != null && econ.reportedNet == null) html += line("After " + L.pct(econ.tacosPct) + " TACOS", L.money(econ.afterAds) + " · " + L.pct(econ.afterAdsPct), true);
-      if (econ.cashTied != null) html += line("Cash tied at MOQ", L.money(econ.cashTied));
-      if (econ.breakevenUnits != null) html += line("Breakeven units at contribution", L.formatInt(econ.breakevenUnits));
-      else if (econ.contribution <= 0) html += line("Breakeven units", "No — contribution is not positive");
-      if (econ.breakevenAfterAds != null) html += line("Breakeven units, after TACOS", L.formatInt(econ.breakevenAfterAds));
-    } else if (econ.cogs != null) {
+    } else if (econ.productsCost != null && econ.contribution == null) {
       html += line("Contribution", "Add a sell price");
     }
     if (econ.reportedNet != null) {
@@ -761,9 +752,48 @@
       if (econ.unexplainedGap != null) html += line("Gap vs contribution", L.money(econ.unexplainedGap) + " · not an ad cost");
     }
     html += "</ul>";
-    if (econ.feeSource === "blended") html += "<p class=\"fine\">Referral " + (econ.referralPct == null ? "is blank" : L.pct(econ.referralPct) + " is a planning rate") + " and is not added on top of blended fees.</p>";
-    if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled China, freight, duty, AWD/storage, packaging, or spoilage counted as zero in the build-up.</p>";
-    html += "<p class=\"fine\">Not a live freight quote. $13.50 and $14.00 are Sellerboard all-in costs, not a China versus freight recipe.</p>";
+    html += "<h3>Mode 2 · Invoice rebuild" + (econ.activeMode === "rebuild" ? " · in use" : "") + "</h3>";
+    html += "<p class=\"fine\">" + esc(gw.invoice) + ", Oct 2023. Kit EXW " + L.money(gw.exw) + " for Mermaid and Unicorn. Farm uses the same architecture. Sea " + L.money(gw.seaFreight) + " + Alibaba " + L.money(gw.alibabaFee) + " = " + L.money(gw.beforeDuty) + " before duty. Duty is not filled. HTS " + esc(gw.hts) + " is often 0% MFN and is not a rate on this page.</p>";
+    if (econ.buildUp == null) {
+      html += "<p class=\"empty\">EXW, freight, and Alibaba are blank. Load the Greatwall waterfall to fill the invoice defaults.</p>";
+    } else {
+      html += "<ul class=\"lines\">";
+      html += line(econ.costBasis + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
+      html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · blank as $0" : ""), L.money(econ.freight || 0));
+      html += line("Alibaba fee" + (econ.alibaba == null ? " · blank as $0" : ""), L.money(econ.alibaba || 0));
+      html += line("All-in before duty", L.money(econ.beforeDuty), true);
+      html += line("Duty " + (econ.dutyPct == null ? "blank, counted as $0 — confirm HTS" : L.pct(econ.dutyPct)), L.money(econ.duty));
+      html += line("AWD/storage" + (econ.inbound == null ? " · blank as $0" : ""), L.money(econ.inbound || 0));
+      html += line("Packaging" + (econ.packaging == null ? " · blank as $0" : ""), L.money(econ.packaging || 0));
+      html += line("Rebuild product cost", L.money(econ.buildUp), econ.activeMode === "rebuild");
+      html += line("Versus Mermaid $13.50", L.money(econ.gapVsMermaidCost) + " · not reconciled");
+      html += line("Versus Farm $14.00", L.money(econ.gapVsFarmCost) + " · not reconciled");
+      html += "</ul>";
+    }
+    html += "<p class=\"fine\">Fee model for " + fee.weightLb + " lb " + esc(fee.sizeTier) + " at " + L.money(fee.price) + ". Dims about " + fee.lengthIn + "×" + fee.widthIn + "×" + fee.heightIn + " in. Referral about " + L.money(fee.referral) + " (15%) + FBA fulfill about " + L.money(fee.fba) + " = about " + L.money(fee.combined) + ". Not the Sep MTD blended fee.</p>";
+    if (econ.componentFees != null) {
+      html += "<ul class=\"lines\">";
+      html += line("Referral on this price" + (econ.referralPct == null ? " (blank as 0%)" : " " + L.pct(econ.referralPct)), L.money(econ.componentReferral));
+      html += line("FBA fulfillment" + (econ.componentFba == null ? " · blank" : ""), econ.componentFba == null ? "—" : L.money(econ.componentFba));
+      html += line("Referral + FBA", L.money(econ.componentFees) + (econ.feeSource === "blended" ? " · not added to blended fees" : ""));
+      if (econ.rebuildContribution != null) html += line("Rebuild contribution", L.money(econ.rebuildContribution) + " · not the Sellerboard net");
+      if (econ.activeMode === "rebuild" && econ.contribution != null) {
+        html += line("Contribution at " + L.money(econ.price), L.money(econ.contribution) + " · " + L.pct(econ.contributionPct), true);
+        if (econ.afterAds != null) html += line("After " + L.pct(econ.tacosPct) + " TACOS", L.money(econ.afterAds) + " · " + L.pct(econ.afterAdsPct), true);
+      }
+      html += "</ul>";
+    }
+    if (econ.cashTied != null || econ.breakevenUnits != null || econ.breakevenAfterAds != null) {
+      html += "<ul class=\"lines\">";
+      if (econ.cashTied != null) html += line("Cash tied at MOQ", L.money(econ.cashTied));
+      if (econ.breakevenUnits != null) html += line("Breakeven units at contribution", L.formatInt(econ.breakevenUnits));
+      else if (econ.contribution != null && econ.contribution <= 0) html += line("Breakeven units", "No — contribution is not positive");
+      if (econ.breakevenAfterAds != null) html += line("Breakeven units, after TACOS", L.formatInt(econ.breakevenAfterAds));
+      html += "</ul>";
+    }
+    if (econ.feeSource === "blended") html += "<p class=\"fine\">Referral and FBA fulfillment are not added on top of blended Amazon fees.</p>";
+    if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled EXW, freight, Alibaba, duty, AWD/storage, packaging, or spoilage count as zero in the rebuild. A blank duty rate is not a confirmed 0% HTS.</p>";
+    html += "<p class=\"fine\">Not a live freight quote and not a customs ruling. $13.50 and $14.00 stay Sellerboard overrides. $15.24 is the invoice before duty.</p>";
     return html;
   }
 
@@ -1116,6 +1146,24 @@
       persist();
       render();
       toast(spec.productName + " costs applied");
+      return;
+    }
+    if (action === "preset-invoice") {
+      var hostInvoice = current();
+      if (!hostInvoice) return;
+      var gw = L.GREATWALL;
+      var feeModel = L.FEE_MODEL;
+      var differs = (hostInvoice.china.unitCost != null && hostInvoice.china.unitCost !== gw.exw) ||
+        (hostInvoice.china.freightPerUnit != null && hostInvoice.china.freightPerUnit !== gw.seaFreight) ||
+        (hostInvoice.china.alibabaFee != null && hostInvoice.china.alibabaFee !== gw.alibabaFee) ||
+        hostInvoice.china.dutyPct != null ||
+        (hostInvoice.overview.fbaFees != null && hostInvoice.overview.fbaFees !== feeModel.fba);
+      if (differs && !confirm("Replace EXW, sea freight, Alibaba, package dims, and FBA fulfillment with the Oct 2023 Greatwall invoice, and clear duty back to blank? Products Cost stays. Duty is not set to a rate.")) return;
+      L.applyInvoicePreset(hostInvoice);
+      touch(hostInvoice);
+      persist();
+      render();
+      toast("Greatwall waterfall loaded. It does not replace Products Cost.");
       return;
     }
     if (action === "export-json") { exportJson(exportList(sorted())); return; }
