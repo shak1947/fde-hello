@@ -2,7 +2,7 @@
 
 Static scorecard for weighing Amazon product ideas for Sensationally OT. You look at the listing yourself and enter scores. This page does not call Amazon, Keepa, Helium 10, or any other product API, and it does not invent review counts or dollar margins.
 
-Open it at `/eval/` on the site, or open `eval/index.html` through a local static server. Some browsers block `localStorage` on `file://` URLs.
+Open it at `/eval/` on the site, or open `public/eval/index.html` through a local static server. Some browsers block `localStorage` on `file://` URLs.
 
 ## How to use
 
