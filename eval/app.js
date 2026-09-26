@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, stoneNpdSeeded: store.stoneNpdSeeded === true, stoneEstimatesSeeded: store.stoneEstimatesSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, stoneNpdSeeded: store.stoneNpdSeeded === true, stoneEstimatesSeeded: store.stoneEstimatesSeeded === true, stoneCompsSeeded: store.stoneCompsSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary().concat(L.stoneLibrary()), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary().concat(L.stoneLibrary()), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -321,6 +321,7 @@
       var compLink = compHref ? "<a href=\"" + esc(compHref) + "\" target=\"_blank\" rel=\"noopener noreferrer\">Open listing</a>" : "";
       return "<article class=\"comp-card\" data-row=\"" + esc(row.id) + "\"><div class=\"comp-top\"><strong>Competitor " + (index + 1) + "</strong>" + compLink +
         "<button type=\"button\" class=\"danger\" data-action=\"remove-comp\" data-comp-id=\"" + esc(row.id) + "\">Remove</button></div>" +
+        (row.note ? "<p class=\"fine comp-fact\">" + esc(row.note) + "</p>" : "") +
         "<div class=\"comp-fields\">" +
         compField(row, "ASIN", "asin", "text", row.asin, "B0…") +
         compField(row, "Title", "title", "text", row.title, "Listing title") +
@@ -1219,6 +1220,7 @@
       store.baselinesSeeded = true;
       store.stoneNpdSeeded = true;
       store.stoneEstimatesSeeded = true;
+      store.stoneCompsSeeded = true;
       if (!added) { toast("Baselines are already in the library"); return; }
       persist();
       toast("Baselines restored");

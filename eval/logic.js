@@ -479,7 +479,8 @@
       monthlyRevenue: partial.monthlyRevenue == null ? null : partial.monthlyRevenue,
       reviews: partial.reviews == null ? null : partial.reviews,
       rating: partial.rating == null ? null : partial.rating,
-      bsr: partial.bsr == null ? "" : String(partial.bsr)
+      bsr: partial.bsr == null ? "" : String(partial.bsr),
+      note: partial.note == null ? "" : String(partial.note)
     };
   }
 
@@ -655,14 +656,8 @@
     d.updatedAt = "2026-09-26T19:00:00.000Z";
     d.overview.price = spec.sell;
     d.overview.category = "Stepping stones";
-    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. ASSUMPTION sell target $44.99 (range $39.99–$49.99). Comp listings about $22.99–$49.99. Comp ASIN " + spec.asin + " was about $49.99 and is not our sell price. Full foot-size only. Nest pack-out for compact FBA. Nest comps are ASIN only, with no price, sales, or reviews: " + spec.nests.join(", ") + ". CapEx PARKED. Filled rubric scores are ASSUMPTIONS. Unscored rows were not assumed. Landed ASSUMPTION $16 (range $14–$18) is in the kit field. Duty 0% is an ASSUMPTION.";
-    d.competitors = spec.nests.map(function (asin) {
-      return compRow({
-        id: "nest-" + asin,
-        asin: asin,
-        title: "Nest comp. ASIN only. Price, sales, and reviews were not in the brief."
-      });
-    });
+    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. ASSUMPTION sell target $44.99 (range $39.99–$49.99). Comp listings about $22.99–$49.99. Comp ASIN " + spec.asin + " was about $49.99 and is not our sell price. Full foot-size only. Nest pack-out for compact FBA. Competitor table: Tiny Land B0CR9TP188 market leader, Fanboxk 15pc B0BQ2V2G1K (monthly units ASSUMPTION), Lehoo Castle B0F28QP7JC, Fanboxk 5pc B0BQ2QFGDT. makarci B0B62KYSZ4 is a volume-alt note. Monthly ranges were not collapsed into one sales figure. CapEx PARKED. Filled rubric scores are ASSUMPTIONS. Unscored rows were not assumed. Landed ASSUMPTION $16 (range $14–$18) is in the kit field. Duty 0% is an ASSUMPTION.";
+    d.competitors = stoneSteppingComps();
     applyStoneEstimate(d, spec);
     d.china.notes = "ASSUMPTION, not Sellerboard Products Cost. Landed midpoint $16 (range $14–$18) is the kit field so this eval has a cost. Alibaba EXW quotes, not that field: basic PP $5.80–$7.50; crab/nest $13.80–$20 per set. Duty 0% is an ASSUMPTION, not an HTS ruling. Freight is not entered and is not a $0 ocean quote. Nest pack-out. CapEx PARKED. Do not fund a mold from this page.";
     d.maker.why = "Stepping stones with a nestable storage pack-out. Full foot-size only. Nest so the FBA carton can be compact. ASSUMPTION sell target $44.99. Landed ASSUMPTION $16. CapEx PARKED.";
@@ -701,8 +696,8 @@
     d.updatedAt = "2026-09-26T19:10:00.000Z";
     d.overview.price = spec.sell;
     d.overview.category = "Stacking rocks";
-    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. Wood kit preferred. ASSUMPTION sell price $26.99 (range $24.99–$29.99). Comp ASIN " + spec.asin + " at about $26.99, 1.1 lb, wood. Sub-$20 ABS or silicone is PARKED unless about 1000 units a month. That volume is not in this brief, so it is not assumed. CapEx PARKED. Landed ASSUMPTION $6 (range $5–$7) is in the kit field. Alibaba FOB about $3.50–$3.70 for 16pc (10pc $2.30–$2.60). Duty 0% is an ASSUMPTION. Filled rubric scores are ASSUMPTIONS.";
-    d.competitors = [];
+    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. Wood kit preferred. ASSUMPTION sell price $26.99 (range $24.99–$29.99). Comp ASIN " + spec.asin + " at about $26.99, 1.1 lb, wood. Competitor table: OESSUF B09BCMP8XX market leader, WOODENFUN B0D22K7FBC, YHHYTOY B0D8DXXPPS, BESTAMTOY B08GFP7PSK. Monthly ranges were not collapsed into one sales figure. Sub-$20 ABS or silicone is PARKED unless about 1000 units a month. That volume is not in this brief, so it is not assumed. CapEx PARKED. Landed ASSUMPTION $6 (range $5–$7) is in the kit field. Alibaba FOB about $3.50–$3.70 for 16pc (10pc $2.30–$2.60). Duty 0% is an ASSUMPTION. Filled rubric scores are ASSUMPTIONS.";
+    d.competitors = stoneStackingComps();
     applyStoneEstimate(d, spec);
     d.china.weightLb = spec.weightLb;
     d.china.notes = "ASSUMPTION, not Sellerboard Products Cost. Landed midpoint $6 (range $5–$7) is the kit field. Cost basis FOB. Alibaba FOB about $3.50–$3.70 for 16pc; 10pc is $2.30–$2.60. Those quotes are not the kit field. Duty 0% is an ASSUMPTION, not an HTS ruling. Freight is not entered. The 1.1 lb figure is the wood comp listing, not a carton we measured and not a freight allocation. Wood kit. CapEx PARKED. Sub-$20 ABS or silicone stays parked under about 1000 units a month, and that rate was not given.";
@@ -726,6 +721,59 @@
       sensory: "ASSUMPTION: stacking and balance fit OT. Score 4. Not a sales measure."
     });
     return d;
+  }
+
+  function stoneSteppingComps() {
+    return [
+      compRow({ id: "comp-B0CR9TP188", asin: "B0CR9TP188", title: "Tiny Land · market leader", reviews: 833, rating: 4.8, monthlySales: 1000, note: "Market leader. $35.99–$42.99. Rating 4.8. 833 reviews. ~1000/mo." }),
+      compRow({ id: "comp-B0BQ2V2G1K", asin: "B0BQ2V2G1K", title: "Fanboxk 15pc · early China", reviews: 65, rating: 4.8, note: "Early China, about 65 reviews. OOS. Rating 4.8. ~50–120/mo ASSUMPTION." }),
+      compRow({ id: "comp-B0F28QP7JC", asin: "B0F28QP7JC", title: "Lehoo Castle · knockoff", price: 27.92, reviews: 655, rating: 4.7, note: "Knockoff. $27.92. Rating 4.7. 655 reviews. ~200–400/mo." }),
+      compRow({ id: "comp-B0BQ2QFGDT", asin: "B0BQ2QFGDT", title: "Fanboxk 5pc · knockoff", price: 22.99, reviews: 828, rating: 4.7, note: "Knockoff. $22.99. Rating 4.7. 828 reviews. ~100–250/mo." }),
+      compRow({ id: "comp-B0B62KYSZ4", asin: "B0B62KYSZ4", title: "makarci · volume alt note", note: "Optional note row. Volume alt ~700–1000/mo. Price, rating, and reviews were not in this note." })
+    ];
+  }
+
+  function stoneStackingComps() {
+    return [
+      compRow({ id: "comp-B09BCMP8XX", asin: "B09BCMP8XX", title: "OESSUF · market leader", price: 26.99, reviews: 602, rating: 4.6, note: "Market leader. $26.99. Rating 4.6. 602 reviews. ~1600–2500/mo." }),
+      compRow({ id: "comp-B0D22K7FBC", asin: "B0D22K7FBC", title: "WOODENFUN · early", price: 16.99, reviews: 68, rating: 4.4, note: "Early, about 68 reviews. $16.99. Rating 4.4. ~50–100/mo." }),
+      compRow({ id: "comp-B0D8DXXPPS", asin: "B0D8DXXPPS", title: "YHHYTOY · knockoff", price: 24.99, reviews: 293, rating: 4.6, note: "Knockoff. $24.99. Rating 4.6. 293 reviews. ~500–700/mo." }),
+      compRow({ id: "comp-B08GFP7PSK", asin: "B08GFP7PSK", title: "BESTAMTOY · knockoff", price: 24.99, reviews: 5042, rating: 4.6, note: "Knockoff. $24.99. Rating 4.6. 5042 reviews. ~150–300/mo." })
+    ];
+  }
+
+  function untouchedNestComps(d) {
+    var rows = d && Array.isArray(d.competitors) ? d.competitors : [];
+    if (rows.length !== 3) return false;
+    var want = STONE_NPD.stepping.nests.slice().sort().join(",");
+    var asins = rows.map(function (row) { return row.asin; }).sort().join(",");
+    if (asins !== want) return false;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (row.price != null || row.reviews != null || row.monthlySales != null || row.rating != null) return false;
+      var title = row.title || "";
+      if (title.indexOf("ASIN only") < 0 && title.indexOf("Nest comp") < 0) return false;
+    }
+    return true;
+  }
+
+  function patchStoneComps(d) {
+    if (!d || !d.overview) return false;
+    if (d.id === STONE_NPD.stepping.id && untouchedNestComps(d)) {
+      var fresh = sampleSteppingStones();
+      d.competitors = fresh.competitors;
+      if ((d.overview.notes || "").indexOf("ASIN only") >= 0) d.overview.notes = fresh.overview.notes;
+      return true;
+    }
+    if (d.id === STONE_NPD.stacking.id && (!d.competitors || d.competitors.length === 0)) {
+      var rocks = sampleStackingRocks();
+      d.competitors = rocks.competitors;
+      if ((d.overview.notes || "").indexOf("B0D22K7FBC") < 0) {
+        d.overview.notes = ((d.overview.notes || "").trim() + " Competitor table: OESSUF B09BCMP8XX, WOODENFUN B0D22K7FBC, YHHYTOY B0D8DXXPPS, BESTAMTOY B08GFP7PSK. Monthly ranges were not collapsed into one sales figure.").trim();
+      }
+      return true;
+    }
+    return false;
   }
 
   function stoneLibrary() {
@@ -1304,6 +1352,8 @@
     if (coreBits.length) parts.push("Shak’s core screen: " + coreBits.join(", ") + ".");
     if (comp) {
       parts.push(comp.leaderTitle + " is about " + Math.round(comp.share * 100) + "% of tracked competitor revenue" + (comp.leaderReviews ? " (" + formatInt(comp.leaderReviews) + " reviews)" : "") + ". The tracked set suggests competition score " + comp.score + "; the rubric says " + scoreText(findCriterion(d, "competition")) + ". The suggestion only sees the rows on this page.");
+    } else if (d.competitors && d.competitors.length) {
+      parts.push("Competitor rows are on the page. A monthly range was not collapsed into one sales figure, so this table has no tracked revenue and does not set a competition score.");
     } else {
       parts.push("No competitor revenue yet. Add leaders or paste a Helium 10 export before treating competition as known.");
     }
@@ -1373,7 +1423,9 @@
       lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
       for (var i = 0; i < d.competitors.length; i++) {
         var row = d.competitors[i];
-        lines.push("| " + (row.title || "—").replace(/\|/g, "/") + " | " + (row.asin || "—") + " | " + money(row.price) + " | " + formatInt(row.monthlySales) + " | " + money(competitorRevenue(row)) + " | " + formatInt(row.reviews) + " | " + (row.rating == null ? "—" : String(row.rating)) + " | " + (row.bsr || "—") + " |");
+        var titleCell = (row.title || "—").replace(/\|/g, "/");
+        if (row.note) titleCell += " — " + String(row.note).replace(/\|/g, "/");
+        lines.push("| " + titleCell + " | " + (row.asin || "—") + " | " + money(row.price) + " | " + formatInt(row.monthlySales) + " | " + money(competitorRevenue(row)) + " | " + formatInt(row.reviews) + " | " + (row.rating == null ? "—" : String(row.rating)) + " | " + (row.bsr || "—") + " |");
       }
       if (comp) {
         lines.push("");
@@ -1498,7 +1550,8 @@
       monthlyRevenue: clampNum(raw.monthlyRevenue, 0, 1000000000),
       reviews: clampNum(raw.reviews, 0, 100000000),
       rating: clampNum(raw.rating, 0, 5),
-      bsr: asString(raw.bsr, 80)
+      bsr: asString(raw.bsr, 80),
+      note: asString(raw.note, 500)
     };
   }
 
@@ -1653,7 +1706,12 @@
               if (patchStoneEstimates(dossiers[e])) patched = true;
             }
           }
-          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
+          if (data.stoneCompsSeeded !== true) {
+            for (var c = 0; c < dossiers.length; c++) {
+              if (patchStoneComps(dossiers[c])) patched = true;
+            }
+          }
+          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
         }
         var seeded = seedBaselines(dossiers);
         var seededStones = addMissingStones(seeded.dossiers);
@@ -1663,14 +1721,14 @@
           baselinesSeeded: true,
           waterfallSeeded: true,
           cogsTrackerSeeded: true,
-          moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true,
+          moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true,
           migrated: false,
           upgraded: true,
           fresh: false,
           replacedFiction: seeded.replaced
         };
       } catch (err) {
-        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
     if (rawV1 != null && rawV1 !== "") {
@@ -1685,15 +1743,15 @@
           if (d) kept.push(d);
         }
         if (!kept.length) {
-          return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
+          return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
         }
         var keptStones = addMissingStones(kept);
-        return { version: 1, dossiers: keptStones.dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: true, fresh: false, replacedFiction: false };
+        return { version: 1, dossiers: keptStones.dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: true, fresh: false, replacedFiction: false };
       } catch (err2) {
-        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
-    return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, migrated: false, fresh: true };
+    return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, migrated: false, fresh: true };
   }
 
   function duplicateDossier(d) {
@@ -1934,7 +1992,7 @@
       for (var c = 0; c < d.competitors.length; c++) {
         var comp = d.competitors[c];
         var rev = competitorRevenue(comp);
-        push("competitor", [comp.asin, comp.title, comp.price == null ? "" : comp.price, comp.monthlySales == null ? "" : comp.monthlySales, rev == null ? "" : rev, comp.reviews == null ? "" : comp.reviews, comp.rating == null ? "" : comp.rating, comp.bsr, "", "", "", "", ""]);
+        push("competitor", [comp.asin, comp.title, comp.price == null ? "" : comp.price, comp.monthlySales == null ? "" : comp.monthlySales, rev == null ? "" : rev, comp.reviews == null ? "" : comp.reviews, comp.rating == null ? "" : comp.rating, comp.bsr, "", "", "", "", comp.note || ""]);
       }
       for (var k = 0; k < d.criteria.length; k++) {
         var crit = d.criteria[k];
@@ -2179,12 +2237,12 @@
       ]
     }), null);
     check("upgrade drops fiction once", upgraded.upgraded && upgraded.replacedFiction && upgraded.baselinesSeeded && upgraded.stoneNpdSeeded && upgraded.dossiers.length === 5 && upgraded.dossiers[0].id === "baseline-mermaid-dough" && upgraded.dossiers[2].id === "kept-real" && upgraded.dossiers[3].id === "npd-stepping-stones");
-    var deleted = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    var deleted = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
     check("seed flag sticks", deleted.baselinesSeeded && !deleted.upgraded && deleted.dossiers.length === 1 && deleted.dossiers[0].id === "kept-real");
     var waterfallOld = storeFromStorage(JSON.stringify({
       version: 1,
       baselinesSeeded: true,
-      stoneNpdSeeded: true, stoneEstimatesSeeded: true,
+      stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true,
       dossiers: [{
         id: "baseline-mermaid-dough",
         productName: "Mermaid dough kit",
@@ -2203,7 +2261,7 @@
     waterfallOld.dossiers[0].china.unitCost = null;
     waterfallOld.dossiers[0].china.freightPerUnit = null;
     waterfallOld.dossiers[0].china.alibabaFee = null;
-    var waterfallAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, dossiers: waterfallOld.dossiers }), null);
+    var waterfallAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, dossiers: waterfallOld.dossiers }), null);
     check("waterfall flag sticks", !waterfallAgain.upgraded && waterfallAgain.dossiers[0].china.unitCost == null && waterfallAgain.cogsTrackerSeeded && waterfallAgain.dossiers[0].china.inboundPlacement === 0);
     var trackerOld = storeFromStorage(JSON.stringify({
       version: 1,
@@ -2238,7 +2296,7 @@
       }]
     }), null);
     check("exw leaves custom freight", exwCustom.exwParsedSeeded && exwCustom.dossiers[0].china.unitCost === 10.65 && exwCustom.dossiers[0].china.freightPerUnit === 3.1 && exwCustom.dossiers[0].china.alibabaFee === 0.2 && exwCustom.dossiers[0].china.notes === "edited freight");
-    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, dossiers: [{
+    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, dossiers: [{
       id: "baseline-farm-dough", productName: "Farm dough", baseline: true, date: "2026-09-26",
       overview: { price: 39.95, fbaFees: 8 }, china: { inboundPlacement: 0, unitCost: 10.65, notes: "edited" }
     }] }), null);
@@ -2266,7 +2324,7 @@
     var scrubbedDemo = normalizeDossier({ productName: "Old pebble", asinOrUrl: demoId, date: "2026-09-18", sample: true });
     check("demo listing blocked", demoId.length === 10 && listingHref(demoId) === "" && listingHref("https://www.amazon.com/dp/" + demoId) === "" && scrubbedDemo.asinOrUrl === "" && listingHref(scrubbedDemo.asinOrUrl) === "");
     var staleDemo = storeFromStorage(JSON.stringify({
-      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true,
+      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true,
       dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01", asinOrUrl: demoId }]
     }), null);
     check("stale demo asin cleared", staleDemo.upgraded && staleDemo.dossiers.length === 1 && staleDemo.dossiers[0].asinOrUrl === "" && listingHref(staleDemo.dossiers[0].asinOrUrl) === "");
@@ -2276,12 +2334,12 @@
     var stackingScore = scoreSummary(stacking.criteria);
     var steppingEcon = economics(stepping);
     var stackingEcon = economics(stacking);
-    check("stepping dossier", stepping.npd === true && stepping.sample === false && stepping.asinOrUrl === "B0F3FFQ1CD" && listingHref(stepping.asinOrUrl) === "https://www.amazon.com/dp/B0F3FFQ1CD" && stepping.overview.price === 44.99 && stepping.maker.priceBandLow === 39.99 && stepping.maker.priceBandHigh === 49.99 && stepping.china.unitCost === 16 && stepping.china.dutyPct === 0 && stepping.china.freightPerUnit == null && stepping.china.productsCost == null && stepping.competitors.length === 3 && stepping.competitors[0].asin === "B0F28QP7JC" && stepping.competitors[1].asin === "B0CR9TP188" && stepping.competitors[2].asin === "B0BQ2QFGDT" && stepping.competitors[0].monthlySales == null && steppingEcon.cogs === 16 && steppingEcon.cogsSource === "buildup" && steppingEcon.feesUnfilled === true && steppingEcon.contribution == null && steppingEcon.reportedNet == null && stepping.overview.notes.indexOf("CapEx PARKED") >= 0 && stepping.overview.notes.indexOf("Full foot-size") >= 0 && stepping.overview.notes.indexOf("ASSUMPTION") >= 0 && stepping.china.notes.indexOf("5.80") >= 0 && stepping.china.notes.indexOf("13.80") >= 0 && stepping.maker.why.indexOf("Nest") >= 0 && steppingScore.hundredths === 292 && steppingScore.band.id === "pass");
-    check("stacking dossier", stacking.npd === true && stacking.asinOrUrl === "B09BCMP8XX" && listingHref(stacking.asinOrUrl) === "https://www.amazon.com/dp/B09BCMP8XX" && stacking.overview.price === 26.99 && stacking.maker.priceBandLow === 24.99 && stacking.maker.priceBandHigh === 29.99 && stacking.china.weightLb === 1.1 && stacking.china.costBasis === "FOB" && stacking.china.productsCost == null && stacking.china.unitCost === 6 && stacking.china.dutyPct === 0 && stacking.competitors.length === 0 && stackingEcon.cogs === 6 && stackingEcon.feesUnfilled === true && stackingEcon.contribution == null && stacking.overview.notes.indexOf("Wood kit") >= 0 && stacking.overview.notes.indexOf("PARKED") >= 0 && stacking.china.notes.indexOf("3.50") >= 0 && stacking.china.notes.indexOf("ASSUMPTION") >= 0 && stacking.maker.why.indexOf("1000") >= 0 && stackingScore.hundredths === 327 && stackingScore.band.id === "pass");
+    check("stepping dossier", stepping.npd === true && stepping.sample === false && stepping.asinOrUrl === "B0F3FFQ1CD" && listingHref(stepping.asinOrUrl) === "https://www.amazon.com/dp/B0F3FFQ1CD" && stepping.overview.price === 44.99 && stepping.maker.priceBandLow === 39.99 && stepping.maker.priceBandHigh === 49.99 && stepping.china.unitCost === 16 && stepping.china.dutyPct === 0 && stepping.china.freightPerUnit == null && stepping.china.productsCost == null && stepping.competitors.length === 5 && stepping.competitors[0].asin === "B0CR9TP188" && stepping.competitors[0].reviews === 833 && stepping.competitors[0].rating === 4.8 && stepping.competitors[0].monthlySales === 1000 && stepping.competitors[0].price == null && stepping.competitors[0].note.indexOf("$35.99–$42.99") >= 0 && stepping.competitors[1].asin === "B0BQ2V2G1K" && stepping.competitors[1].reviews === 65 && stepping.competitors[1].note.indexOf("OOS") >= 0 && stepping.competitors[1].note.indexOf("ASSUMPTION") >= 0 && stepping.competitors[2].asin === "B0F28QP7JC" && stepping.competitors[2].price === 27.92 && stepping.competitors[2].reviews === 655 && stepping.competitors[3].asin === "B0BQ2QFGDT" && stepping.competitors[3].price === 22.99 && stepping.competitors[3].reviews === 828 && stepping.competitors[4].asin === "B0B62KYSZ4" && stepping.competitors[4].note.indexOf("700–1000") >= 0 && competitionInsight(stepping.competitors) == null && steppingEcon.cogs === 16 && steppingEcon.cogsSource === "buildup" && steppingEcon.feesUnfilled === true && steppingEcon.contribution == null && steppingEcon.reportedNet == null && stepping.overview.notes.indexOf("CapEx PARKED") >= 0 && stepping.overview.notes.indexOf("Full foot-size") >= 0 && stepping.overview.notes.indexOf("ASSUMPTION") >= 0 && stepping.china.notes.indexOf("5.80") >= 0 && stepping.china.notes.indexOf("13.80") >= 0 && stepping.maker.why.indexOf("Nest") >= 0 && steppingScore.hundredths === 292 && steppingScore.band.id === "pass");
+    check("stacking dossier", stacking.npd === true && stacking.asinOrUrl === "B09BCMP8XX" && listingHref(stacking.asinOrUrl) === "https://www.amazon.com/dp/B09BCMP8XX" && stacking.overview.price === 26.99 && stacking.maker.priceBandLow === 24.99 && stacking.maker.priceBandHigh === 29.99 && stacking.china.weightLb === 1.1 && stacking.china.costBasis === "FOB" && stacking.china.productsCost == null && stacking.china.unitCost === 6 && stacking.china.dutyPct === 0 && stacking.competitors.length === 4 && stacking.competitors[0].asin === "B09BCMP8XX" && stacking.competitors[0].price === 26.99 && stacking.competitors[0].reviews === 602 && stacking.competitors[0].rating === 4.6 && stacking.competitors[0].note.indexOf("1600–2500") >= 0 && stacking.competitors[1].asin === "B0D22K7FBC" && stacking.competitors[1].price === 16.99 && stacking.competitors[1].reviews === 68 && stacking.competitors[2].asin === "B0D8DXXPPS" && stacking.competitors[2].reviews === 293 && stacking.competitors[3].asin === "B08GFP7PSK" && stacking.competitors[3].price === 24.99 && stacking.competitors[3].reviews === 5042 && stacking.competitors[3].rating === 4.6 && competitionInsight(stacking.competitors) == null && stackingEcon.cogs === 6 && stackingEcon.feesUnfilled === true && stackingEcon.contribution == null && stacking.overview.notes.indexOf("Wood kit") >= 0 && stacking.overview.notes.indexOf("PARKED") >= 0 && stacking.china.notes.indexOf("3.50") >= 0 && stacking.china.notes.indexOf("ASSUMPTION") >= 0 && stacking.maker.why.indexOf("1000") >= 0 && stackingScore.hundredths === 327 && stackingScore.band.id === "pass");
     check("stone asin route", dossierByAsin(seededLibrary(), "B0F3FFQ1CD").id === "npd-stepping-stones" && dossierByAsin(seededLibrary(), "https://www.amazon.com/dp/B09BCMP8XX").id === "npd-stacking-rocks" && dossierByAsin(seededLibrary(), "") == null);
     var stoneOld = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
     check("stone npd seeds once", stoneOld.upgraded && stoneOld.stoneNpdSeeded && stoneOld.dossiers.length === 3 && stoneOld.dossiers[1].asinOrUrl === "B0F3FFQ1CD" && stoneOld.dossiers[2].asinOrUrl === "B09BCMP8XX");
-    var stoneAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    var stoneAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, stoneCompsSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
     check("stone flag sticks", !stoneAgain.upgraded && stoneAgain.dossiers.length === 1);
     var estimateOld = storeFromStorage(JSON.stringify({
       version: 1, baselinesSeeded: true, stoneNpdSeeded: true,
@@ -2308,6 +2366,35 @@
       }]
     }), null);
     check("stone typed cost sticks", !estimateKept.upgraded && estimateKept.dossiers.length === 1 && estimateKept.dossiers[0].china.unitCost === 9 && estimateKept.dossiers[0].overview.price === 42 && estimateKept.dossiers[0].maker.why === "typed");
+    var nestOld = storeFromStorage(JSON.stringify({
+      version: 1, baselinesSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true,
+      dossiers: [{
+        id: "npd-stepping-stones", productName: "Stepping stones", npd: true, date: "2026-09-26", asinOrUrl: "B0F3FFQ1CD",
+        overview: { price: 44.99, notes: "Nest comps are ASIN only. Landed ASSUMPTION $16." },
+        china: { unitCost: 16, dutyPct: 0 },
+        competitors: [
+          { id: "nest-B0F28QP7JC", asin: "B0F28QP7JC", title: "Nest comp. ASIN only. Price, sales, and reviews were not in the brief." },
+          { id: "nest-B0CR9TP188", asin: "B0CR9TP188", title: "Nest comp. ASIN only. Price, sales, and reviews were not in the brief." },
+          { id: "nest-B0BQ2QFGDT", asin: "B0BQ2QFGDT", title: "Nest comp. ASIN only. Price, sales, and reviews were not in the brief." }
+        ]
+      }, {
+        id: "npd-stacking-rocks", productName: "Stacking rocks", npd: true, date: "2026-09-26", asinOrUrl: "B09BCMP8XX",
+        overview: { price: 26.99, notes: "Wood kit. Landed ASSUMPTION $6." },
+        china: { unitCost: 6, dutyPct: 0, costBasis: "FOB", weightLb: 1.1 },
+        competitors: []
+      }]
+    }), null);
+    check("stone comps patch", nestOld.upgraded && nestOld.stoneCompsSeeded && nestOld.dossiers[0].overview.price === 44.99 && nestOld.dossiers[0].china.unitCost === 16 && nestOld.dossiers[0].competitors.length === 5 && nestOld.dossiers[0].competitors[0].asin === "B0CR9TP188" && nestOld.dossiers[0].competitors[1].note.indexOf("ASSUMPTION") >= 0 && nestOld.dossiers[0].overview.notes.indexOf("B0BQ2V2G1K") >= 0 && nestOld.dossiers[1].china.unitCost === 6 && nestOld.dossiers[1].competitors.length === 4 && nestOld.dossiers[1].competitors[3].asin === "B08GFP7PSK" && nestOld.dossiers[1].overview.notes.indexOf("Wood kit") >= 0);
+    var typedComp = storeFromStorage(JSON.stringify({
+      version: 1, baselinesSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true,
+      dossiers: [{
+        id: "npd-stepping-stones", productName: "Stepping stones", npd: true, date: "2026-09-26", asinOrUrl: "B0F3FFQ1CD",
+        overview: { price: 44.99 },
+        china: { unitCost: 16, dutyPct: 0 },
+        competitors: [{ id: "mine", asin: "B0CR9TP188", title: "Mine", reviews: 10 }]
+      }]
+    }), null);
+    check("typed competitor sticks", !typedComp.upgraded && typedComp.dossiers.length === 1 && typedComp.dossiers[0].competitors.length === 1 && typedComp.dossiers[0].competitors[0].title === "Mine" && typedComp.dossiers[0].china.unitCost === 16);
     check("margin bands", marginScoreFromPct(32) === 5 && marginScoreFromPct(24) === 4 && marginScoreFromPct(19.9) === 3 && marginScoreFromPct(6) === 2 && marginScoreFromPct(5.9) === 1);
     return fails;
   }
