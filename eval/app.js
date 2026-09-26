@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, stoneNpdSeeded: store.stoneNpdSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, stoneNpdSeeded: store.stoneNpdSeeded === true, stoneEstimatesSeeded: store.stoneEstimatesSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary().concat(L.stoneLibrary()), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary().concat(L.stoneLibrary()), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, stoneEstimatesSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -181,7 +181,7 @@
       sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
     }
     if (list.some(function (d) { return d.npd; })) {
-      sampleNote += "<div class=\"banner\"><strong>Stepping stones and stacking rocks are NPD briefs.</strong> CapEx is parked. Comp links are real ASINs. China cost is blank. Filled rubric scores are assumptions. Open <a href=\"/eval/?asin=B0F3FFQ1CD\">stepping stones</a> or <a href=\"/eval/?asin=B09BCMP8XX\">stacking rocks</a>.</div>";
+      sampleNote += "<div class=\"banner\"><strong>Stepping stones and stacking rocks are NPD briefs.</strong> CapEx is parked. Comp links are real ASINs. Sell targets and landed costs are ASSUMPTIONS, not Sellerboard: stepping $44.99 / landed $16, stacking $26.99 / landed $6. Duty 0% is an assumption. Filled rubric scores are assumptions. Open <a href=\"/eval/?asin=B0F3FFQ1CD\">stepping stones</a> or <a href=\"/eval/?asin=B09BCMP8XX\">stacking rocks</a>.</div>";
     }
     return "<div class=\"wrap\"><main id=\"main\">" +
       "<header class=\"hero\"><div>" +
@@ -263,7 +263,7 @@
       "</nav></div><main id=\"main\">" + banners() +
       "<div class=\"banner\" id=\"sample-banner\"><strong>Fictional sample.</strong> ASINs, sales, reviews, and costs on this page were written for the demo. They are not a Helium 10 or Amazon pull. Replace them before you treat the file as a sourcing decision. <div><button type=\"button\" data-action=\"clear-sample\">This is a real product</button></div></div>" +
       "<div class=\"banner\" id=\"baseline-banner\"><strong>Sellerboard baseline, 2026-09-26.</strong> Mode 1 uses Products Cost. Mode 2 is the Oct 2023 Greatwall invoice and is not added on top of that cost. Blended Amazon fees replace referral plus FBA fulfillment. Duty is blank until the HTS is confirmed. The gap to reported net is not an ad cost. Competitor rows stay empty until you paste Helium 10.</div>" +
-      "<div class=\"banner\" id=\"npd-banner\" hidden><strong>NPD brief. CapEx PARKED.</strong> The Amazon link is the comp listing, not an SOT SKU. China EXW, freight, and Products Cost are blank. Filled rubric scores are assumptions. A product that must sell under $20 stays parked unless it can do about 1000 units a month. That volume is not assumed.</div>" +
+      "<div class=\"banner\" id=\"npd-banner\" hidden><strong>NPD brief. CapEx PARKED.</strong> The Amazon link is the comp listing, not an SOT SKU. The kit field is a landed ASSUMPTION, not Sellerboard Products Cost. Duty 0% is an assumption. Filled rubric scores are assumptions. A product that must sell under $20 stays parked unless it can do about 1000 units a month. That volume is not assumed.</div>" +
       "<section class=\"panel decision\" aria-label=\"Decision\"><p class=\"kicker\">Decision</p><p id=\"decision-text\"></p>" +
       "<div class=\"kpis\">" +
       kpi("kpi-cogs", "Products cost") + kpi("kpi-fees", "Amazon fees") + kpi("kpi-contrib", "Contribution") +
@@ -350,12 +350,13 @@
     var gw = L.GREATWALL;
     var cur = L.GREATWALL_CURRENT;
     return "<section class=\"panel\" id=\"china\" data-section><p class=\"kicker\">C · Landed cost</p><h2>China / landed cost <span class=\"stamp\">ESTIMATE</span></h2>" +
+      npdEstimateHtml(d) +
       "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Current EXW</strong> is the parsed Greatwall kit price (" + esc(cur.parsed) + "): Mermaid " + L.money(cur.mermaid.exw) + " (was " + L.money(cur.mermaid.priorExw) + "), Farm " + L.money(cur.farm.exw) + " on " + esc(cur.farm.invoice) + " only. Unicorn " + L.money(cur.unicorn.exw) + " and Dino " + L.money(cur.dino.exw) + " are reference EXWs, not dossiers. Freight $/unit is a manual input. Shipment totals are mixed SKUs and are not allocated. EXW to Sellerboard is about " + esc(L.gapBandText()) + " for ocean, duty, and inbound together. The Oct 2023 invoice " + esc(gw.invoice) + " is history. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed. Fee Preview is not live. The COGS Tracker (" + esc(L.COGS_TRACKER.asOf) + ") supplies the fee defaults, and both samples stay at the live sell price $39.95. Blended Amazon fees, when filled, replace that tracker split.</p>" +
       "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button><button type=\"button\" data-action=\"preset-exw-mermaid\">Mermaid EXW $10.30</button><button type=\"button\" data-action=\"preset-exw-farm\">Farm EXW $10.35</button><button type=\"button\" data-action=\"preset-exw-unicorn\">Unicorn EXW $10.35</button><button type=\"button\" data-action=\"preset-exw-dino\">Dino EXW $10.30</button></div>" +
       "<p class=\"fine\">Sellerboard presets fill Products Cost, blended fees, and reported net. They leave EXW and freight alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank. EXW buttons set the kit EXW only. They do not fill freight, Alibaba, duty, or Products Cost. Farm $10.35 is invoice " + esc(cur.farm.invoice) + " only.</p>" +
       "<div class=\"split\"><div class=\"fields cols-3\">" +
       field("Mode 1 · Sellerboard Products Cost ($)", textInput("china.productsCost", c.productsCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Override: 13.50 Mermaid / 14 Farm" }), "span-3") +
-      field("Kit EXW ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "10.30 Mermaid current" })) +
+      field(d.npd ? "Landed ASSUMPTION ($)" : "Kit EXW ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: d.npd ? "Landed midpoint" : "10.30 Mermaid current" })) +
       field("Cost basis", selectBox("china.costBasis", c.costBasis, [["EXW", "EXW"], ["FOB", "FOB"]])) +
       field("Freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual $/unit. Do not allocate a shipment." })) +
       field("Alibaba fee / unit ($)", textInput("china.alibabaFee", c.alibabaFee, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional. Oct 2023 was 0.35" })) +
@@ -696,7 +697,7 @@
     if (decision) decision.textContent = L.decisionBrief(d);
     paintKpis(d, econ, moat);
     var econOut = document.getElementById("econ-out");
-    if (econOut) econOut.innerHTML = econHtml(econ);
+    if (econOut) econOut.innerHTML = econHtml(econ, d);
     paintCompetition(d, comp, econ);
     var maker = document.getElementById("maker-out");
     if (maker) maker.innerHTML = makerHtml(d, econ, comp);
@@ -740,7 +741,7 @@
   }
 
   function paintKpis(d, econ, moat) {
-    var costNote = econ.cogs == null ? "Need Products Cost or China + freight" : (econ.cogsSource === "sellerboard" ? "Sellerboard override" : "Build-up");
+    var costNote = econ.cogs == null ? "Need Products Cost or China + freight" : (d.npd ? "ASSUMPTION landed" : (econ.cogsSource === "sellerboard" ? "Sellerboard override" : "Build-up"));
     setKpi("kpi-cogs", econ.cogs == null ? "—" : L.money(econ.cogs), costNote);
     var feeNote = econ.feeStack == null ? "Blended, or referral + FBA" : (econ.feeSource === "blended" ? "Blended, referral not added" : "Referral + FBA fulfillment");
     setKpi("kpi-fees", econ.feeStack == null ? "—" : L.money(econ.feeStack), feeNote);
@@ -788,7 +789,16 @@
     return L.GREATWALL_CURRENT.shipments.map(function (n) { return L.money(n); }).join(" / ");
   }
 
-  function econHtml(econ) {
+  function npdEstimateHtml(d) {
+    if (!d || !d.npd || !L.STONE_NPD) return "";
+    var s = L.STONE_NPD;
+    if (d.id === s.stacking.id) {
+      return "<div class=\"banner\" id=\"npd-estimates\"><strong>ASSUMPTION, not Sellerboard.</strong> Sell price " + L.money(s.stacking.sell) + " (range " + L.money(s.stacking.bandLow) + "–" + L.money(s.stacking.bandHigh) + "). Wood kit. Alibaba FOB about $3.50–$3.70 for 16pc (10pc $2.30–$2.60). Landed " + L.money(s.stacking.landed) + " is the midpoint of $5–$7 and is the kit field. Duty 0% ASSUMPTION. CapEx PARKED. Sub-$20 ABS or silicone stays parked under about 1000 units a month. That volume is not assumed.</div>";
+    }
+    return "<div class=\"banner\" id=\"npd-estimates\"><strong>ASSUMPTION, not Sellerboard.</strong> Sell target " + L.money(s.stepping.sell) + " (range " + L.money(s.stepping.bandLow) + "–" + L.money(s.stepping.bandHigh) + "). Comp listings about $22.99–$49.99. Nest pack-out. Alibaba EXW: basic PP $5.80–$7.50; crab/nest $13.80–$20 per set. Landed " + L.money(s.stepping.landed) + " is the midpoint of $14–$18 and is the kit field. Duty 0% ASSUMPTION. CapEx PARKED.</div>";
+  }
+
+  function econHtml(econ, d) {
     var gw = L.GREATWALL;
     var cur = L.GREATWALL_CURRENT;
     var fee = L.FEE_MODEL;
@@ -827,12 +837,13 @@
     html += "<div id=\"greatwall-2023\"><h3>Oct 2023 invoice · history</h3>";
     html += "<p class=\"fine\">" + esc(gw.invoice) + ". Kit EXW " + L.money(gw.exw) + ", sea freight " + L.money(gw.seaFreight) + " per unit, Alibaba " + L.money(gw.alibabaFee) + " per unit, " + L.money(gw.beforeDuty) + " before duty. That stack is not the current sample default. Duty is not filled. HTS " + esc(gw.hts) + " is often 0% MFN and is not a rate on this page.</p></div>";
     html += "<h3>Rebuild" + (econ.activeMode === "rebuild" ? " · in use" : "") + "</h3>";
-    html += "<p class=\"fine\">Uses the EXW, freight, and Alibaba you typed. Blank freight counts as $0 in this arithmetic only. That zero is not a freight quote and not an allocation of a shipment.</p>";
+    if (d && d.npd) html += "<p class=\"fine\">The kit field is the landed ASSUMPTION midpoint. It is not Sellerboard Products Cost and not a factory EXW or FOB quote. Freight is not entered on top of it. Duty 0% is an ASSUMPTION, not an HTS ruling.</p>";
+    else html += "<p class=\"fine\">Uses the EXW, freight, and Alibaba you typed. Blank freight counts as $0 in this arithmetic only. That zero is not a freight quote and not an allocation of a shipment.</p>";
     if (econ.buildUp == null) {
       html += "<p class=\"empty\">EXW, freight, and Alibaba are blank. Set a current EXW or type a kit price. Freight $/unit stays empty until you enter it.</p>";
     } else {
       html += "<ul class=\"lines\">";
-      html += line(econ.costBasis + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
+      html += line((d && d.npd ? "Landed ASSUMPTION" : econ.costBasis) + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
       html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · not entered" : ""), econ.freight == null ? "Manual" : L.money(econ.freight));
       html += line("Alibaba fee" + (econ.alibaba == null ? " · blank as $0" : ""), L.money(econ.alibaba || 0));
       html += line("All-in before duty", L.money(econ.beforeDuty), true);
@@ -848,7 +859,7 @@
     }
     html += trackerHtml();
     html += "<p class=\"fine\">Size-tier fee model for " + fee.weightLb + " lb " + esc(fee.sizeTier) + " at " + L.money(fee.price) + ". Dims about " + fee.lengthIn + "×" + fee.widthIn + "×" + fee.heightIn + " in. Referral about " + L.money(fee.referral) + " (15%) + FBA fulfill about " + L.money(fee.fba) + " = about " + L.money(fee.combined) + ". Farm's tracker FBA is " + L.money(L.COGS_TRACKER.farm.fba) + " instead. Neither number is a live Fee Preview, and neither is added on top of Sep MTD blended fees.</p>";
-    if (econ.componentFees != null && econ.cogs != null) {
+    if (econ.componentFees != null && econ.cogs != null && !econ.feesUnfilled) {
       html += "<ul class=\"lines\">";
       html += line("Referral on this price" + (econ.referralPct == null ? " (blank as 0%)" : " " + L.pct(econ.referralPct)), L.money(econ.componentReferral));
       html += line("FBA fulfillment" + (econ.componentFba == null ? " · blank" : ""), econ.componentFba == null ? "—" : L.money(econ.componentFba));
@@ -870,7 +881,8 @@
       html += "</ul>";
     }
     if (econ.feeSource === "blended") html += "<p class=\"fine\">Referral and FBA fulfillment are not added on top of blended Amazon fees.</p>";
-    if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled EXW, freight, Alibaba, duty, AWD/storage, packaging, or spoilage count as zero in the rebuild. A blank duty rate is not a confirmed 0% HTS.</p>";
+    if (d && d.npd && econ.blanksAsZero) html += "<p class=\"fine\">Freight, Alibaba, AWD, packaging, and spoilage are blank and count as zero in this arithmetic only. That zero is not a freight quote. Duty 0% is an ASSUMPTION, not an HTS ruling.</p>";
+    else if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled EXW, freight, Alibaba, duty, AWD/storage, packaging, or spoilage count as zero in the rebuild. A blank duty rate is not a confirmed 0% HTS.</p>";
     html += "<p class=\"fine\">Not a live freight quote and not a customs ruling. $13.50 and $14.00 stay Sellerboard overrides. About " + esc(L.gapBandText()) + " is the EXW-to-Sellerboard band for ocean, duty, and inbound together. " + L.money(gw.beforeDuty) + " is the Oct 2023 invoice before duty, and it is not the current build-up.</p>";
     return html;
   }
@@ -1206,6 +1218,7 @@
       }
       store.baselinesSeeded = true;
       store.stoneNpdSeeded = true;
+      store.stoneEstimatesSeeded = true;
       if (!added) { toast("Baselines are already in the library"); return; }
       persist();
       toast("Baselines restored");
