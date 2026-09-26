@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -164,7 +164,7 @@
     var anySample = list.some(function (d) { return d.sample; });
     var sampleNote = "";
     if (anyBaseline) {
-      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on Products Cost $13.50. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. The Oct 2023 Greatwall invoice (EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty) is a second stack and is not added on top of Products Cost. Competitor tables stay empty until you paste Helium 10.</div>";
+      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on Products Cost $13.50. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. Both samples keep the live sell price $39.95. Fee Preview is not live, so the COGS Tracker (2026-07-22) is the fee default and does not replace those nets. Competitor tables stay empty until you paste Helium 10.</div>";
     }
     if (anySample) {
       sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
@@ -332,7 +332,7 @@
     var gw = L.GREATWALL;
     var fee = L.FEE_MODEL;
     return "<section class=\"panel\" id=\"china\" data-section><p class=\"kicker\">C · Landed cost</p><h2>China / landed cost <span class=\"stamp\">ESTIMATE</span></h2>" +
-      "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Mode 2</strong> rebuilds Greatwall " + esc(gw.invoice) + " (Oct 2023): EXW + sea freight + Alibaba + duty + AWD/storage, then the fee model (referral + FBA). Do not add Mode 2 freight on top of Products Cost. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed — that code is often 0% MFN and is not entered as a rate. Blended Amazon fees, when filled, replace referral plus FBA.</p>" +
+      "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Mode 2</strong> rebuilds Greatwall " + esc(gw.invoice) + " (Oct 2023): EXW + sea freight + Alibaba + duty + AWD/storage, then referral and FBA. Do not add Mode 2 freight on top of Products Cost. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed. Fee Preview is not live. The COGS Tracker (" + esc(L.COGS_TRACKER.asOf) + ") supplies the fee defaults, and both samples stay at the live sell price $39.95. Blended Amazon fees, when filled, replace that tracker split.</p>" +
       "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button><button type=\"button\" data-action=\"preset-invoice\">Load Greatwall waterfall</button></div>" +
       "<p class=\"fine\">Sellerboard presets fill Products Cost, blended fees, and reported net. They leave the invoice lines alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank. The Greatwall button fills EXW " + L.money(gw.exw) + ", sea freight " + L.money(gw.seaFreight) + ", Alibaba " + L.money(gw.alibabaFee) + " (" + L.money(gw.beforeDuty) + " before duty), clears duty back to blank, and sets FBA fulfillment to " + L.money(fee.fba) + ". It does not change Products Cost.</p>" +
       "<div class=\"split\"><div class=\"fields cols-3\">" +
@@ -342,7 +342,8 @@
       field("Sea freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "4.24" })) +
       field("Alibaba fee / unit ($)", textInput("china.alibabaFee", c.alibabaFee, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "0.35" })) +
       field("Duty %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Blank until HTS confirmed" })) +
-      field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Not on the invoice" })) +
+      field("Inbound placement ($)", textInput("china.inboundPlacement", c.inboundPlacement, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "0 in COGS tracker" })) +
+      field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "No AWD Drive export" })) +
       field("Shipping mode", selectBox("china.shippingMode", c.shippingMode, [["sea", "Sea"], ["air", "Air"]])) +
       field("Weight (lb)", textInput("china.weightLb", c.weightLb, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "3.3" })) +
       field("Length (in)", textInput("china.lengthIn", c.lengthIn, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "13.39" })) +
@@ -352,7 +353,7 @@
       field("Packaging ($)", textInput("china.packaging", c.packaging, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional" })) +
       field("Spoilage buffer %", textInput("china.spoilagePct", c.spoilagePct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Optional" })) +
       field("Blended Amazon fees ($)", textInput("china.amazonFeesBlended", c.amazonFeesBlended, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Sep MTD, per unit" })) +
-      field("FBA fulfillment ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "7.38 fee model" })) +
+      field("FBA fulfillment ($)", textInput("overview.fbaFees", o.fbaFees, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "7.55 Farm tracker, or 7.38 size tier" })) +
       field("Referral %", textInput("china.referralPct", c.referralPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "~15 planning rate" })) +
       field("Ads / TACOS % (optional)", textInput("china.tacosPct", c.tacosPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Not the Sellerboard gap" })) +
       field("Sellerboard net ($ / unit)", textInput("china.reportedNet", c.reportedNet, { type: "number", kind: "signed", step: "0.01", placeholder: "Sep MTD, can be negative" })) +
@@ -729,6 +730,31 @@
     return "<li" + (total ? " class=\"total\"" : "") + "><span>" + esc(label) + "</span><span>" + esc(value) + "</span></li>";
   }
 
+  function trackerHtml() {
+    var t = L.COGS_TRACKER;
+    var math = L.cogsTrackerMath();
+    var m = t.mermaid;
+    var f = t.farm;
+    return "<h3>COGS Tracker defaults</h3>" +
+      "<p class=\"fine\">" + esc(t.source) + ", " + esc(t.asOf) + ". Fee Preview is not live, so this is the fee default. It does not replace Sep MTD blended fees or Sellerboard net. Inbound placement is " + L.money(t.inboundPlacement) + ". No AWD Drive export, so AWD/storage stays blank unless you type one.</p>" +
+      "<ul class=\"lines\">" +
+      line("Mermaid at live " + L.money(m.price), "COGS " + L.money(m.cogs)) +
+      line("Modeled profit before ads", L.money(m.profitBeforeAds) + " · " + m.profitBeforeAdsPct + "%") +
+      line("Modeled profit with CPA", L.money(m.profitWithCpa) + " · " + m.profitWithCpaPct + "%") +
+      line("Implied fees (price − COGS − profit before ads)", L.money(math.mermaidImpliedFees) + " · not an FBA/referral split") +
+      line("CPA difference in that model", L.money(math.mermaidCpaGap)) +
+      line(m.olderSource, "COGS " + L.money(m.olderCogs) + " · fees/u " + L.money(m.olderFees) + " · profit " + L.money(m.olderProfit) + " · older, not current") +
+      line("Farm tracker row at " + L.money(f.modeledPrice) + " (not the live price)", "0 units") +
+      line("Farm FBA fulfill on that row", L.money(f.fba)) +
+      line("Farm referral on that row", L.money(f.referralAtModeled)) +
+      line("Farm profit on that row", L.money(f.profitAtModeled) + " · " + f.profitAtModeledPct + "%") +
+      line("Live sell price for the sample", L.money(f.livePrice)) +
+      line("Referral scaled to 15% of live price", L.money(f.liveReferral)) +
+      line("Live price with tracker FBA + scaled referral", L.money(math.farmLiveBeforeAds) + " before ads · not Sellerboard net") +
+      line("Inbound placement", L.money(t.inboundPlacement) + " · not AWD") +
+      "</ul>";
+  }
+
   function econHtml(econ) {
     var gw = L.GREATWALL;
     var fee = L.FEE_MODEL;
@@ -770,12 +796,14 @@
       html += line("Versus Farm $14.00", L.money(econ.gapVsFarmCost) + " · not reconciled");
       html += "</ul>";
     }
-    html += "<p class=\"fine\">Fee model for " + fee.weightLb + " lb " + esc(fee.sizeTier) + " at " + L.money(fee.price) + ". Dims about " + fee.lengthIn + "×" + fee.widthIn + "×" + fee.heightIn + " in. Referral about " + L.money(fee.referral) + " (15%) + FBA fulfill about " + L.money(fee.fba) + " = about " + L.money(fee.combined) + ". Not the Sep MTD blended fee.</p>";
+    html += trackerHtml();
+    html += "<p class=\"fine\">Size-tier fee model for " + fee.weightLb + " lb " + esc(fee.sizeTier) + " at " + L.money(fee.price) + ". Dims about " + fee.lengthIn + "×" + fee.widthIn + "×" + fee.heightIn + " in. Referral about " + L.money(fee.referral) + " (15%) + FBA fulfill about " + L.money(fee.fba) + " = about " + L.money(fee.combined) + ". Farm's tracker FBA is " + L.money(L.COGS_TRACKER.farm.fba) + " instead. Neither number is a live Fee Preview, and neither is added on top of Sep MTD blended fees.</p>";
     if (econ.componentFees != null) {
       html += "<ul class=\"lines\">";
       html += line("Referral on this price" + (econ.referralPct == null ? " (blank as 0%)" : " " + L.pct(econ.referralPct)), L.money(econ.componentReferral));
       html += line("FBA fulfillment" + (econ.componentFba == null ? " · blank" : ""), econ.componentFba == null ? "—" : L.money(econ.componentFba));
-      html += line("Referral + FBA", L.money(econ.componentFees) + (econ.feeSource === "blended" ? " · not added to blended fees" : ""));
+      html += line("Inbound placement" + (econ.inboundPlacement == null ? " · blank" : ""), econ.inboundPlacement == null ? "—" : L.money(econ.inboundPlacement) + " · tracker default is $0, not AWD");
+      html += line("Referral + FBA + inbound placement", L.money(econ.componentFees) + (econ.feeSource === "blended" ? " · not added to blended fees" : ""));
       if (econ.rebuildContribution != null) html += line("Rebuild contribution", L.money(econ.rebuildContribution) + " · not the Sellerboard net");
       if (econ.activeMode === "rebuild" && econ.contribution != null) {
         html += line("Contribution at " + L.money(econ.price), L.money(econ.contribution) + " · " + L.pct(econ.contributionPct), true);

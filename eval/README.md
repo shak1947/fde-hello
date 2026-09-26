@@ -37,7 +37,19 @@ Dollar outputs on the China section are labeled **ESTIMATE**. They are not freig
 
 Do not add Mode 2 freight on top of Products Cost. The gap between $15.24 and the Sellerboard Products Cost is not reconciled.
 
-**Fee model** for a 3.3 lb Large Standard at $39.95 (about 13.39×8.47×2.76 in): referral about $5.99 (15%) + FBA fulfillment about $7.38 = about $13.37. On the baselines this model is visible and is not added on top of the Sep MTD blended fees.
+**Fee model** for a 3.3 lb Large Standard at $39.95 (about 13.39×8.47×2.76 in): referral about $5.99 (15%) + FBA fulfillment about $7.38 = about $13.37. On the baselines this size-tier line is visible and is not added on top of the Sep MTD blended fees.
+
+**COGS Tracker defaults** (Drive, 2026-07-22), used when Fee Preview is not live. Both UI samples keep the live sell price **$39.95**.
+
+| | Mermaid `KIT-MERMAID` | Farm `35-ZREI-MJZW` |
+| --- | --- | --- |
+| Tracker price | $39.95 (live) | Modeled at **$35.95**, not the live price. 0 units on that row. |
+| COGS | $13.50 | $14.00 |
+| Fees | Implied $14.76 from the profit below. Not an FBA/referral split. | FBA fulfill $7.55, referral $5.39 on the $35.95 row. At $39.95, referral scales to about $5.99 (15%). FBA stays $7.55. |
+| Profit | $11.69 (29.3%) before ads. $8.09 (20.2%) with CPA. | $9.01 (25.1%) on the $35.95 row. |
+| Older sheet | June 2025 Inventory: COGS $13.03, fees/unit $13.39, profit $11.74. Not the current COGS. | |
+
+Inbound placement is **$0** in the tracker. There is no AWD Drive export, so AWD/storage stays blank. These tracker lines do not replace Sep MTD blended fees or Sellerboard net.
 
 ## First visit
 

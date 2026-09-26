@@ -79,7 +79,8 @@
       listPrice: null,
       productsCost: 13.5,
       amazonFeesBlended: 14.12,
-      reportedNet: 8.9
+      reportedNet: 8.9,
+      trackerFba: null
     },
     farm: {
       id: "baseline-farm-dough",
@@ -90,7 +91,8 @@
       listPrice: 49.95,
       productsCost: 14,
       amazonFeesBlended: 18,
-      reportedNet: -3.77
+      reportedNet: -3.77,
+      trackerFba: 7.55
     }
   };
 
@@ -123,6 +125,53 @@
     fba: 7.38,
     combined: 13.37
   };
+
+  /* COGS Tracker (Drive), 2026-07-22. Use when Amazon Fee Preview is not live.
+     Mermaid is modeled at the live $39.95. Farm's tracker row is modeled at
+     $35.95 with 0 units; the sample sell price stays $39.95 and referral is
+     scaled to 15% of that price. Inbound placement is $0. There is no AWD export.
+     June 2025 Inventory figures are older and are not the current COGS. */
+  var COGS_TRACKER = {
+    asOf: "2026-07-22",
+    source: "COGS Tracker (Drive)",
+    inboundPlacement: 0,
+    awdExport: false,
+    mermaid: {
+      price: 39.95,
+      cogs: 13.5,
+      profitBeforeAds: 11.69,
+      profitBeforeAdsPct: 29.3,
+      profitWithCpa: 8.09,
+      profitWithCpaPct: 20.2,
+      olderAsOf: "2025-06",
+      olderSource: "June 2025 Inventory sheet",
+      olderCogs: 13.03,
+      olderFees: 13.39,
+      olderProfit: 11.74
+    },
+    farm: {
+      modeledPrice: 35.95,
+      livePrice: 39.95,
+      cogs: 14,
+      fba: 7.55,
+      referralAtModeled: 5.39,
+      profitAtModeled: 9.01,
+      profitAtModeledPct: 25.1,
+      units: 0,
+      liveReferral: 5.99
+    }
+  };
+
+  function cogsTrackerMath() {
+    var m = COGS_TRACKER.mermaid;
+    var f = COGS_TRACKER.farm;
+    return {
+      mermaidImpliedFees: roundCents(m.price - m.cogs - m.profitBeforeAds),
+      mermaidCpaGap: roundCents(m.profitBeforeAds - m.profitWithCpa),
+      farmModeledProfit: roundCents(f.modeledPrice - f.cogs - f.fba - f.referralAtModeled),
+      farmLiveBeforeAds: roundCents(f.livePrice - f.cogs - f.fba - f.liveReferral)
+    };
+  }
 
   var FICTIONAL_IDS = {
     "sample-pebble-calm-mini": true,
@@ -263,6 +312,7 @@
       freightPerUnit: null,
       alibabaFee: null,
       dutyPct: null,
+      inboundPlacement: null,
       amazonInbound: null,
       weightLb: null,
       lengthIn: null,
@@ -372,7 +422,8 @@
     d.overview.bsr = "";
     d.overview.reviewCount = null;
     d.overview.rating = null;
-    d.overview.fbaFees = FEE_MODEL.fba;
+    d.overview.fbaFees = spec.trackerFba != null ? spec.trackerFba : FEE_MODEL.fba;
+    d.china.inboundPlacement = COGS_TRACKER.inboundPlacement;
     d.china.unitCost = GREATWALL.exw;
     d.china.freightPerUnit = GREATWALL.seaFreight;
     d.china.alibabaFee = GREATWALL.alibabaFee;
@@ -404,8 +455,8 @@
     var d = blankDossier();
     fillBaselineShell(d, spec);
     d.updatedAt = "2026-09-26T18:00:00.000Z";
-    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Sell $39.95. Mode 1 uses Products Cost $13.50. Sep MTD Amazon fees about $14.12 per unit. Sep MTD net about +$8.90 per unit (about 22% of price). Healthy baseline. Mode 2 is the Oct 2023 Greatwall invoice " + GREATWALL.invoice + ": kit EXW $10.65 (Mermaid/Unicorn; Farm is the same architecture), sea freight $4.24, Alibaba $0.35, $15.24 before duty. That freight is not added on top of Products Cost. Duty is blank pending HTS confirmation. No BSR, review count, or competitor sales in this snapshot.";
-    d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $13.50. Do not add sea freight on top of it. Mode 2 is Greatwall " + GREATWALL.invoice + " (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. AWD/storage is blank. Fee model for 3.3 lb Large Standard at $39.95: referral about $5.99 (15%) + FBA about $7.38 = about $13.37. Dims about 13.39×8.47×2.76 in. Sep MTD blended fees about $14.12 replace that fee model on the contribution line. The $13.50 versus $15.24 difference is not reconciled. The gap to reported net is not an ad cost.";
+    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Live sell price $39.95. Mode 1 uses Products Cost $13.50. Sep MTD Amazon fees about $14.12 per unit. Sep MTD net about +$8.90 per unit (about 22% of price). Healthy baseline. Fee Preview is not live. COGS Tracker " + COGS_TRACKER.asOf + " models profit $11.69 (29.3%) before ads and $8.09 (20.2%) with CPA. Mode 2 is the Oct 2023 Greatwall invoice " + GREATWALL.invoice + ": kit EXW $10.65 (Mermaid/Unicorn; Farm is the same architecture), sea freight $4.24, Alibaba $0.35, $15.24 before duty. That freight is not added on top of Products Cost. Duty is blank pending HTS confirmation. No BSR, review count, or competitor sales in this snapshot.";
+    d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $13.50. Do not add sea freight on top of it. Mode 2 is Greatwall " + GREATWALL.invoice + " (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. AWD/storage is blank — no AWD Drive export. Fee Preview is not live. COGS Tracker " + COGS_TRACKER.asOf + " at the live $39.95: modeled profit $11.69 (29.3%) before ads, $8.09 (20.2%) with CPA, on COGS $13.50. Implied fees are $14.76 (price minus COGS minus profit before ads), not an FBA versus referral split. June 2025 Inventory had older COGS $13.03, fees per unit $13.39, profit $11.74. Inbound placement is $0 in the tracker. Size-tier fee model remains referral about $5.99 + FBA about $7.38. Sep MTD blended fees about $14.12 stay the fees in use. The $13.50 versus $15.24 difference is not reconciled. The gap to reported net is not an ad cost.";
     d.maker.why = "Healthy baseline. Sep 2026 MTD Sellerboard net about +$8.90 per unit on a $39.95 sell price after Products Cost $13.50 and Amazon fees about $14.12. The Greatwall invoice rebuild is a second mode and is not added to that cost.";
     d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
     d.moat.ourPlan = "Use this listing as the healthy comparison unit: net about +$8.90 per unit. Products Cost $13.50 stays the cost in use. The Oct 2023 invoice waterfall is visible beside it and is not a second freight charge.";
@@ -418,8 +469,8 @@
     var d = blankDossier();
     fillBaselineShell(d, spec);
     d.updatedAt = "2026-09-26T17:00:00.000Z";
-    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Sell $39.95, compare-at/list $49.95. SKU 35-ZREI-MJZW. Mode 1 uses Products Cost $14.00. Sep MTD Amazon fees about $18 per unit blended. Ads are high; ad dollars are not broken out. Sep MTD net about −$3.77 per unit. Conditional and underwater at current ads and fees. Mode 2 uses the same Oct 2023 Greatwall kit architecture as Mermaid: EXW $10.65, sea freight $4.24, Alibaba $0.35, $15.24 before duty. That freight is not added on top of Products Cost.";
-    d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $14.00. Do not add sea freight on top of it. Mode 2 is the same Greatwall " + GREATWALL.invoice + " architecture as Mermaid (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. Fee model: referral about $5.99 + FBA about $7.38. Sep MTD blended fees about $18 replace that model on the contribution line. Ads are high only — there is no TACOS dollar. The $14.00 versus $15.24 difference is not reconciled. The gap versus reported net is not an ad-cost measure.";
+    d.overview.notes = "Sellerboard baseline " + BASELINES.asOf + " (" + BASELINES.source + "). Live sell price $39.95, compare-at/list $49.95. SKU 35-ZREI-MJZW. Mode 1 uses Products Cost $14.00. Sep MTD Amazon fees about $18 per unit blended. Ads are high; ad dollars are not broken out. Sep MTD net about −$3.77 per unit. Conditional and underwater at current ads and fees. Fee Preview is not live. The COGS Tracker " + COGS_TRACKER.asOf + " row is modeled at $35.95, not this sell price: FBA fulfill $7.55, referral $5.39, profit $9.01 (25.1%), 0 units. Referral at the live $39.95 is about $5.99 (15%). Mode 2 uses the same Oct 2023 Greatwall kit architecture as Mermaid: EXW $10.65, sea freight $4.24, Alibaba $0.35, $15.24 before duty. That freight is not added on top of Products Cost.";
+    d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $14.00. Do not add sea freight on top of it. Mode 2 is the same Greatwall " + GREATWALL.invoice + " architecture as Mermaid (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. AWD/storage is blank — no AWD Drive export. Fee Preview is not live. COGS Tracker " + COGS_TRACKER.asOf + " modeled this SKU at $35.95 (not the live $39.95): FBA fulfill $7.55, referral $5.39, profit $9.01 (25.1%), 0 units. Sample sell price stays $39.95. Referral scaled to 15% is about $5.99. FBA fulfill stays $7.55. Inbound placement is $0. Sep MTD blended fees about $18 stay the fees in use. Ads are high only — there is no TACOS dollar. The $14.00 versus $15.24 difference is not reconciled. The gap versus reported net is not an ad-cost measure.";
     d.maker.why = "Underwater at current ads and fees. Sep 2026 MTD Sellerboard net about −$3.77 per unit on a $39.95 sell price (compare-at $49.95) after Products Cost $14.00 and Amazon fees about $18 per unit. A reorder is Conditional until that stack changes. The Greatwall invoice rebuild is not added on top of Products Cost.";
     d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
     d.moat.ourPlan = "At current ads and fees the unit is underwater (net about −$3.77). Treat a reorder as Conditional until the fee and ad stack changes. Products Cost $14.00 stays the cost in use. The invoice waterfall is the same kit architecture as Mermaid and is not a second freight charge.";
@@ -484,6 +535,32 @@
       if (d.moat) d.moat.ourPlan = fresh.moat.ourPlan;
     }
     return true;
+  }
+
+  function patchCogsTracker(d) {
+    if (!d || (d.id !== BASELINES.mermaid.id && d.id !== BASELINES.farm.id)) return false;
+    if (!d.china || !d.overview) return false;
+    var fresh = d.id === BASELINES.mermaid.id ? sampleMermaid() : sampleFarm();
+    var changed = false;
+    if (d.china.inboundPlacement == null) {
+      d.china.inboundPlacement = COGS_TRACKER.inboundPlacement;
+      changed = true;
+    }
+    if (d.id === BASELINES.farm.id && (d.overview.fbaFees == null || d.overview.fbaFees === FEE_MODEL.fba)) {
+      d.overview.fbaFees = COGS_TRACKER.farm.fba;
+      changed = true;
+    }
+    if (d.overview.price == null) {
+      d.overview.price = fresh.overview.price;
+      changed = true;
+    }
+    var note = d.china.notes || "";
+    if (note.indexOf("COGS Tracker") < 0 && note.indexOf(GREATWALL.invoice) >= 0) {
+      d.china.notes = fresh.china.notes;
+      d.overview.notes = fresh.overview.notes;
+      changed = true;
+    }
+    return changed;
   }
 
   function scoreSummary(criteria) {
@@ -587,6 +664,7 @@
     var freight = numOrNull(china.freightPerUnit);
     var alibaba = numOrNull(china.alibabaFee);
     var dutyPct = numOrNull(china.dutyPct);
+    var placement = numOrNull(china.inboundPlacement);
     var inbound = numOrNull(china.amazonInbound);
     var packaging = numOrNull(china.packaging);
     var spoilagePct = numOrNull(china.spoilagePct);
@@ -604,6 +682,7 @@
       freight: freight,
       alibaba: alibaba,
       dutyPct: dutyPct,
+      inboundPlacement: placement,
       inbound: inbound,
       packaging: packaging,
       spoilagePct: spoilagePct,
@@ -700,8 +779,9 @@
       } else {
         var refPct = referralPct == null ? 0 : referralPct;
         var fbaUsed = fba == null ? 0 : fba;
+        var placementUsed = placement == null ? 0 : placement;
         result.referral = price * refPct / 100;
-        result.feeStack = result.referral + fbaUsed;
+        result.feeStack = result.referral + fbaUsed + placementUsed;
         result.feeSource = "components";
         result.referralApplied = true;
       }
@@ -716,9 +796,10 @@
     if (price != null && price > 0) {
       var refPctShown = referralPct == null ? 0 : referralPct;
       var fbaShown = fba == null ? 0 : fba;
+      var placementShown = placement == null ? 0 : placement;
       result.componentReferral = roundCents(price * refPctShown / 100);
       result.componentFba = fba;
-      result.componentFees = roundCents(result.componentReferral + fbaShown);
+      result.componentFees = roundCents(result.componentReferral + fbaShown + placementShown);
       result.componentFeesPartial = referralPct == null || fba == null;
       if (result.buildUp != null && fba != null && referralPct != null) {
         result.rebuildContribution = roundCents(price - result.buildUp - result.componentFees);
@@ -842,7 +923,7 @@
       var strong = rubric.band.id === "go" ? " (Strong GO)" : "";
       parts.push("Verdict " + rubric.band.label + strong + " at " + formatHundredths(rubric.hundredths) + ".");
     }
-    if (d.baseline) parts.push("Repeat, gift, and OT-fit on this baseline are product-type starters, not Sellerboard measures. The measured margin row is the Sellerboard net. Competition, reviews, size, repack, and moat are unknown. Duty is blank until the HTS is confirmed.");
+    if (d.baseline) parts.push("Repeat, gift, and OT-fit on this baseline are product-type starters, not Sellerboard measures. The measured margin row is the Sellerboard net. Fee Preview is not live, so the COGS Tracker defaults do not replace that net. Competition, reviews, size, repack, and moat are unknown. Duty is blank until the HTS is confirmed.");
     var coreBits = [];
     ["repeat", "gift", "size", "repack", "moat"].forEach(function (id) {
       var c = findCriterion(d, id);
@@ -1096,6 +1177,7 @@
         freightPerUnit: clampNum(chinaIn.freightPerUnit, 0, 100000),
         alibabaFee: clampNum(chinaIn.alibabaFee, 0, 100000),
         dutyPct: clampNum(chinaIn.dutyPct, 0, 100),
+        inboundPlacement: clampNum(chinaIn.inboundPlacement, 0, 100000),
         amazonInbound: clampNum(chinaIn.amazonInbound, 0, 100000),
         weightLb: clampNum(chinaIn.weightLb, 0, 1000),
         lengthIn: clampNum(chinaIn.lengthIn, 0, 1000),
@@ -1163,7 +1245,12 @@
               if (patchShippedBaseline(dossiers[p])) patched = true;
             }
           }
-          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
+          if (data.cogsTrackerSeeded !== true) {
+            for (var t = 0; t < dossiers.length; t++) {
+              if (patchCogsTracker(dossiers[t])) patched = true;
+            }
+          }
+          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
         }
         var seeded = seedBaselines(dossiers);
         return {
@@ -1171,13 +1258,14 @@
           dossiers: seeded.dossiers,
           baselinesSeeded: true,
           waterfallSeeded: true,
+          cogsTrackerSeeded: true,
           migrated: false,
           upgraded: true,
           fresh: false,
           replacedFiction: seeded.replaced
         };
       } catch (err) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
     if (rawV1 != null && rawV1 !== "") {
@@ -1192,14 +1280,14 @@
           if (d) kept.push(d);
         }
         if (!kept.length) {
-          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
+          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
         }
-        return { version: 1, dossiers: kept, baselinesSeeded: true, waterfallSeeded: true, migrated: true, fresh: false, replacedFiction: false };
+        return { version: 1, dossiers: kept, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: true, fresh: false, replacedFiction: false };
       } catch (err2) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
-    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, migrated: false, fresh: true };
+    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true };
   }
 
   function duplicateDossier(d) {
@@ -1605,7 +1693,10 @@
     check("farm underwater", farmEcon.marginScore === 1 && farmEcon.commercial.id === "underwater");
     check("farm rubric conditional", farmScore.num === 59 && farmScore.den === 17 && farmScore.hundredths === 347 && farmScore.band.id === "conditional");
     check("farm list", farm.overview.listPrice === 49.95 && farm.overview.sku === "35-ZREI-MJZW" && farm.asinOrUrl === "B0GCTV28TN");
-    check("farm same kit architecture", farm.china.unitCost === 10.65 && farm.china.freightPerUnit === 4.24 && farm.china.alibabaFee === 0.35 && farm.china.dutyPct == null && farm.overview.fbaFees === 7.38 && farmEcon.activeMode === "sellerboard" && Math.abs(farmEcon.beforeDuty - 15.24) < 1e-9);
+    check("farm same kit architecture", farm.china.unitCost === 10.65 && farm.china.freightPerUnit === 4.24 && farm.china.alibabaFee === 0.35 && farm.china.dutyPct == null && farm.china.amazonInbound == null && farm.overview.fbaFees === 7.55 && farm.overview.price === 39.95 && farmEcon.activeMode === "sellerboard" && Math.abs(farmEcon.beforeDuty - 15.24) < 1e-9);
+    var trackerMath = cogsTrackerMath();
+    check("mermaid tracker model", mermaid.overview.price === 39.95 && mermaid.china.inboundPlacement === 0 && trackerMath.mermaidImpliedFees === 14.76 && trackerMath.mermaidCpaGap === 3.6 && mermaidEcon.feeStack === 14.12 && mermaidEcon.componentFees === 13.37);
+    check("farm tracker model", farm.china.inboundPlacement === 0 && farm.maker.monthlyUnits == null && trackerMath.farmModeledProfit === 9.01 && trackerMath.farmLiveBeforeAds === 12.41 && roundCents(COGS_TRACKER.farm.modeledPrice * 0.15) === 5.39 && farmEcon.componentReferral === 5.99 && farmEcon.componentFba === 7.55 && farmEcon.componentFees === 13.54 && farmEcon.feeSource === "blended");
     check("farm no tacos", farm.china.tacosPct == null && farmEcon.afterAds == null);
     var farmBrief = decisionBrief(farm);
     check("farm brief conditional", farmBrief.indexOf("Underwater") >= 0 && farmBrief.indexOf("Conditional") >= 0);
@@ -1690,7 +1781,34 @@
     waterfallOld.dossiers[0].china.freightPerUnit = null;
     waterfallOld.dossiers[0].china.alibabaFee = null;
     var waterfallAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, dossiers: waterfallOld.dossiers }), null);
-    check("waterfall flag sticks", !waterfallAgain.upgraded && waterfallAgain.dossiers[0].china.unitCost == null);
+    check("waterfall flag sticks", !waterfallAgain.upgraded && waterfallAgain.dossiers[0].china.unitCost == null && waterfallAgain.cogsTrackerSeeded && waterfallAgain.dossiers[0].china.inboundPlacement === 0);
+    var trackerOld = storeFromStorage(JSON.stringify({
+      version: 1,
+      baselinesSeeded: true,
+      waterfallSeeded: true,
+      dossiers: [{
+        id: "baseline-farm-dough",
+        productName: "Farm dough",
+        baseline: true,
+        date: "2026-09-26",
+        overview: { price: 39.95, sku: "35-ZREI-MJZW", fbaFees: 7.38 },
+        china: {
+          productsCost: 14,
+          amazonFeesBlended: 18,
+          reportedNet: -3.77,
+          unitCost: 10.65,
+          freightPerUnit: 4.24,
+          alibabaFee: 0.35,
+          notes: "Mode 2 is Greatwall SENSORY KITGW20231012."
+        }
+      }]
+    }), null);
+    check("cogs tracker patch", trackerOld.upgraded && trackerOld.cogsTrackerSeeded && trackerOld.dossiers[0].overview.price === 39.95 && trackerOld.dossiers[0].overview.fbaFees === 7.55 && trackerOld.dossiers[0].china.inboundPlacement === 0 && trackerOld.dossiers[0].china.amazonInbound == null && trackerOld.dossiers[0].china.notes.indexOf("COGS Tracker") >= 0 && trackerOld.dossiers[0].china.notes.indexOf("$35.95") >= 0);
+    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, dossiers: [{
+      id: "baseline-farm-dough", productName: "Farm dough", baseline: true, date: "2026-09-26",
+      overview: { price: 39.95, fbaFees: 8 }, china: { inboundPlacement: 0, unitCost: 10.65, notes: "edited" }
+    }] }), null);
+    check("cogs tracker flag sticks", !trackerAgain.upgraded && trackerAgain.dossiers[0].overview.fbaFees === 8 && trackerAgain.dossiers[0].china.notes === "edited");
 
     var blankEcon = economics(blankDossier());
     check("blank landed null", blankEcon.landed == null && blankEcon.contribution == null);
@@ -1714,6 +1832,8 @@
     BASELINES: BASELINES,
     GREATWALL: GREATWALL,
     FEE_MODEL: FEE_MODEL,
+    COGS_TRACKER: COGS_TRACKER,
+    cogsTrackerMath: cogsTrackerMath,
     clampWeight: clampWeight,
     clampScore: clampScore,
     hundredthsOf: hundredthsOf,
