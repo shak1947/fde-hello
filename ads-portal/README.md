@@ -126,4 +126,4 @@ Open `http://localhost:3000/ads`. Set `ADS_PORTAL_PASSWORD` in `.env.local` (git
 
 ## Existing pages
 
-`/` is `public/legacy-home.html` (rewrite). `/eval` is `public/eval/index.html`. Do not put an `app/page.tsx` over `/`, or the bio gate will stop loading.
+`/` is `public/legacy-home.html` (rewrite). `/eval` is the product dossier in `eval/`, served by the Next route (stepping stones, stacking rocks, and the competitor tables). Do not put an `app/page.tsx` over `/`, or the bio gate will stop loading.
