@@ -7,6 +7,12 @@ export type MatchType = (typeof MATCH_TYPES)[number];
 export const TARGETING_TYPES = ["MANUAL", "AUTO"] as const;
 export type TargetingType = (typeof TARGETING_TYPES)[number];
 
+export const NEGATIVE_MATCH_TYPES = ["NEGATIVE_EXACT", "NEGATIVE_PHRASE", "NEGATIVE_BROAD"] as const;
+export type NegativeMatchType = (typeof NEGATIVE_MATCH_TYPES)[number];
+
+export const NEGATIVE_SCOPES = ["CAMPAIGN", "AD_GROUP"] as const;
+export type NegativeScope = (typeof NEGATIVE_SCOPES)[number];
+
 export type Keyword = {
   keywordId: string;
   campaignId: string;
@@ -16,6 +22,48 @@ export type Keyword = {
   bid: number;
   state: DeliveryState;
   negative: boolean;
+};
+
+export type NegativeEntry = {
+  entryId: string;
+  campaignId: string;
+  adGroupId: string;
+  scope: NegativeScope;
+  kind: "KEYWORD" | "ASIN";
+  value: string;
+  matchType: NegativeMatchType | "ASIN_SAME_AS";
+  state: DeliveryState;
+};
+
+export type ProductTarget = {
+  targetId: string;
+  campaignId: string;
+  adGroupId: string;
+  asin: string;
+  bid: number;
+  state: DeliveryState;
+};
+
+export type ProductAd = {
+  adId: string;
+  campaignId: string;
+  adGroupId: string;
+  asin: string;
+  sku: string;
+  state: DeliveryState;
+};
+
+export type SearchTerm = {
+  searchTerm: string;
+  campaignId: string;
+  campaignName: string;
+  adGroupId: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  sales: number;
+  orders: number;
+  sample: boolean;
 };
 
 export type Campaign = {
@@ -31,6 +79,9 @@ export type Campaign = {
   simulated: boolean;
   adGroupId: string;
   keywords: Keyword[];
+  negatives: NegativeEntry[];
+  productTargets: ProductTarget[];
+  productAds: ProductAd[];
 };
 
 export type CreateCampaignAction = {
@@ -75,12 +126,80 @@ export type UpsertKeywordsAction = {
   keywords: KeywordInput[];
 };
 
+export type UpdateKeywordAction = {
+  type: "update_keyword";
+  campaignId: string;
+  keywordId: string;
+  bid?: number;
+  state?: DeliveryState;
+};
+
+export type AddKeywordAction = {
+  type: "add_keyword";
+  campaignId: string;
+  adGroupId?: string;
+  keywordText: string;
+  matchType: MatchType;
+  bid: number;
+  state: DeliveryState;
+};
+
+export type AddNegativeAction = {
+  type: "add_negative";
+  campaignId: string;
+  adGroupId?: string;
+  scope: NegativeScope;
+  kind: "KEYWORD" | "ASIN";
+  keywordText?: string;
+  matchType?: NegativeMatchType;
+  asin?: string;
+  state: DeliveryState;
+};
+
+export type ApplySearchTermAction = {
+  type: "apply_search_term";
+  campaignId: string;
+  adGroupId?: string;
+  searchTerm: string;
+  as: "KEYWORD" | "NEGATIVE_KEYWORD" | "NEGATIVE_ASIN";
+  matchType: MatchType | NegativeMatchType;
+  bid?: number;
+  scope?: NegativeScope;
+  state: DeliveryState;
+};
+
+export type UpsertProductTargetAction = {
+  type: "upsert_product_target";
+  campaignId: string;
+  adGroupId?: string;
+  targetId?: string;
+  asin: string;
+  bid?: number;
+  state: DeliveryState;
+};
+
+export type ManageProductAdAction = {
+  type: "manage_product_ad";
+  campaignId: string;
+  adGroupId?: string;
+  adId?: string;
+  asin?: string;
+  sku?: string;
+  state: DeliveryState;
+};
+
 export type AdsAction =
   | CreateCampaignAction
   | UpdateCampaignAction
   | SetBudgetAction
   | SetCampaignStateAction
-  | UpsertKeywordsAction;
+  | UpsertKeywordsAction
+  | UpdateKeywordAction
+  | AddKeywordAction
+  | AddNegativeAction
+  | ApplySearchTermAction
+  | UpsertProductTargetAction
+  | ManageProductAdAction;
 
 export type Actor = {
   id: string;

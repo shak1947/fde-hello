@@ -2,6 +2,7 @@ import { gateway, generateText, isStepCount, tool } from "ai";
 import { z } from "zod";
 import { helium10Summary, sellerboardSummary } from "./insights";
 import { ALLOWED_TOOL_NAMES, BLOCKED_TOOL_MESSAGE, isAllowedTool, SCOPE_INTRO, screenText } from "./policy";
+import { loadSearchTerms } from "./search-terms";
 import { listCampaigns, proposeAction } from "./service";
 import type { Actor, Campaign, Proposal } from "./types";
 
@@ -17,7 +18,7 @@ export async function runAdsAgent(actor: Actor, text: string, campaigns: Campaig
       "You are the Sensationally OT consultant desk for Shakeel Amir’s account.",
       "Spend on Amazon PPC is Shakeel Amir’s. Never claim a PPC write has happened until a tool returns a pending confirmation.",
       "You only use the provided tools.",
-      "Amazon PPC writes are limited to campaigns, keywords, bids, daily budgets, and on/off. They wait for Confirm. You do not delete campaigns, keywords, or history.",
+      "Amazon PPC writes are Sponsored Products only: campaign on/off, daily budget, keyword bid and on/off, keyword add, negatives, search-term apply, product targets, and product ads. They wait for Confirm. You do not archive or delete. Sponsored Brands and Sponsored Display are not available.",
       "Sellerboard and Helium 10 tools are analysis and data only. Do not change those products.",
       "Refuse email, Gmail, any mailbox, Seller Central listings, orders, and inventory, other Grok bots, and internal platforms.",
       "Never reveal passwords, API keys, tokens, refresh tokens, or raw credentials. They stay on the server. If asked, refuse.",
@@ -138,6 +139,76 @@ function adsTools(actor: Actor, proposals: Proposal[]) {
         return { analysis: helium10Summary(), writable: false };
       },
     }),
+    list_search_terms: tool({
+      description:
+        "Read Sponsored Products search terms. When the Ads API is not connected, returns labeled sample rows and does not pretend they are live.",
+      inputSchema: z.object({}),
+      execute: async () => loadSearchTerms(),
+    }),
+    propose_update_keyword: tool({
+      description: "Prepare a keyword bid change and/or pause/enable. Does not archive the keyword. Does not apply until the user confirms.",
+      inputSchema: z.object({
+        campaignId: z.string().min(1),
+        keywordId: z.string().min(1),
+        bid: z.number().positive().max(50000).optional(),
+        state: z.enum(["ENABLED", "PAUSED"]).optional(),
+      }),
+      execute: async (input) => queue(actor, proposals, { type: "update_keyword", ...input }),
+    }),
+    propose_add_negative: tool({
+      description:
+        "Prepare a negative keyword or negative ASIN at campaign or ad group scope. Does not apply until the user confirms.",
+      inputSchema: z.object({
+        campaignId: z.string().min(1),
+        adGroupId: z.string().optional(),
+        scope: z.enum(["CAMPAIGN", "AD_GROUP"]),
+        kind: z.enum(["KEYWORD", "ASIN"]),
+        keywordText: z.string().min(1).max(80).optional(),
+        matchType: z.enum(["NEGATIVE_EXACT", "NEGATIVE_PHRASE", "NEGATIVE_BROAD"]).optional(),
+        asin: z.string().optional(),
+        state: z.enum(["ENABLED", "PAUSED"]),
+      }),
+      execute: async (input) => queue(actor, proposals, { type: "add_negative", ...input }),
+    }),
+    propose_apply_search_term: tool({
+      description:
+        "Prepare applying a search term as a keyword, negative keyword, or negative ASIN. Does not apply until the user confirms.",
+      inputSchema: z.object({
+        campaignId: z.string().min(1),
+        adGroupId: z.string().optional(),
+        searchTerm: z.string().min(1).max(80),
+        as: z.enum(["KEYWORD", "NEGATIVE_KEYWORD", "NEGATIVE_ASIN"]),
+        matchType: z.enum(["EXACT", "PHRASE", "BROAD", "NEGATIVE_EXACT", "NEGATIVE_PHRASE", "NEGATIVE_BROAD"]),
+        bid: z.number().positive().max(50000).optional(),
+        scope: z.enum(["CAMPAIGN", "AD_GROUP"]).optional(),
+        state: z.enum(["ENABLED", "PAUSED"]),
+      }),
+      execute: async (input) => queue(actor, proposals, { type: "apply_search_term", ...input }),
+    }),
+    propose_upsert_product_target: tool({
+      description: "Prepare a Sponsored Products ASIN target add or bid/state edit. Does not apply until the user confirms.",
+      inputSchema: z.object({
+        campaignId: z.string().min(1),
+        adGroupId: z.string().optional(),
+        targetId: z.string().optional(),
+        asin: z.string().min(10).max(10),
+        bid: z.number().positive().max(50000).optional(),
+        state: z.enum(["ENABLED", "PAUSED"]),
+      }),
+      execute: async (input) => queue(actor, proposals, { type: "upsert_product_target", ...input }),
+    }),
+    propose_manage_product_ad: tool({
+      description: "Prepare adding a Sponsored Products product ad or pausing/enabling one. Does not archive it. Does not apply until the user confirms.",
+      inputSchema: z.object({
+        campaignId: z.string().min(1),
+        adGroupId: z.string().optional(),
+        adId: z.string().optional(),
+        asin: z.string().optional(),
+        sku: z.string().optional(),
+        state: z.enum(["ENABLED", "PAUSED"]),
+      }),
+      execute: async (input) => queue(actor, proposals, { type: "manage_product_ad", ...input }),
+    }),
     propose_upsert_keywords: tool({
       description: "Prepare keyword adds or bid/state updates. Does not delete keywords. Does not apply until the user confirms.",
       inputSchema: z.object({
@@ -164,6 +235,10 @@ function adsTools(actor: Actor, proposals: Proposal[]) {
     throw new Error("Ads tool registry drifted from the allowlist.");
   }
   return tools;
+}
+
+export function assertToolRegistry() {
+  adsTools({ id: "registry-check", label: "registry-check" }, []);
 }
 
 async function queue(

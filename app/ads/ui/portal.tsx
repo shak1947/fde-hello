@@ -1,19 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { P0Toggles, type P0Campaign } from "./p0-toggles";
 
-type Campaign = {
-  campaignId: string;
-  name: string;
-  state: "ENABLED" | "PAUSED";
+type Campaign = P0Campaign & {
   targetingType: "MANUAL" | "AUTO";
-  dailyBudget: number;
   spend: number | null;
   sales: number | null;
   clicks: number | null;
   impressions: number | null;
-  simulated: boolean;
-  keywords: { keywordId: string; keywordText: string; matchType: string; bid: number; state: string }[];
 };
 
 type Proposal = {
@@ -40,6 +35,14 @@ type Workspace = {
   spendOwner: string;
   account: string;
   connectHint: string;
+  connectionLabel?: string;
+  sampleData?: boolean;
+  caps?: {
+    maxDailyBudget: number | null;
+    maxBid: number | null;
+    budgetStatus: string;
+    bidStatus: string;
+  };
   campaigns: Campaign[];
   proposals: Proposal[];
   audit: AuditEvent[];
@@ -69,11 +72,6 @@ export function AdsPortal() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [campaignId, setCampaignId] = useState("");
-  const [budget, setBudget] = useState("40");
-  const [keyword, setKeyword] = useState("");
-  const [matchType, setMatchType] = useState("EXACT");
-  const [bid, setBid] = useState("1.25");
   const [newName, setNewName] = useState("");
   const [newBudget, setNewBudget] = useState("25");
   const [targeting, setTargeting] = useState("MANUAL");
@@ -94,7 +92,6 @@ export function AdsPortal() {
     if (!response.ok) throw new Error(body.error || "Could not load campaigns.");
     setWho(body.actorLabel || "Shared password");
     setWorkspace(body);
-    setCampaignId((current) => current || body.campaigns[0]?.campaignId || "");
   }, [authHeaders]);
 
   useEffect(() => {
@@ -268,7 +265,7 @@ export function AdsPortal() {
           Spend is {workspace?.spendOwner ?? "Shakeel Amir"}’s. PPC writes wait for confirmation. Sellerboard and
           Helium 10 are analysis only. Passwords and API keys stay on the server. {workspace?.connectHint}{" "}
           <span className={workspace?.mode === "live" ? "pill live" : "pill sim"}>
-            {workspace?.mode === "live" ? "Live Ads API" : "Simulated"}
+            {workspace?.connectionLabel || (workspace?.mode === "live" ? "Live Ads API" : "API not connected")}
           </span>
         </span>
       </section>
@@ -280,7 +277,7 @@ export function AdsPortal() {
           <section className="panel">
             <h2>Allowed</h2>
             <ul className="deny">
-              <li>Amazon PPC: campaigns, keywords, budgets, on/off</li>
+              <li>Amazon PPC: pause/enable, budget, keyword bid, negatives, search terms, product targets and ads</li>
               <li>Sellerboard analysis and profit data</li>
               <li>Helium 10 analysis and keyword research</li>
               <li>Export CSV and read the audit log</li>
@@ -293,7 +290,8 @@ export function AdsPortal() {
               <li>Seller Central listings, orders, and inventory</li>
               <li>Other Grok bots and internal platforms</li>
               <li>Passwords, API keys, and raw credentials</li>
-              <li>Deletes, billing, and wiping history</li>
+              <li>Archive, deletes, billing, and wiping history</li>
+              <li>Helium 10 Manage writes</li>
             </ul>
           </section>
           <section className="panel">
@@ -402,6 +400,7 @@ export function AdsPortal() {
                   <tr key={campaign.campaignId}>
                     <td>
                       {campaign.name}
+                      {campaign.simulated ? <span className="tag">Sample</span> : null}
                       <div className="muted">{campaign.campaignId}</div>
                     </td>
                     <td>{campaign.state}</td>
@@ -412,102 +411,15 @@ export function AdsPortal() {
                 ))}
               </tbody>
             </table>
-            <form
-              className="stack"
-              style={{ marginTop: "0.9rem" }}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void propose({
-                  type: "set_budget",
-                  campaignId,
-                  dailyBudget: Number(budget),
-                });
-              }}
-            >
-              <label>
-                Campaign
-                <select value={campaignId} onChange={(event) => setCampaignId(event.target.value)}>
-                  {workspace?.campaigns.map((campaign) => (
-                    <option key={campaign.campaignId} value={campaign.campaignId}>
-                      {campaign.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Daily budget (USD)
-                <input value={budget} onChange={(event) => setBudget(event.target.value)} inputMode="decimal" />
-              </label>
-              <div className="row">
-                <button className="btn" type="submit" disabled={busy || !campaignId}>
-                  Prepare budget change
-                </button>
-                <button
-                  className="btn-warn"
-                  type="button"
-                  disabled={busy || !campaignId}
-                  onClick={() =>
-                    void propose({ type: "set_campaign_state", campaignIds: [campaignId], state: "PAUSED" })
-                  }
-                >
-                  Prepare pause
-                </button>
-                <button
-                  className="btn-ghost"
-                  type="button"
-                  disabled={busy || !campaignId}
-                  onClick={() =>
-                    void propose({ type: "set_campaign_state", campaignIds: [campaignId], state: "ENABLED" })
-                  }
-                >
-                  Prepare enable
-                </button>
-              </div>
-            </form>
           </section>
 
-          <section className="panel">
-            <h2>Keyword</h2>
-            <form
-              className="stack"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void propose({
-                  type: "upsert_keywords",
-                  campaignId,
-                  keywords: [
-                    {
-                      keywordText: keyword,
-                      matchType,
-                      bid: Number(bid),
-                      state: "ENABLED",
-                      negative: false,
-                    },
-                  ],
-                });
-              }}
-            >
-              <label>
-                Keyword
-                <input value={keyword} onChange={(event) => setKeyword(event.target.value)} />
-              </label>
-              <label>
-                Match
-                <select value={matchType} onChange={(event) => setMatchType(event.target.value)}>
-                  <option>EXACT</option>
-                  <option>PHRASE</option>
-                  <option>BROAD</option>
-                </select>
-              </label>
-              <label>
-                Bid (USD)
-                <input value={bid} onChange={(event) => setBid(event.target.value)} inputMode="decimal" />
-              </label>
-              <button className="btn" type="submit" disabled={busy || !campaignId || !keyword.trim()}>
-                Prepare keyword change
-              </button>
-            </form>
-          </section>
+          <P0Toggles
+            campaigns={workspace?.campaigns ?? []}
+            busy={busy}
+            caps={workspace?.caps ?? null}
+            sampleData={workspace?.sampleData !== false && workspace?.mode !== "live"}
+            propose={propose}
+          />
 
           <section className="panel">
             <h2>New campaign</h2>

@@ -3,6 +3,16 @@ import path from "node:path";
 import type { AuditEvent, Campaign, Proposal } from "./types";
 import { seedCampaigns } from "./seed";
 
+export function normalizeCampaign(row: Campaign): Campaign {
+  return {
+    ...row,
+    keywords: row.keywords ?? [],
+    negatives: row.negatives ?? [],
+    productTargets: row.productTargets ?? [],
+    productAds: row.productAds ?? [],
+  };
+}
+
 type Bucket = {
   file: string;
   campaigns: Campaign[];
@@ -31,7 +41,7 @@ function readBucket(file: string): Bucket {
     const parsed = JSON.parse(raw) as Partial<Bucket>;
     return {
       file,
-      campaigns: parsed.campaigns?.length ? parsed.campaigns : seedCampaigns(),
+      campaigns: parsed.campaigns?.length ? parsed.campaigns.map(normalizeCampaign) : seedCampaigns(),
       proposals: parsed.proposals ?? [],
       audit: parsed.audit ?? [],
     };

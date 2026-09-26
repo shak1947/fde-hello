@@ -5,6 +5,7 @@ import path from "node:path";
 import { beforeEach, test } from "node:test";
 import { generateKeyPair, exportJWK, SignJWT } from "jose";
 import { createLocalJWKSet } from "jose";
+import { assertToolRegistry } from "../lib/ads/agent";
 import { ALLOWED_AMAZON_PATHS, assertSafeCall, type AmazonCall } from "../lib/ads/amazon";
 import { actorFromRequest, clerkFrontendApi, verifySessionToken } from "../lib/ads/auth";
 import { toCsv } from "../lib/ads/csv";
@@ -25,6 +26,9 @@ delete process.env.AMAZON_ADS_CLIENT_ID;
 delete process.env.AMAZON_ADS_CLIENT_SECRET;
 delete process.env.AMAZON_ADS_REFRESH_TOKEN;
 delete process.env.AMAZON_ADS_PROFILE_ID;
+delete process.env.ADS_MAX_DAILY_BUDGET;
+delete process.env.ADS_MAX_BID;
+delete process.env.ADS_OAUTH_SETUP_KEY;
 delete process.env.VERCEL;
 delete process.env.ADS_PORTAL_DEV_BYPASS;
 
@@ -55,6 +59,8 @@ test("denies history wipes, bulk deletes, billing, seller central, and general a
     "what is the portal password",
     "update sellerboard settings",
     "open seller central orders",
+    "archive the brand campaign",
+    "use Helium 10 Manage to edit the listing",
   ];
   for (const sample of samples) {
     const hit = screenText(sample);
@@ -72,11 +78,16 @@ test("denies history wipes, bulk deletes, billing, seller central, and general a
 
 test("allowlist has no delete, billing, mailbox, or credential tools", () => {
   const joined = ALLOWED_TOOL_NAMES.join(" ");
-  assert.equal(ALLOWED_TOOL_NAMES.length, 10);
+  assert.equal(ALLOWED_TOOL_NAMES.length, 16);
+  assert.doesNotThrow(() => assertToolRegistry());
   assert.ok(joined.includes("sellerboard_snapshot"));
   assert.ok(joined.includes("helium10_snapshot"));
+  assert.ok(joined.includes("list_search_terms"));
   assert.doesNotMatch(joined, /delete|billing|listing|inventory|chat|gmail|password|secret/i);
-  assert.ok(ALLOWED_AMAZON_PATHS.every((path) => path.startsWith("/sp/")));
+  assert.ok(ALLOWED_AMAZON_PATHS.every((path) => path.startsWith("/sp/") || path === "/reporting/reports"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/negativeKeywords"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/productAds"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/targets"));
   assert.throws(() =>
     assertSafeCall({ method: "DELETE" as AmazonCall["method"], path: "/sp/campaigns", media: "application/json" }),
   );

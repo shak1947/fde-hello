@@ -6,10 +6,17 @@ Spend on ads is Shak’s. Every create, budget change, keyword change, and on/of
 
 ## What the consultant can do
 
-- Amazon PPC: list campaigns, keywords, and the performance numbers already on those records
-- Amazon PPC: create or rename a Sponsored Products campaign, change keywords, set a daily budget, turn campaigns on or off
+- Amazon PPC (Sponsored Products): list campaigns, keywords, negatives, product targets, and product ads
+- Amazon PPC writes, each after Confirm, and each checked against server spend caps:
+  1. Pause or enable a campaign
+  2. Edit a campaign daily budget
+  3. Edit a keyword bid, or pause or enable a keyword
+  4. Add a keyword (exact, phrase, or broad)
+  5. Add a negative keyword or negative ASIN, at campaign or ad group scope
+  6. Read a search-term report and apply a row as a keyword or a negative
+  7. Add or edit a product target, and add, pause, or enable a product ad ASIN
 - Sellerboard: read sample profit analysis (not a live account change)
-- Helium 10: read sample keyword research (not a live account change)
+- Helium 10: read sample keyword research (not a live account change, and not Helium 10 Manage)
 - Download CSV for campaigns, keywords, and the mutation audit log
 
 PPC reads run immediately. PPC writes become a pending card. Cancel drops the change. The audit log stores applied, cancelled, failed, and refused attempts.
@@ -25,9 +32,10 @@ These are blocked in the chat text, in tool inputs, and again when someone confi
 - Other Grok bots and internal platforms
 - Passwords, API keys, tokens, and raw credentials
 - Wipe or delete account history
-- Bulk delete, “delete everything”, or deleting a campaign or keyword
+- Archive, bulk delete, “delete everything”, or deleting a campaign, keyword, target, or product ad
 - Billing, cards, payouts, invoices
-- Writes to Sellerboard or Helium 10
+- Writes to Sellerboard, Helium 10, or Helium 10 Manage
+- Sponsored Brands and Sponsored Display (follow-up; the API refuses those paths)
 
 There is no delete tool and no Amazon request path outside Sponsored Products campaign, ad group, and keyword list/create/update. The HTTP client rejects `DELETE`. Amazon error text returned to the desk does not include credential values.
 
@@ -47,12 +55,18 @@ Allowed tool names:
 - `propose_set_budget`
 - `propose_set_campaign_state`
 - `propose_upsert_keywords`
+- `propose_update_keyword`
+- `propose_add_negative`
+- `propose_apply_search_term`
+- `propose_upsert_product_target`
+- `propose_manage_product_ad`
+- `list_search_terms` (read-only)
 - `sellerboard_snapshot` (read-only analysis)
 - `helium10_snapshot` (read-only analysis)
 
-## Simulated mode
+## API not connected
 
-If the Amazon variables below are missing, the banner says **Simulated**. Three sample campaigns (`SOT Brand Defense`, `SOT Sensory Chews`, `SOT Auto Discovery`) stand in for the account. Confirm updates that local state and the audit log. It does not call Amazon and does not spend money. Figures in the table are sample data, labeled simulated.
+If client id, secret, refresh token, or profile id is missing, the banner says **API not connected**. Three sample campaigns (`SOT Brand Defense`, `SOT Sensory Chews`, `SOT Auto Discovery`), plus sample keywords, negatives, search terms, product targets, and product ads, stand in for the account. Every sample row is labeled Sample. Confirm updates that local state and the audit log. It does not call Amazon, does not pretend the data is live, and does not spend money.
 
 The in-process store is written to `/tmp/sot-ads-portal-state.json` (or `ADS_PORTAL_STATE_FILE`). On Vercel that file lives for the life of the instance, not across a fresh deploy. Connect the Ads API for a real account of record. The audit CSV is still the mutation trail for the running instance.
 
@@ -67,19 +81,37 @@ Copy `.env.example` to `.env.local` for local work. In Vercel, add the same name
 | `ADS_PORTAL_ALLOWED_EMAILS` | Optional comma-separated emails. Requires a secret key or an email claim on the session token. |
 | `AMAZON_ADS_CLIENT_ID` | Login with Amazon client id |
 | `AMAZON_ADS_CLIENT_SECRET` | Login with Amazon secret |
-| `AMAZON_ADS_REFRESH_TOKEN` | Refresh token for Shak’s ads authorization |
+| `AMAZON_ADS_REFRESH_TOKEN` | Refresh token from Shak’s one-time grant. Never put this in the consultant UI or in git. |
 | `AMAZON_ADS_PROFILE_ID` | Profile id sent as `Amazon-Advertising-API-Scope` |
-| `AMAZON_ADS_REGION` | `NA` (default), `EU`, or `FE` |
+| `AMAZON_ADS_REGION` | `na` (default), `eu`, or `fe` |
+| `ADS_MAX_DAILY_BUDGET` | Optional in dry-run. Required before a live daily-budget write. Values above the cap are refused. |
+| `ADS_MAX_BID` | Optional in dry-run. Required before a live bid write. Values above the cap are refused. |
+| `ADS_OAUTH_SETUP_KEY` | Owner-only key, at least 8 characters. The shared portal password cannot start the Amazon grant. |
+| `AMAZON_ADS_REDIRECT_URI` | Optional. Production value is `https://fde-hello.vercel.app/api/ads/oauth/callback`. |
 | `AMAZON_ADS_API_BASE` | Optional host override |
-| `AMAZON_ADS_TOKEN_URL` | Optional. Default `https://api.amazon.com/auth/o2/token` |
+| `AMAZON_ADS_TOKEN_URL` | Optional. Defaults: `na` `https://api.amazon.com/auth/o2/token`, `eu` `https://api.amazon.co.uk/auth/o2/token`, `fe` `https://api.amazon.co.jp/auth/o2/token` |
 | `ADS_PORTAL_MODEL` | AI Gateway model. Default `openai/gpt-6-luna` |
 | `AI_GATEWAY_API_KEY` | Only needed off Vercel. Deployed functions use OIDC. |
 | `ADS_PORTAL_PASSWORD` | Shared password for the portal. Set it in Vercel → project **fde-hello** → Settings → Environment Variables for **Production** and **Preview**, then redeploy. The server compares the sign-in form to this value and sets an httpOnly session cookie. If the variable is missing, the portal stays closed. Do not commit the value. |
 | `ADS_PORTAL_DEV_BYPASS` | Local API tests only. Value `1` accepts `Authorization: Bearer dev` when `VERCEL` is unset. Ignored on Vercel. The password cookie is still required when `ADS_PORTAL_PASSWORD` is set. |
 
-Live mode turns on only when client id, secret, refresh token, and profile id are all set. The same confirm step still guards writes. See `/ads/connect` in the running app.
+Live mode turns on only when client id, secret, refresh token, and profile id are all set. The same confirm step still guards writes. Live budget and bid changes also require `ADS_MAX_DAILY_BUDGET` and `ADS_MAX_BID`. See `/ads/connect` in the running app.
 
-Amazon calls use Sponsored Products v3 (`application/vnd.spCampaign.v3+json` and the ad group / keyword equivalents). A new campaign is created with `LEGACY_FOR_SALES` bidding and a default ad group so keywords have somewhere to land.
+The access token is refreshed on the server and is not returned to the browser. The audit log records portal writes (applied, cancelled, failed, refused) and is passed through redaction so passwords, refresh tokens, and access tokens are not stored.
+
+Amazon writes use Sponsored Products v3 (`application/vnd.spCampaign.v3+json`, and the ad group, keyword, negative keyword, targeting clause, and product ad equivalents). Search terms use `POST /reporting/reports` with `reportTypeId` `spSearchTerm`. A new campaign is created with `LEGACY_FOR_SALES` bidding and a default ad group so keywords have somewhere to land. Sponsored Brands and Sponsored Display are not called.
+
+## Login with Amazon (one-time owner grant)
+
+Shak does this once. The consultant desk never receives the refresh token.
+
+1. Create a Login with Amazon security profile and request Amazon Ads API access for scope `advertising::campaign_management`.
+2. Allowed return URL for production: `https://fde-hello.vercel.app/api/ads/oauth/callback`. For local work also allow `http://localhost:3000/api/ads/oauth/callback`.
+3. In Vercel → project **fde-hello** → Settings → Environment Variables, set `AMAZON_ADS_CLIENT_ID`, `AMAZON_ADS_CLIENT_SECRET`, `AMAZON_ADS_REGION` (`na`, `eu`, or `fe`), `ADS_OAUTH_SETUP_KEY`, `ADS_MAX_DAILY_BUDGET`, and `ADS_MAX_BID` for Production and Preview. Do not commit the values.
+4. Redeploy.
+5. Sign in at `/ads` with the portal password, open `/ads/connect`, and enter the owner setup key. The shared password alone returns 403.
+6. Amazon redirects to the callback. Copy the refresh token into `AMAZON_ADS_REFRESH_TOKEN` and the Sensationally OT profile id into `AMAZON_ADS_PROFILE_ID`. Close the tab. Do not send that page to the consultant.
+7. Redeploy. The desk banner changes from **API not connected** to **Live Ads API**. Writes still wait for Confirm.
 
 ## Login gate
 

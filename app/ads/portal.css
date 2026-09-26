@@ -89,6 +89,11 @@ th { color: var(--muted); font-weight: 650; font-size: 0.75rem; text-transform: 
 .pill { display: inline-flex; border-radius: 999px; padding: 0.1rem 0.5rem; border: 1px solid var(--line); font-size: 0.75rem; }
 .pill.live { color: var(--accent-2); }
 .pill.sim { color: var(--warn); }
+.tag {
+  display: inline-flex; margin-left: 0.35rem; border-radius: 999px; padding: 0.05rem 0.4rem;
+  border: 1px solid rgba(252, 211, 77, 0.45); color: var(--warn); font-size: 0.72rem; font-weight: 700;
+}
+.doc ol { color: var(--muted); padding-left: 1.2rem; }
 pre {
   white-space: pre-wrap; word-break: break-word; margin: 0.4rem 0 0;
   font-size: 0.78rem; color: var(--muted);

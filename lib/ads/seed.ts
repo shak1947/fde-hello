@@ -1,4 +1,4 @@
-import type { Campaign, Keyword } from "./types";
+import type { Campaign, Keyword, SearchTerm } from "./types";
 
 function keyword(
   partial: Pick<Keyword, "keywordId" | "campaignId" | "keywordText" | "matchType" | "bid" | "state"> &
@@ -43,6 +43,48 @@ export function seedCampaigns(): Campaign[] {
           state: "ENABLED",
         }),
       ],
+      negatives: [
+        {
+          entryId: "sim-neg-brand-kw",
+          campaignId: "sim-cmp-brand",
+          adGroupId: "",
+          scope: "CAMPAIGN",
+          kind: "KEYWORD",
+          value: "free",
+          matchType: "NEGATIVE_EXACT",
+          state: "ENABLED",
+        },
+        {
+          entryId: "sim-neg-brand-asin",
+          campaignId: "sim-cmp-brand",
+          adGroupId: "sim-ag-sim-cmp-brand",
+          scope: "AD_GROUP",
+          kind: "ASIN",
+          value: "B0SAMPLE01",
+          matchType: "ASIN_SAME_AS",
+          state: "ENABLED",
+        },
+      ],
+      productTargets: [
+        {
+          targetId: "sim-tgt-brand-1",
+          campaignId: "sim-cmp-brand",
+          adGroupId: "sim-ag-sim-cmp-brand",
+          asin: "B0SAMPLE02",
+          bid: 0.85,
+          state: "ENABLED",
+        },
+      ],
+      productAds: [
+        {
+          adId: "sim-ad-brand-1",
+          campaignId: "sim-cmp-brand",
+          adGroupId: "sim-ag-sim-cmp-brand",
+          asin: "B0SAMPLE03",
+          sku: "SOT-SAMPLE",
+          state: "ENABLED",
+        },
+      ],
     },
     {
       campaignId: "sim-cmp-chews",
@@ -66,6 +108,9 @@ export function seedCampaigns(): Campaign[] {
           state: "PAUSED",
         }),
       ],
+      negatives: [],
+      productTargets: [],
+      productAds: [],
     },
     {
       campaignId: "sim-cmp-auto",
@@ -80,6 +125,38 @@ export function seedCampaigns(): Campaign[] {
       simulated: true,
       adGroupId: "sim-ag-sim-cmp-auto",
       keywords: [],
+      negatives: [],
+      productTargets: [],
+      productAds: [],
+    },
+  ];
+}
+
+export function seedSearchTerms(): SearchTerm[] {
+  return [
+    {
+      searchTerm: "sensory chew necklace",
+      campaignId: "sim-cmp-brand",
+      campaignName: "SOT Brand Defense",
+      adGroupId: "sim-ag-sim-cmp-brand",
+      impressions: 420,
+      clicks: 18,
+      cost: 14.2,
+      sales: 79.9,
+      orders: 2,
+      sample: true,
+    },
+    {
+      searchTerm: "B0SAMPLE01",
+      campaignId: "sim-cmp-chews",
+      campaignName: "SOT Sensory Chews",
+      adGroupId: "sim-ag-sim-cmp-chews",
+      impressions: 80,
+      clicks: 4,
+      cost: 3.1,
+      sales: 0,
+      orders: 0,
+      sample: true,
     },
   ];
 }

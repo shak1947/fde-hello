@@ -8,6 +8,7 @@ const SECRET_ENV = [
   "AI_GATEWAY_API_KEY",
   "SELLERBOARD_API_TOKEN",
   "HELIUM10_API_KEY",
+  "ADS_OAUTH_SETUP_KEY",
 ] as const;
 
 export function redactSecrets(value: string): string {
@@ -19,7 +20,9 @@ export function redactSecrets(value: string): string {
   }
   return out
     .replace(/\bBearer\s+[A-Za-z0-9._\-+/=]{8,}/gi, "Bearer [redacted]")
-    .replace(/\b(sk|pk)_(?:test|live)_[A-Za-z0-9]+/g, "[redacted]");
+    .replace(/\bAtz[ar]\|[A-Za-z0-9_\-]+/g, "[redacted]")
+    .replace(/\b(sk|pk)_(?:test|live)_[A-Za-z0-9]+/g, "[redacted]")
+    .replace(/(refresh_token|access_token|client_secret)(["']?\s*[:=]\s*["']?)[^"',\s}]+/gi, "$1$2[redacted]");
 }
 
 export function redactUnknown(value: unknown): unknown {

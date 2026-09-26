@@ -1,20 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { AdsApiError, amazonApply, amazonListCampaigns } from "./amazon";
+import { publicCaps } from "./caps";
 import { adsMode } from "./mode";
 import { redactSecrets, redactUnknown } from "./redact";
 import { parseAction, type DenyHit } from "./policy";
 import { planMessage, type Plan } from "./planner";
+import { applySimulated } from "./simulate";
 import { clone, withStore } from "./store";
 import { toCsv } from "./csv";
-import type {
-  Actor,
-  AdsAction,
-  ApplyResult,
-  AuditEvent,
-  Campaign,
-  Keyword,
-  Proposal,
-} from "./types";
+import type { Actor, AdsAction, ApplyResult, AuditEvent, Campaign, Proposal } from "./types";
 
 const PROPOSAL_TTL_MS = 30 * 60 * 1000;
 
@@ -36,10 +30,13 @@ export async function workspace(actor: Actor) {
     spendOwner: "Shakeel Amir",
     account: "Sensationally OT",
     simulated: mode === "dry-run",
+    sampleData: mode === "dry-run",
+    connectionLabel: mode === "dry-run" ? "API not connected" : "Live Ads API",
+    caps: publicCaps(),
     connectHint:
       mode === "dry-run"
-        ? "Amazon Ads credentials are not set. Changes stay in the simulator. See Connect Ads API."
-        : "Connected to the Amazon Advertising API. Writes still wait for confirmation.",
+        ? "API not connected. Rows marked Sample are not live Amazon data. Confirm still runs here, and nothing is sent to Amazon."
+        : "Connected to the Amazon Advertising API for Sponsored Products. Writes still wait for confirmation. Sponsored Brands and Sponsored Display are not connected.",
     campaigns,
     proposals: side.proposals,
     audit: side.audit,
@@ -231,11 +228,23 @@ export async function exportDataset(dataset: string): Promise<{ filename: string
         keyword.negative,
       ]),
     );
+    const negativeRows = view.campaigns.flatMap((campaign) =>
+      (campaign.negatives ?? []).map((entry) => [
+        campaign.campaignId,
+        campaign.name,
+        entry.entryId,
+        entry.value,
+        entry.matchType,
+        "",
+        entry.state,
+        true,
+      ]),
+    );
     return {
       filename: "sot-ads-keywords.csv",
       body: toCsv(
         ["campaignId", "campaignName", "keywordId", "keywordText", "matchType", "bid", "state", "negative"],
-        rows,
+        [...rows, ...negativeRows],
       ),
     };
   }
@@ -325,140 +334,17 @@ function auditFrom(
 async function applyAction(action: AdsAction): Promise<ApplyResult> {
   if (adsMode() === "live") {
     const applied = await amazonApply(action);
-    return { mode: "live", summary: applied.summary, before: applied.before, after: applied.after };
+    return {
+      mode: "live",
+      summary: redactSecrets(applied.summary),
+      before: redactUnknown(applied.before),
+      after: redactUnknown(applied.after),
+    };
   }
   return withStore((bucket) => {
     const applied = applySimulated(bucket.campaigns, action);
     return { mode: "dry-run" as const, summary: applied.summary, before: applied.before, after: applied.after };
   });
-}
-
-function applySimulated(campaigns: Campaign[], action: AdsAction): {
-  summary: string;
-  before: unknown;
-  after: unknown;
-} {
-  if (action.type === "create_campaign") {
-    const campaignId = `sim-cmp-${randomUUID().slice(0, 8)}`;
-    const created: Campaign = {
-      campaignId,
-      name: action.name,
-      state: action.state,
-      targetingType: action.targetingType,
-      dailyBudget: action.dailyBudget,
-      spend: 0,
-      sales: 0,
-      clicks: 0,
-      impressions: 0,
-      simulated: true,
-      adGroupId: `sim-ag-${campaignId}`,
-      keywords: [],
-    };
-    campaigns.push(created);
-    return {
-      summary: `Dry-run created “${action.name}” (${action.state}) at $${action.dailyBudget.toFixed(2)}/day. No Amazon spend occurred.`,
-      before: null,
-      after: publicCampaign(created),
-    };
-  }
-
-  if (action.type === "set_budget") {
-    const campaign = requireCampaign(campaigns, action.campaignId);
-    const before = publicCampaign(campaign);
-    campaign.dailyBudget = action.dailyBudget;
-    return {
-      summary: `Dry-run set ${campaign.name} daily budget from $${before.dailyBudget.toFixed(2)} to $${campaign.dailyBudget.toFixed(2)}. No Amazon spend occurred.`,
-      before,
-      after: publicCampaign(campaign),
-    };
-  }
-
-  if (action.type === "set_campaign_state") {
-    const before = action.campaignIds.map((id) => publicCampaign(requireCampaign(campaigns, id)));
-    for (const id of action.campaignIds) {
-      requireCampaign(campaigns, id).state = action.state;
-    }
-    const after = action.campaignIds.map((id) => publicCampaign(requireCampaign(campaigns, id)));
-    return {
-      summary: `Dry-run set ${action.campaignIds.length} campaign(s) to ${action.state}. Nothing was deleted.`,
-      before,
-      after,
-    };
-  }
-
-  if (action.type === "update_campaign") {
-    const campaign = requireCampaign(campaigns, action.campaignId);
-    const before = publicCampaign(campaign);
-    if (action.name) campaign.name = action.name;
-    if (action.state) campaign.state = action.state;
-    return {
-      summary: `Dry-run updated ${campaign.name}.`,
-      before,
-      after: publicCampaign(campaign),
-    };
-  }
-
-  const campaign = requireCampaign(campaigns, action.campaignId);
-  const before = campaign.keywords.map(publicKeyword);
-  for (const input of action.keywords) {
-    const existing = campaign.keywords.find(
-      (keyword) =>
-        keyword.keywordId === input.keywordId ||
-        (keyword.keywordText.toLowerCase() === input.keywordText.toLowerCase() &&
-          keyword.matchType === input.matchType &&
-          keyword.negative === Boolean(input.negative)),
-    );
-    if (existing) {
-      existing.bid = input.bid;
-      existing.state = input.state;
-      existing.keywordText = input.keywordText;
-      existing.matchType = input.matchType;
-      existing.negative = Boolean(input.negative);
-    } else {
-      campaign.keywords.push({
-        keywordId: `sim-kw-${randomUUID().slice(0, 8)}`,
-        campaignId: campaign.campaignId,
-        adGroupId: campaign.adGroupId,
-        keywordText: input.keywordText,
-        matchType: input.matchType,
-        bid: input.bid,
-        state: input.state,
-        negative: Boolean(input.negative),
-      });
-    }
-  }
-  return {
-    summary: `Dry-run updated ${action.keywords.length} keyword(s) on ${campaign.name}.`,
-    before,
-    after: campaign.keywords.map(publicKeyword),
-  };
-}
-
-function requireCampaign(campaigns: Campaign[], id: string): Campaign {
-  const campaign = campaigns.find((item) => item.campaignId === id);
-  if (!campaign) throw new AdsApiError(`No campaign ${id} is in this view.`, 404);
-  return campaign;
-}
-
-function publicCampaign(campaign: Campaign) {
-  return {
-    campaignId: campaign.campaignId,
-    name: campaign.name,
-    state: campaign.state,
-    dailyBudget: campaign.dailyBudget,
-    targetingType: campaign.targetingType,
-  };
-}
-
-function publicKeyword(keyword: Keyword) {
-  return {
-    keywordId: keyword.keywordId,
-    keywordText: keyword.keywordText,
-    matchType: keyword.matchType,
-    bid: keyword.bid,
-    state: keyword.state,
-    negative: keyword.negative,
-  };
 }
 
 export function describeAction(action: AdsAction, campaigns: Campaign[]): string {
@@ -474,6 +360,18 @@ export function describeAction(action: AdsAction, campaigns: Campaign[]): string
       return `Update ${name(action.campaignId)}`;
     case "upsert_keywords":
       return `Change ${action.keywords.length} keyword(s) on ${name(action.campaignId)}`;
+    case "update_keyword":
+      return `Update keyword ${action.keywordId} on ${name(action.campaignId)}${action.bid != null ? ` bid $${action.bid.toFixed(2)}` : ""} ${action.state ?? ""}`.trim();
+    case "add_keyword":
+      return `Add ${action.matchType} keyword “${action.keywordText}” on ${name(action.campaignId)} at $${action.bid.toFixed(2)}`;
+    case "add_negative":
+      return `Add negative ${action.kind === "ASIN" ? action.asin : action.keywordText} on ${name(action.campaignId)} (${action.scope})`;
+    case "apply_search_term":
+      return `Apply search term “${action.searchTerm}” as ${action.as} on ${name(action.campaignId)}`;
+    case "upsert_product_target":
+      return `${action.targetId ? "Update" : "Add"} product target ${action.asin} on ${name(action.campaignId)}`;
+    case "manage_product_ad":
+      return `${action.adId ? "Set" : "Add"} product ad ${action.asin || action.sku || action.adId} ${action.state} on ${name(action.campaignId)}`;
     default:
       return "Amazon Ads change";
   }
