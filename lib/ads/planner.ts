@@ -1,4 +1,5 @@
-import { looksLikeAdsWork, isGreeting, SCOPE_INTRO, screenText, type DenyHit } from "./policy";
+import { researchReply } from "./insights";
+import { BLOCKED_TOOL_MESSAGE, looksLikeAdsWork, isGreeting, SCOPE_INTRO, screenText, type DenyHit } from "./policy";
 import type { AdsAction, Campaign, DeliveryState, MatchType, TargetingType } from "./types";
 
 export type Plan =
@@ -11,7 +12,7 @@ const moneyPattern = "\\$?(\\d+(?:\\.\\d{1,2})?)";
 
 export function planMessage(text: string, campaigns: Campaign[]): Plan {
   const raw = text.trim();
-  if (!raw) return { kind: "reply", message: "Say what you want changed in Amazon Advertising." };
+  if (!raw) return { kind: "reply", message: "Say what you want in Amazon PPC, Sellerboard, or Helium 10." };
   const deny = screenText(raw);
   if (deny) return { kind: "denied", deny };
   if (isGreeting(raw)) return { kind: "reply", message: SCOPE_INTRO };
@@ -22,6 +23,9 @@ export function planMessage(text: string, campaigns: Campaign[]): Plan {
         "Use the CSV buttons for campaigns, keywords, or the audit log. Exports are downloads only. Nothing on the account is changed.",
     };
   }
+
+  const researchFirst = researchReply(raw);
+  if (researchFirst && !looksLikeAdsWork(raw)) return { kind: "reply", message: researchFirst };
 
   const list = findList(raw, campaigns);
   if (list) return list;
@@ -34,6 +38,9 @@ export function planMessage(text: string, campaigns: Campaign[]): Plan {
   const keyword = findKeyword(raw, campaigns);
   if (keyword) return keyword;
 
+  const research = researchReply(raw);
+  if (research) return { kind: "reply", message: research };
+
   if (looksLikeAdsWork(raw)) {
     return {
       kind: "unsure",
@@ -41,9 +48,8 @@ export function planMessage(text: string, campaigns: Campaign[]): Plan {
     };
   }
   return {
-    kind: "reply",
-    message:
-      "That is outside this portal. I only handle Amazon Advertising for Sensationally OT: campaigns, keywords, budgets, and on/off. I do not answer general questions.",
+    kind: "denied",
+    deny: { rule: "out-of-scope", message: BLOCKED_TOOL_MESSAGE },
   };
 }
 

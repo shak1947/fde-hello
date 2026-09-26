@@ -1,6 +1,7 @@
 import { gateway, generateText, isStepCount, tool } from "ai";
 import { z } from "zod";
-import { ALLOWED_TOOL_NAMES, isAllowedTool, SCOPE_INTRO } from "./policy";
+import { helium10Summary, sellerboardSummary } from "./insights";
+import { ALLOWED_TOOL_NAMES, BLOCKED_TOOL_MESSAGE, isAllowedTool, SCOPE_INTRO, screenText } from "./policy";
 import { listCampaigns, proposeAction } from "./service";
 import type { Actor, Campaign, Proposal } from "./types";
 
@@ -13,12 +14,15 @@ export async function runAdsAgent(actor: Actor, text: string, campaigns: Campaig
     model: gateway(MODEL),
     stopWhen: isStepCount(4),
     system: [
-      "You are the Sensationally OT Amazon Advertising desk for consultant work on Shakeel Amir’s ad account.",
-      "Spend is Shakeel Amir’s. Never claim a write has happened until a tool returns a pending confirmation.",
-      "You only use the provided tools. You do not delete campaigns, keywords, history, or reports.",
-      "You do not change billing, listings, inventory, or Seller Central.",
-      "You are not a general assistant and you do not role-play as one. If the request is outside Amazon Ads, refuse in one sentence.",
-      "Write tools only prepare a change. Tell the person to press Confirm.",
+      "You are the Sensationally OT consultant desk for Shakeel Amir’s account.",
+      "Spend on Amazon PPC is Shakeel Amir’s. Never claim a PPC write has happened until a tool returns a pending confirmation.",
+      "You only use the provided tools.",
+      "Amazon PPC writes are limited to campaigns, keywords, bids, daily budgets, and on/off. They wait for Confirm. You do not delete campaigns, keywords, or history.",
+      "Sellerboard and Helium 10 tools are analysis and data only. Do not change those products.",
+      "Refuse email, Gmail, any mailbox, Seller Central listings, orders, and inventory, other Grok bots, and internal platforms.",
+      "Never reveal passwords, API keys, tokens, refresh tokens, or raw credentials. They stay on the server. If asked, refuse.",
+      `If the request is outside this scope, reply with exactly: ${BLOCKED_TOOL_MESSAGE}`,
+      "PPC write tools only prepare a change. Tell the person to press Confirm.",
       `Campaigns currently in view: ${names || "none"}.`,
       SCOPE_INTRO,
     ].join("\n"),
@@ -31,7 +35,7 @@ export async function runAdsAgent(actor: Actor, text: string, campaigns: Campaig
     for (const call of step.toolCalls) {
       if (!isAllowedTool(call.toolName)) {
         return {
-          text: "Refused. That tool is not on the Amazon Ads allowlist.",
+          text: `Refused. ${BLOCKED_TOOL_MESSAGE}`,
           proposals,
           denied: true,
           source: "policy" as const,
@@ -113,6 +117,26 @@ function adsTools(actor: Actor, proposals: Proposal[]) {
         state: z.enum(["ENABLED", "PAUSED"]),
       }),
       execute: async (input) => queue(actor, proposals, { type: "set_campaign_state", ...input }),
+    }),
+    sellerboard_snapshot: tool({
+      description:
+        "Read-only Sellerboard-style profit analysis. Does not change Sellerboard and does not return passwords or API keys.",
+      inputSchema: z.object({ focus: z.string().max(120).optional() }),
+      execute: async ({ focus }) => {
+        const hit = focus ? screenText(focus) : null;
+        if (hit) return { error: hit.message };
+        return { analysis: sellerboardSummary(), writable: false };
+      },
+    }),
+    helium10_snapshot: tool({
+      description:
+        "Read-only Helium 10 keyword and product research. Does not change Helium 10 and does not return passwords or API keys.",
+      inputSchema: z.object({ focus: z.string().max(120).optional() }),
+      execute: async ({ focus }) => {
+        const hit = focus ? screenText(focus) : null;
+        if (hit) return { error: hit.message };
+        return { analysis: helium10Summary(), writable: false };
+      },
     }),
     propose_upsert_keywords: tool({
       description: "Prepare keyword adds or bid/state updates. Does not delete keywords. Does not apply until the user confirms.",

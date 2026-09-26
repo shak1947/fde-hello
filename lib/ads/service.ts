@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AdsApiError, amazonApply, amazonListCampaigns } from "./amazon";
 import { adsMode } from "./mode";
+import { redactSecrets, redactUnknown } from "./redact";
 import { parseAction, type DenyHit } from "./policy";
 import { planMessage, type Plan } from "./planner";
 import { clone, withStore } from "./store";
@@ -153,41 +154,46 @@ export async function handleChat(actor: Actor, message: string) {
     return new Error(detail);
   });
   if (campaigns instanceof Error) {
-    return {
+    return publishChat({
       text: campaigns.message,
       proposals: [] as Proposal[],
       denied: false,
       source: "ads-api" as const,
-    };
+    });
   }
   const plan = planMessage(text, campaigns);
   if (plan.kind === "denied") {
     const event = await recordDenied(actor, plan.deny, { message: text });
-    return {
+    return publishChat({
       text: plan.deny.message,
       proposals: [] as Proposal[],
       denied: true,
       auditId: event.id,
       source: "policy" as const,
-    };
+    });
   }
   if (plan.kind === "reply") {
-    return { text: plan.message, proposals: [] as Proposal[], denied: false, source: "planner" as const };
+    return publishChat({ text: plan.message, proposals: [] as Proposal[], denied: false, source: "planner" as const });
   }
   if (plan.kind === "proposal") {
     const created = await proposeAction(actor, plan.action, text);
     if (!created.ok) {
-      return { text: created.error, proposals: [] as Proposal[], denied: Boolean(created.deny), source: "policy" as const };
+      return publishChat({
+        text: created.error,
+        proposals: [] as Proposal[],
+        denied: Boolean(created.deny),
+        source: "policy" as const,
+      });
     }
-    return {
+    return publishChat({
       text: plan.message,
       proposals: [created.proposal],
       denied: false,
       source: "planner" as const,
-    };
+    });
   }
   const model = await runModelIfConfigured(actor, text, campaigns);
-  return model;
+  return publishChat(model);
 }
 
 export async function exportDataset(dataset: string): Promise<{ filename: string; body: string } | null> {
@@ -269,7 +275,7 @@ async function runModelIfConfigured(actor: Actor, text: string, campaigns: Campa
     const { runAdsAgent } = await import("./agent");
     return await runAdsAgent(actor, text, campaigns);
   } catch (error) {
-    console.error("ads agent failed", error instanceof Error ? error.message : "unknown");
+    console.error("ads agent failed", redactSecrets(error instanceof Error ? error.message : "unknown"));
     return {
       text: unsureHint(campaigns),
       proposals: [] as Proposal[],
@@ -281,7 +287,11 @@ async function runModelIfConfigured(actor: Actor, text: string, campaigns: Campa
 
 function unsureHint(campaigns: Campaign[]): string {
   const names = campaigns.map((campaign) => campaign.name).join(", ");
-  return `I can list campaigns, change a budget, turn a campaign on or off, or add a keyword. Try “set budget of ${campaigns[0]?.name ?? "a campaign"} to 40”. Campaigns in view: ${names}. Nothing was changed.`;
+  return `Access is limited to Amazon PPC, Sellerboard, and Helium 10. I can list campaigns, change a budget, turn a campaign on or off, add a keyword, or read Sellerboard and Helium 10 analysis. Try “set budget of ${campaigns[0]?.name ?? "a campaign"} to 40”. Campaigns in view: ${names}. Nothing was changed.`;
+}
+
+function publishChat<T extends { text: string }>(result: T): T {
+  return { ...result, text: redactSecrets(result.text) };
 }
 
 async function recordDenied(actor: Actor, deny: DenyHit, detail: unknown): Promise<AuditEvent> {
@@ -307,8 +317,8 @@ function auditFrom(
     mode: adsMode(),
     actionType,
     status,
-    summary,
-    detail,
+    summary: redactSecrets(summary),
+    detail: redactUnknown(detail),
   };
 }
 

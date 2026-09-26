@@ -64,10 +64,7 @@ async function accessToken(env: AmazonEnv, fetchImpl: typeof fetch): Promise<str
     error_description?: string;
   };
   if (!response.ok || !payload.access_token) {
-    throw new AdsApiError(
-      payload.error_description || "Amazon Ads login failed. Check the refresh token and client credentials.",
-      502,
-    );
+    throw new AdsApiError("Amazon Ads login failed. Credentials stay on the server.", 502);
   }
   tokens.set(env.profileId, {
     accessToken: payload.access_token,
@@ -114,8 +111,8 @@ function safeJson(text: string): unknown {
 
 function publicAmazonError(payload: unknown, status: number): string {
   const record = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const message = String(record.message || record.details || record.code || "Amazon Ads request failed");
-  return `Amazon Ads returned ${status}: ${message.replace(/client_secret|refresh_token/gi, "[redacted]").slice(0, 280)}`;
+  const code = typeof record.code === "string" && /^[A-Z0-9_]{1,40}$/.test(record.code) ? ` (${record.code})` : "";
+  return `Amazon Ads returned ${status}${code}. Credentials stay on the server.`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

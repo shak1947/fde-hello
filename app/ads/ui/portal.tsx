@@ -52,6 +52,8 @@ const SUGGESTIONS = [
   "Pause SOT Sensory Chews",
   "Set budget of SOT Brand Defense to $40",
   "Add exact keyword sensory chew to SOT Brand Defense at $1.25",
+  "Show Sellerboard profit",
+  "Helium 10 research for sensory chew",
 ];
 
 export function AdsPortal() {
@@ -61,7 +63,7 @@ export function AdsPortal() {
   const [lines, setLines] = useState<ChatLine[]>([
     {
       role: "desk",
-      text: "Amazon Advertising only. Spend on this account is Shakeel Amir’s. I will ask you to confirm before any campaign, keyword, or budget change.",
+      text: "Access is limited to Amazon PPC, Sellerboard, and Helium 10. Spend on ads is Shakeel Amir’s. PPC writes wait for confirmation. Sellerboard and Helium 10 are analysis only. Passwords and API keys stay on the server.",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -261,9 +263,10 @@ export function AdsPortal() {
       </header>
 
       <section className="banner">
-        <strong>Spend is {workspace?.spendOwner ?? "Shakeel Amir"}’s.</strong>{" "}
+        <strong>Access is limited to Amazon PPC, Sellerboard, and Helium 10.</strong>{" "}
         <span className="muted">
-          {workspace?.connectHint}{" "}
+          Spend is {workspace?.spendOwner ?? "Shakeel Amir"}’s. PPC writes wait for confirmation. Sellerboard and
+          Helium 10 are analysis only. Passwords and API keys stay on the server. {workspace?.connectHint}{" "}
           <span className={workspace?.mode === "live" ? "pill live" : "pill sim"}>
             {workspace?.mode === "live" ? "Live Ads API" : "Simulated"}
           </span>
@@ -277,21 +280,20 @@ export function AdsPortal() {
           <section className="panel">
             <h2>Allowed</h2>
             <ul className="deny">
-              <li>Create and modify campaigns</li>
-              <li>Change keywords, bids, and match types</li>
-              <li>Set daily budgets</li>
-              <li>Turn campaigns on or off</li>
+              <li>Amazon PPC: campaigns, keywords, budgets, on/off</li>
+              <li>Sellerboard analysis and profit data</li>
+              <li>Helium 10 analysis and keyword research</li>
               <li>Export CSV and read the audit log</li>
             </ul>
           </section>
           <section className="panel">
             <h2>Refused</h2>
             <ul className="deny">
-              <li>Wipe or delete account history</li>
-              <li>Bulk delete campaigns or delete everything</li>
-              <li>Billing or payment changes</li>
-              <li>Listings, inventory, Seller Central</li>
-              <li>Other bots or general chat</li>
+              <li>Email, Gmail, and any mailbox</li>
+              <li>Seller Central listings, orders, and inventory</li>
+              <li>Other Grok bots and internal platforms</li>
+              <li>Passwords, API keys, and raw credentials</li>
+              <li>Deletes, billing, and wiping history</li>
             </ul>
           </section>
           <section className="panel">

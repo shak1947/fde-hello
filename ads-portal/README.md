@@ -1,31 +1,35 @@
 # Sensationally OT Amazon Ads portal
 
-Invite-only desk for an offshore consultant working **Amazon Advertising only** on Shakeel Amir’s Sensationally OT account. The app is the Next.js project at the repository root. The portal is served at `/ads`.
+Invite-only desk for an offshore consultant on Shakeel Amir’s Sensationally OT account. Access is limited to **Amazon PPC**, **Sellerboard** analysis, and **Helium 10** analysis. The app is the Next.js project at the repository root. The portal is served at `/ads`.
 
-Spend is Shak’s. Every create, budget change, keyword change, and on/off switch is prepared first and runs only after **Confirm**.
+Spend on ads is Shak’s. Every create, budget change, keyword change, and on/off switch is prepared first and runs only after **Confirm**. Sellerboard and Helium 10 stay read-only. The consultant never sees Shak’s passwords or API keys; those stay in server environment variables.
 
 ## What the consultant can do
 
-- List campaigns, keywords, and the performance numbers already on those records
-- Create or rename a Sponsored Products campaign
-- Change keyword text, match type, bid, and on/off state
-- Set a daily budget
-- Turn campaigns on (`ENABLED`) or off (`PAUSED`)
+- Amazon PPC: list campaigns, keywords, and the performance numbers already on those records
+- Amazon PPC: create or rename a Sponsored Products campaign, change keywords, set a daily budget, turn campaigns on or off
+- Sellerboard: read sample profit analysis (not a live account change)
+- Helium 10: read sample keyword research (not a live account change)
 - Download CSV for campaigns, keywords, and the mutation audit log
 
-Reads run immediately. Writes become a pending card. Cancel drops the change. The audit log stores applied, cancelled, failed, and refused attempts.
+PPC reads run immediately. PPC writes become a pending card. Cancel drops the change. The audit log stores applied, cancelled, failed, and refused attempts.
 
 ## Hard deny
 
+Anything outside Amazon PPC, Sellerboard, and Helium 10 is refused with: “Access is limited to Amazon PPC, Sellerboard, and Helium 10.”
+
 These are blocked in the chat text, in tool inputs, and again when someone confirms:
 
+- Email, Gmail, and any mailbox
+- Seller Central listings, orders, inventory, and FBA (Ads console campaign work stays allowed)
+- Other Grok bots and internal platforms
+- Passwords, API keys, tokens, and raw credentials
 - Wipe or delete account history
 - Bulk delete, “delete everything”, or deleting a campaign or keyword
 - Billing, cards, payouts, invoices
-- Listings, inventory, Seller Central, FBA
-- General assistant chat, other bots, or instruction bypasses
+- Writes to Sellerboard or Helium 10
 
-There is no delete tool and no Amazon request path outside Sponsored Products campaign, ad group, and keyword list/create/update. The HTTP client rejects `DELETE`.
+There is no delete tool and no Amazon request path outside Sponsored Products campaign, ad group, and keyword list/create/update. The HTTP client rejects `DELETE`. Amazon error text returned to the desk does not include credential values.
 
 Pausing a campaign is the supported way to stop spend. Pausing does not remove history.
 
@@ -43,6 +47,8 @@ Allowed tool names:
 - `propose_set_budget`
 - `propose_set_campaign_state`
 - `propose_upsert_keywords`
+- `sellerboard_snapshot` (read-only analysis)
+- `helium10_snapshot` (read-only analysis)
 
 ## Simulated mode
 
