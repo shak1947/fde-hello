@@ -39,7 +39,6 @@ export function PasswordForm() {
         Password
         <input
           type="password"
-          name="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

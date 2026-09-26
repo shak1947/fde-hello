@@ -5,6 +5,7 @@ import path from "node:path";
 import { beforeEach, test } from "node:test";
 import { generateKeyPair, exportJWK, SignJWT } from "jose";
 import { createLocalJWKSet } from "jose";
+import { assertToolRegistry } from "../lib/ads/agent";
 import { ALLOWED_AMAZON_PATHS, assertSafeCall, type AmazonCall } from "../lib/ads/amazon";
 import { actorFromRequest, clerkFrontendApi, verifySessionToken } from "../lib/ads/auth";
 import { toCsv } from "../lib/ads/csv";
@@ -25,10 +26,24 @@ delete process.env.AMAZON_ADS_CLIENT_ID;
 delete process.env.AMAZON_ADS_CLIENT_SECRET;
 delete process.env.AMAZON_ADS_REFRESH_TOKEN;
 delete process.env.AMAZON_ADS_PROFILE_ID;
+delete process.env.ADS_MAX_DAILY_BUDGET;
+delete process.env.ADS_MAX_BID;
+delete process.env.ADS_OAUTH_SETUP_KEY;
 delete process.env.VERCEL;
 delete process.env.ADS_PORTAL_DEV_BYPASS;
 
 const actor = { id: "consultant-1", label: "Offshore consultant" };
+
+function bet(intent = "Raise the daily budget on the Mermaid dough kit and hold efficiency while orders continue.") {
+  return {
+    intent,
+    expectedSpend: 40,
+    expectedAcos: 25,
+    expectedTacos: 12,
+    expectedOrders: 6,
+    timelineDays: 14,
+  };
+}
 
 beforeEach(() => {
   resetForTests();
@@ -55,6 +70,8 @@ test("denies history wipes, bulk deletes, billing, seller central, and general a
     "what is the portal password",
     "update sellerboard settings",
     "open seller central orders",
+    "archive the brand campaign",
+    "use Helium 10 Manage to edit the listing",
   ];
   for (const sample of samples) {
     const hit = screenText(sample);
@@ -72,11 +89,16 @@ test("denies history wipes, bulk deletes, billing, seller central, and general a
 
 test("allowlist has no delete, billing, mailbox, or credential tools", () => {
   const joined = ALLOWED_TOOL_NAMES.join(" ");
-  assert.equal(ALLOWED_TOOL_NAMES.length, 10);
+  assert.equal(ALLOWED_TOOL_NAMES.length, 16);
+  assert.doesNotThrow(() => assertToolRegistry());
   assert.ok(joined.includes("sellerboard_snapshot"));
   assert.ok(joined.includes("helium10_snapshot"));
+  assert.ok(joined.includes("list_search_terms"));
   assert.doesNotMatch(joined, /delete|billing|listing|inventory|chat|gmail|password|secret/i);
-  assert.ok(ALLOWED_AMAZON_PATHS.every((path) => path.startsWith("/sp/")));
+  assert.ok(ALLOWED_AMAZON_PATHS.every((path) => path.startsWith("/sp/") || path === "/reporting/reports"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/negativeKeywords"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/productAds"));
+  assert.ok(ALLOWED_AMAZON_PATHS.includes("/sp/targets"));
   assert.throws(() =>
     assertSafeCall({ method: "DELETE" as AmazonCall["method"], path: "/sp/campaigns", media: "application/json" }),
   );
@@ -97,7 +119,7 @@ test("budget change waits for confirm, then shows the new cap and an audit row",
   assert.equal(chat.proposals.length, 1);
   const mid = await listCampaigns();
   assert.equal(mid.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.dailyBudget, 35);
-  const confirmed = await confirmProposal(actor, chat.proposals[0].id);
+  const confirmed = await confirmProposal(actor, chat.proposals[0].id, bet());
   assert.equal(confirmed.ok, true);
   if (!confirmed.ok) return;
   assert.match(confirmed.proposal.result?.summary || "", /40\.00/);
@@ -107,6 +129,7 @@ test("budget change waits for confirm, then shows the new cap and an audit row",
   assert.ok(csv);
   assert.match(csv!.body, /applied/);
   assert.match(csv!.body, /SOT Brand Defense/);
+  assert.match(csv!.body, /Mermaid dough kit/);
 });
 
 test("a delete-all payload does not remove campaigns", async () => {
@@ -159,7 +182,7 @@ test("keyword proposal adds the keyword only after confirm", async () => {
   if (!created.ok) return;
   const before = (await listCampaigns()).find((campaign) => campaign.campaignId === "sim-cmp-brand");
   assert.equal(before?.keywords.some((keyword) => keyword.keywordText === "calm stone"), false);
-  await confirmProposal(actor, created.proposal.id);
+  await confirmProposal(actor, created.proposal.id, bet());
   const after = (await listCampaigns()).find((campaign) => campaign.campaignId === "sim-cmp-brand");
   assert.equal(after?.keywords.some((keyword) => keyword.keywordText === "calm stone" && keyword.bid === 1.25), true);
 });

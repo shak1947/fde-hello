@@ -1,13 +1,24 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import type { AuditEvent, Campaign, Proposal } from "./types";
+import type { AuditEvent, Campaign, FeedbackCheck, Proposal } from "./types";
 import { seedCampaigns } from "./seed";
+
+export function normalizeCampaign(row: Campaign): Campaign {
+  return {
+    ...row,
+    keywords: row.keywords ?? [],
+    negatives: row.negatives ?? [],
+    productTargets: row.productTargets ?? [],
+    productAds: row.productAds ?? [],
+  };
+}
 
 type Bucket = {
   file: string;
   campaigns: Campaign[];
   proposals: Proposal[];
   audit: AuditEvent[];
+  feedback: FeedbackCheck[];
 };
 
 const globalStore = globalThis as typeof globalThis & {
@@ -21,8 +32,17 @@ function stateFile(): string {
   );
 }
 
+function normalizeAudit(event: AuditEvent): AuditEvent {
+  return {
+    ...event,
+    intent: event.intent ?? "",
+    expected: event.expected ?? "",
+    challengeStrength: event.challengeStrength ?? "",
+  };
+}
+
 function emptyBucket(file: string): Bucket {
-  return { file, campaigns: seedCampaigns(), proposals: [], audit: [] };
+  return { file, campaigns: seedCampaigns(), proposals: [], audit: [], feedback: [] };
 }
 
 function readBucket(file: string): Bucket {
@@ -31,9 +51,10 @@ function readBucket(file: string): Bucket {
     const parsed = JSON.parse(raw) as Partial<Bucket>;
     return {
       file,
-      campaigns: parsed.campaigns?.length ? parsed.campaigns : seedCampaigns(),
+      campaigns: parsed.campaigns?.length ? parsed.campaigns.map(normalizeCampaign) : seedCampaigns(),
       proposals: parsed.proposals ?? [],
-      audit: parsed.audit ?? [],
+      audit: (parsed.audit ?? []).map(normalizeAudit),
+      feedback: parsed.feedback ?? [],
     };
   } catch {
     return emptyBucket(file);
@@ -51,8 +72,8 @@ function bucket(): Bucket {
 function persist(current: Bucket) {
   const file = current.file;
   mkdirSync(path.dirname(file), { recursive: true });
-  const { campaigns, proposals, audit } = current;
-  writeFileSync(file, JSON.stringify({ campaigns, proposals, audit }));
+  const { campaigns, proposals, audit, feedback } = current;
+  writeFileSync(file, JSON.stringify({ campaigns, proposals, audit, feedback }));
 }
 
 let queue: Promise<void> = Promise.resolve();

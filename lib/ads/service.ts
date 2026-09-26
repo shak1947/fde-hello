@@ -1,26 +1,22 @@
 import { randomUUID } from "node:crypto";
 import { AdsApiError, amazonApply, amazonListCampaigns } from "./amazon";
+import { publicCaps } from "./caps";
+import { actionCampaignIds, compareOutcome, formatExpected, parseChallenge, readActual } from "./challenge";
+import { attachKits, CATALOG, findKit, groupByKit, resolveKit } from "./catalog";
 import { adsMode } from "./mode";
 import { redactSecrets, redactUnknown } from "./redact";
 import { parseAction, type DenyHit } from "./policy";
 import { planMessage, type Plan } from "./planner";
+import { applySimulated } from "./simulate";
 import { clone, withStore } from "./store";
 import { toCsv } from "./csv";
-import type {
-  Actor,
-  AdsAction,
-  ApplyResult,
-  AuditEvent,
-  Campaign,
-  Keyword,
-  Proposal,
-} from "./types";
+import type { Actor, AdsAction, ApplyResult, AuditEvent, Campaign, DecisionChallenge, Proposal } from "./types";
 
 const PROPOSAL_TTL_MS = 30 * 60 * 1000;
 
 export async function listCampaigns(): Promise<Campaign[]> {
   if (adsMode() === "live") return amazonListCampaigns();
-  return withStore((bucket) => clone(bucket.campaigns));
+  return withStore((bucket) => attachKits(clone(bucket.campaigns)));
 }
 
 export async function workspace(actor: Actor) {
@@ -29,6 +25,7 @@ export async function workspace(actor: Actor) {
   const side = await withStore((bucket) => ({
     proposals: bucket.proposals.filter((item) => item.actorId === actor.id).slice(-20),
     audit: bucket.audit.slice(-40).reverse(),
+    checks: bucket.feedback.slice(-30).reverse(),
   }));
   return {
     mode,
@@ -36,13 +33,19 @@ export async function workspace(actor: Actor) {
     spendOwner: "Shakeel Amir",
     account: "Sensationally OT",
     simulated: mode === "dry-run",
+    sampleData: mode === "dry-run",
+    connectionLabel: mode === "dry-run" ? "API not connected" : "Live Ads API",
+    caps: publicCaps(),
     connectHint:
       mode === "dry-run"
-        ? "Amazon Ads credentials are not set. Changes stay in the simulator. See Connect Ads API."
-        : "Connected to the Amazon Advertising API. Writes still wait for confirmation.",
+        ? "API not connected. Kit rows marked Sample are not live Amazon data. Confirm still asks for the bet, and nothing is sent to Amazon."
+        : "Connected to the Amazon Advertising API for Sponsored Products. Writes still wait for a named bet and confirmation. Sponsored Brands and Sponsored Display are not connected.",
+    catalog: CATALOG,
+    kits: groupByKit(campaigns),
     campaigns,
     proposals: side.proposals,
     audit: side.audit,
+    checks: side.checks,
   };
 }
 
@@ -85,7 +88,7 @@ export async function proposeAction(actor: Actor, input: unknown, rawText?: stri
   return { ok: true, proposal: proposal.proposal };
 }
 
-export async function confirmProposal(actor: Actor, id: string) {
+export async function confirmProposal(actor: Actor, id: string, challengeInput?: unknown) {
   const pending = await withStore((bucket) =>
     clone(bucket.proposals.find((item) => item.id === id) ?? null),
   );
@@ -104,6 +107,9 @@ export async function confirmProposal(actor: Actor, id: string) {
     if (recheck.deny) await recordDenied(actor, recheck.deny, pending.action);
     return recheck;
   }
+  const campaigns = await listCampaigns().catch(() => [] as Campaign[]);
+  const challenge = parseChallenge(challengeInput, pending.summary, campaigns, recheck.action);
+  if (!challenge.ok) return challenge;
 
   try {
     const result = await applyAction(recheck.action);
@@ -111,8 +117,11 @@ export async function confirmProposal(actor: Actor, id: string) {
       const row = bucket.proposals.find((item) => item.id === id);
       if (!row || row.status !== "pending") return null;
       row.status = "applied";
+      row.challenge = challenge.challenge;
       row.result = result;
-      bucket.audit.push(auditFrom(actor, "applied", recheck.action.type, result.summary, result));
+      const event = auditFrom(actor, "applied", recheck.action.type, result.summary, result, challenge.challenge);
+      bucket.audit.push(event);
+      bucket.feedback.push(feedbackFrom(actor, row, challenge.challenge, campaigns));
       return clone(row);
     });
     if (!saved) return { ok: false as const, status: 409, error: "This change was already resolved." };
@@ -125,10 +134,32 @@ export async function confirmProposal(actor: Actor, id: string) {
         row.status = "failed";
         row.error = message;
       }
-      bucket.audit.push(auditFrom(actor, "failed", recheck.action.type, message, { id }));
+      bucket.audit.push(auditFrom(actor, "failed", recheck.action.type, message, { id }, challenge.challenge));
     });
     return { ok: false as const, status: 502, error: message };
   }
+}
+
+export async function recordFeedback(actor: Actor, input: unknown) {
+  const body = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const id = typeof body.id === "string" ? body.id : "";
+  const parsed = readActual(body);
+  if (!id) return { ok: false as const, status: 400, error: "Name the check you are closing." };
+  if (!parsed.ok) return { ok: false as const, status: 400, error: parsed.error };
+  return withStore((bucket) => {
+    const row = bucket.feedback.find((item) => item.id === id);
+    if (!row) return { ok: false as const, status: 404, error: "That check was not found." };
+    if (row.status === "recorded") {
+      return { ok: false as const, status: 409, error: "This check already has a result." };
+    }
+    const actual = { ...parsed.actual, recordedAt: new Date().toISOString() };
+    row.actual = actual;
+    row.status = "recorded";
+    row.comparison = compareOutcome(row.challenge, actual, row.reviewAfter);
+    const summary = `Feedback on ${row.kitName}: ${row.comparison.verdict}. ${row.comparison.lines[0] ?? ""}`.trim();
+    bucket.audit.push(auditFrom(actor, "applied", "feedback_check", summary, { id, comparison: row.comparison }, row.challenge));
+    return { ok: true as const, check: clone(row) };
+  });
 }
 
 export async function rejectProposal(actor: Actor, id: string) {
@@ -231,11 +262,23 @@ export async function exportDataset(dataset: string): Promise<{ filename: string
         keyword.negative,
       ]),
     );
+    const negativeRows = view.campaigns.flatMap((campaign) =>
+      (campaign.negatives ?? []).map((entry) => [
+        campaign.campaignId,
+        campaign.name,
+        entry.entryId,
+        entry.value,
+        entry.matchType,
+        "",
+        entry.state,
+        true,
+      ]),
+    );
     return {
       filename: "sot-ads-keywords.csv",
       body: toCsv(
         ["campaignId", "campaignName", "keywordId", "keywordText", "matchType", "bid", "state", "negative"],
-        rows,
+        [...rows, ...negativeRows],
       ),
     };
   }
@@ -244,7 +287,7 @@ export async function exportDataset(dataset: string): Promise<{ filename: string
     return {
       filename: "sot-ads-audit.csv",
       body: toCsv(
-        ["id", "at", "actorLabel", "mode", "actionType", "status", "summary"],
+        ["id", "at", "actorLabel", "mode", "actionType", "status", "summary", "intent", "expected", "challengeStrength"],
         audit.map((event) => [
           event.id,
           event.at,
@@ -253,6 +296,9 @@ export async function exportDataset(dataset: string): Promise<{ filename: string
           event.actionType,
           event.status,
           event.summary,
+          event.intent ?? "",
+          event.expected ?? "",
+          event.challengeStrength ?? "",
         ]),
       ),
     };
@@ -308,6 +354,7 @@ function auditFrom(
   actionType: string,
   summary: string,
   detail: unknown,
+  challenge?: DecisionChallenge,
 ): AuditEvent {
   return {
     id: `aud-${randomUUID()}`,
@@ -318,14 +365,47 @@ function auditFrom(
     actionType,
     status,
     summary: redactSecrets(summary),
-    detail: redactUnknown(detail),
+    intent: challenge?.intent ?? "",
+    expected: challenge ? formatExpected(challenge) : "",
+    challengeStrength: challenge?.strength ?? "",
+    detail: redactUnknown(challenge ? { detail, challenge } : detail),
+  };
+}
+
+function feedbackFrom(actor: Actor, proposal: Proposal, challenge: DecisionChallenge, campaigns: Campaign[]) {
+  const ids = actionCampaignIds(proposal.action);
+  const kit =
+    (proposal.action.type === "create_campaign" ? findKit(proposal.action.kitId) : null) ||
+    campaigns.map((campaign) => (ids.includes(campaign.campaignId) ? resolveKit(campaign) : null)).find(Boolean) ||
+    null;
+  const reviewAfter = new Date(Date.now() + challenge.timelineDays * 24 * 60 * 60 * 1000).toISOString();
+  return {
+    id: `chk-${randomUUID()}`,
+    proposalId: proposal.id,
+    at: new Date().toISOString(),
+    reviewAfter,
+    actorId: actor.id,
+    actorLabel: actor.label,
+    kitId: kit?.kitId ?? null,
+    kitName: kit?.name ?? "Not tied to a kit",
+    summary: proposal.summary,
+    mode: adsMode(),
+    challenge,
+    status: "awaiting" as const,
+    actual: null,
+    comparison: null,
   };
 }
 
 async function applyAction(action: AdsAction): Promise<ApplyResult> {
   if (adsMode() === "live") {
     const applied = await amazonApply(action);
-    return { mode: "live", summary: applied.summary, before: applied.before, after: applied.after };
+    return {
+      mode: "live",
+      summary: redactSecrets(applied.summary),
+      before: redactUnknown(applied.before),
+      after: redactUnknown(applied.after),
+    };
   }
   return withStore((bucket) => {
     const applied = applySimulated(bucket.campaigns, action);
@@ -333,139 +413,14 @@ async function applyAction(action: AdsAction): Promise<ApplyResult> {
   });
 }
 
-function applySimulated(campaigns: Campaign[], action: AdsAction): {
-  summary: string;
-  before: unknown;
-  after: unknown;
-} {
-  if (action.type === "create_campaign") {
-    const campaignId = `sim-cmp-${randomUUID().slice(0, 8)}`;
-    const created: Campaign = {
-      campaignId,
-      name: action.name,
-      state: action.state,
-      targetingType: action.targetingType,
-      dailyBudget: action.dailyBudget,
-      spend: 0,
-      sales: 0,
-      clicks: 0,
-      impressions: 0,
-      simulated: true,
-      adGroupId: `sim-ag-${campaignId}`,
-      keywords: [],
-    };
-    campaigns.push(created);
-    return {
-      summary: `Dry-run created “${action.name}” (${action.state}) at $${action.dailyBudget.toFixed(2)}/day. No Amazon spend occurred.`,
-      before: null,
-      after: publicCampaign(created),
-    };
-  }
-
-  if (action.type === "set_budget") {
-    const campaign = requireCampaign(campaigns, action.campaignId);
-    const before = publicCampaign(campaign);
-    campaign.dailyBudget = action.dailyBudget;
-    return {
-      summary: `Dry-run set ${campaign.name} daily budget from $${before.dailyBudget.toFixed(2)} to $${campaign.dailyBudget.toFixed(2)}. No Amazon spend occurred.`,
-      before,
-      after: publicCampaign(campaign),
-    };
-  }
-
-  if (action.type === "set_campaign_state") {
-    const before = action.campaignIds.map((id) => publicCampaign(requireCampaign(campaigns, id)));
-    for (const id of action.campaignIds) {
-      requireCampaign(campaigns, id).state = action.state;
-    }
-    const after = action.campaignIds.map((id) => publicCampaign(requireCampaign(campaigns, id)));
-    return {
-      summary: `Dry-run set ${action.campaignIds.length} campaign(s) to ${action.state}. Nothing was deleted.`,
-      before,
-      after,
-    };
-  }
-
-  if (action.type === "update_campaign") {
-    const campaign = requireCampaign(campaigns, action.campaignId);
-    const before = publicCampaign(campaign);
-    if (action.name) campaign.name = action.name;
-    if (action.state) campaign.state = action.state;
-    return {
-      summary: `Dry-run updated ${campaign.name}.`,
-      before,
-      after: publicCampaign(campaign),
-    };
-  }
-
-  const campaign = requireCampaign(campaigns, action.campaignId);
-  const before = campaign.keywords.map(publicKeyword);
-  for (const input of action.keywords) {
-    const existing = campaign.keywords.find(
-      (keyword) =>
-        keyword.keywordId === input.keywordId ||
-        (keyword.keywordText.toLowerCase() === input.keywordText.toLowerCase() &&
-          keyword.matchType === input.matchType &&
-          keyword.negative === Boolean(input.negative)),
-    );
-    if (existing) {
-      existing.bid = input.bid;
-      existing.state = input.state;
-      existing.keywordText = input.keywordText;
-      existing.matchType = input.matchType;
-      existing.negative = Boolean(input.negative);
-    } else {
-      campaign.keywords.push({
-        keywordId: `sim-kw-${randomUUID().slice(0, 8)}`,
-        campaignId: campaign.campaignId,
-        adGroupId: campaign.adGroupId,
-        keywordText: input.keywordText,
-        matchType: input.matchType,
-        bid: input.bid,
-        state: input.state,
-        negative: Boolean(input.negative),
-      });
-    }
-  }
-  return {
-    summary: `Dry-run updated ${action.keywords.length} keyword(s) on ${campaign.name}.`,
-    before,
-    after: campaign.keywords.map(publicKeyword),
-  };
-}
-
-function requireCampaign(campaigns: Campaign[], id: string): Campaign {
-  const campaign = campaigns.find((item) => item.campaignId === id);
-  if (!campaign) throw new AdsApiError(`No campaign ${id} is in this view.`, 404);
-  return campaign;
-}
-
-function publicCampaign(campaign: Campaign) {
-  return {
-    campaignId: campaign.campaignId,
-    name: campaign.name,
-    state: campaign.state,
-    dailyBudget: campaign.dailyBudget,
-    targetingType: campaign.targetingType,
-  };
-}
-
-function publicKeyword(keyword: Keyword) {
-  return {
-    keywordId: keyword.keywordId,
-    keywordText: keyword.keywordText,
-    matchType: keyword.matchType,
-    bid: keyword.bid,
-    state: keyword.state,
-    negative: keyword.negative,
-  };
-}
-
 export function describeAction(action: AdsAction, campaigns: Campaign[]): string {
   const name = (id: string) => campaigns.find((item) => item.campaignId === id)?.name ?? id;
   switch (action.type) {
-    case "create_campaign":
-      return `Create ${action.state} campaign “${action.name}” at $${action.dailyBudget.toFixed(2)}/day`;
+    case "create_campaign": {
+      const kit = findKit(action.kitId);
+      const onKit = kit ? ` for ${kit.name}` : " with no kit";
+      return `Create ${action.state} campaign “${action.name}”${onKit} at $${action.dailyBudget.toFixed(2)}/day`;
+    }
     case "set_budget":
       return `Set ${name(action.campaignId)} daily budget to $${action.dailyBudget.toFixed(2)}`;
     case "set_campaign_state":
@@ -474,6 +429,18 @@ export function describeAction(action: AdsAction, campaigns: Campaign[]): string
       return `Update ${name(action.campaignId)}`;
     case "upsert_keywords":
       return `Change ${action.keywords.length} keyword(s) on ${name(action.campaignId)}`;
+    case "update_keyword":
+      return `Update keyword ${action.keywordId} on ${name(action.campaignId)}${action.bid != null ? ` bid $${action.bid.toFixed(2)}` : ""} ${action.state ?? ""}`.trim();
+    case "add_keyword":
+      return `Add ${action.matchType} keyword “${action.keywordText}” on ${name(action.campaignId)} at $${action.bid.toFixed(2)}`;
+    case "add_negative":
+      return `Add negative ${action.kind === "ASIN" ? action.asin : action.keywordText} on ${name(action.campaignId)} (${action.scope})`;
+    case "apply_search_term":
+      return `Apply search term “${action.searchTerm}” as ${action.as} on ${name(action.campaignId)}`;
+    case "upsert_product_target":
+      return `${action.targetId ? "Update" : "Add"} product target ${action.asin} on ${name(action.campaignId)}`;
+    case "manage_product_ad":
+      return `${action.adId ? "Set" : "Add"} product ad ${action.asin || action.sku || action.adId} ${action.state} on ${name(action.campaignId)}`;
     default:
       return "Amazon Ads change";
   }

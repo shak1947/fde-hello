@@ -1,10 +1,17 @@
 import { z } from "zod";
+import { BID_CAP_ENV, BUDGET_CAP_ENV, capFailure, readCap } from "./caps";
+import { findKit } from "./catalog";
+import { adsMode } from "./mode";
 import { redactSecrets } from "./redact";
 import {
   DELIVERY_STATES,
   MATCH_TYPES,
+  NEGATIVE_MATCH_TYPES,
+  NEGATIVE_SCOPES,
   TARGETING_TYPES,
   type AdsAction,
+  type MatchType,
+  type NegativeMatchType,
 } from "./types";
 
 export const BLOCKED_TOOL_MESSAGE =
@@ -19,6 +26,12 @@ export const ALLOWED_TOOL_NAMES = [
   "propose_set_budget",
   "propose_set_campaign_state",
   "propose_upsert_keywords",
+  "propose_update_keyword",
+  "propose_add_negative",
+  "propose_apply_search_term",
+  "propose_upsert_product_target",
+  "propose_manage_product_ad",
+  "list_search_terms",
   "sellerboard_snapshot",
   "helium10_snapshot",
 ] as const;
@@ -62,10 +75,15 @@ const DENY_RULES: { rule: string; pattern: RegExp; message: string }[] = [
     message: `Refused. Bulk delete and “delete everything” are not available. Pause a campaign if it should stop spending. ${BLOCKED_TOOL_MESSAGE}`,
   },
   {
+    rule: "archive",
+    pattern: /\b(un)?archiv(?:e|ed|ing)\b/i,
+    message: `Refused. Archiving campaigns, keywords, targets, or product ads is not available. Pause them instead. ${BLOCKED_TOOL_MESSAGE}`,
+  },
+  {
     rule: "single-delete",
     pattern:
-      /\b(delete|archive)\s+(the\s+)?(campaign|keyword|ad group|target)\b|\bremove\s+(the\s+)?(campaign|keyword|ad group)\b/i,
-    message: `Refused. This portal does not delete campaigns or keywords. Pause them, or change the bid, match type, or budget. ${BLOCKED_TOOL_MESSAGE}`,
+      /\b(delete|remove)\s+(the\s+)?(campaign|keyword|ad group|target|product ad|asin)\b/i,
+    message: `Refused. This portal does not delete campaigns, keywords, targets, or product ads. Pause them, or change the bid, match type, or budget. ${BLOCKED_TOOL_MESSAGE}`,
   },
   {
     rule: "billing",
@@ -74,9 +92,15 @@ const DENY_RULES: { rule: string; pattern: RegExp; message: string }[] = [
     message: `Refused. Billing and payment changes are outside this portal. ${BLOCKED_TOOL_MESSAGE}`,
   },
   {
+    rule: "helium-manage",
+    pattern:
+      /\b(helium\s*10|h10|helium)\s+manage\b|\bmanage\b[\s\S]{0,40}\b(helium\s*10|h10)\b|\bhelium\s*(10\s+)?manage\b/i,
+    message: `Refused. Helium 10 Manage writes are not available. Helium 10 stays analysis only. ${BLOCKED_TOOL_MESSAGE}`,
+  },
+  {
     rule: "analysis-write",
     pattern:
-      /\b(update|change|edit|delete|create|upload|connect|sync)\s+(?:the\s+|my\s+|our\s+)?(sellerboard|helium\s*10|h10)\b|\b(sellerboard|helium\s*10|h10)\b\s+(settings|password|account|project)\b/i,
+      /\b(update|change|edit|delete|create|upload|connect|sync|write)\s+(?:the\s+|my\s+|our\s+|a\s+)?(sellerboard|helium\s*10|h10)\b|\b(sellerboard|helium\s*10|h10)\b\s+(settings|password|account|project|listing)\b/i,
     message: `Refused. Sellerboard and Helium 10 are analysis only. ${BLOCKED_TOOL_MESSAGE}`,
   },
   {
@@ -155,6 +179,12 @@ const keywordInput = z.object({
   negative: z.boolean().optional(),
 });
 
+const asinSchema = z
+  .string()
+  .trim()
+  .regex(/^B0[A-Z0-9]{8}$/i)
+  .transform((value) => value.toUpperCase());
+
 const actionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("create_campaign"),
@@ -162,6 +192,7 @@ const actionSchema = z.discriminatedUnion("type", [
     dailyBudget: money,
     targetingType: z.enum(TARGETING_TYPES),
     state: z.enum(DELIVERY_STATES),
+    kitId: z.string().min(1).max(40).optional(),
   }),
   z.object({
     type: z.literal("update_campaign"),
@@ -184,6 +215,62 @@ const actionSchema = z.discriminatedUnion("type", [
     campaignId: z.string().min(1).max(80),
     keywords: z.array(keywordInput).min(1).max(25),
   }),
+  z.object({
+    type: z.literal("update_keyword"),
+    campaignId: z.string().min(1).max(80),
+    keywordId: z.string().min(1).max(80),
+    bid: money.optional(),
+    state: z.enum(DELIVERY_STATES).optional(),
+  }),
+  z.object({
+    type: z.literal("add_keyword"),
+    campaignId: z.string().min(1).max(80),
+    adGroupId: z.string().min(1).max(80).optional(),
+    keywordText: z.string().min(1).max(80),
+    matchType: z.enum(MATCH_TYPES),
+    bid: money,
+    state: z.enum(DELIVERY_STATES),
+  }),
+  z.object({
+    type: z.literal("add_negative"),
+    campaignId: z.string().min(1).max(80),
+    adGroupId: z.string().min(1).max(80).optional(),
+    scope: z.enum(NEGATIVE_SCOPES),
+    kind: z.enum(["KEYWORD", "ASIN"]),
+    keywordText: z.string().min(1).max(80).optional(),
+    matchType: z.enum(NEGATIVE_MATCH_TYPES).optional(),
+    asin: asinSchema.optional(),
+    state: z.enum(DELIVERY_STATES),
+  }),
+  z.object({
+    type: z.literal("apply_search_term"),
+    campaignId: z.string().min(1).max(80),
+    adGroupId: z.string().min(1).max(80).optional(),
+    searchTerm: z.string().min(1).max(80),
+    as: z.enum(["KEYWORD", "NEGATIVE_KEYWORD", "NEGATIVE_ASIN"]),
+    matchType: z.union([z.enum(MATCH_TYPES), z.enum(NEGATIVE_MATCH_TYPES)]),
+    bid: money.optional(),
+    scope: z.enum(NEGATIVE_SCOPES).optional(),
+    state: z.enum(DELIVERY_STATES),
+  }),
+  z.object({
+    type: z.literal("upsert_product_target"),
+    campaignId: z.string().min(1).max(80),
+    adGroupId: z.string().min(1).max(80).optional(),
+    targetId: z.string().min(1).max(80).optional(),
+    asin: asinSchema,
+    bid: money.optional(),
+    state: z.enum(DELIVERY_STATES),
+  }),
+  z.object({
+    type: z.literal("manage_product_ad"),
+    campaignId: z.string().min(1).max(80),
+    adGroupId: z.string().min(1).max(80).optional(),
+    adId: z.string().min(1).max(80).optional(),
+    asin: asinSchema.optional(),
+    sku: z.string().min(1).max(80).optional(),
+    state: z.enum(DELIVERY_STATES),
+  }),
 ]);
 
 export type ActionParse =
@@ -191,10 +278,8 @@ export type ActionParse =
   | { ok: false; status: number; error: string; deny?: DenyHit };
 
 function cleanAction(action: AdsAction): AdsAction {
-  if (action.type === "create_campaign" || action.type === "update_campaign") {
-    if (action.type === "create_campaign") {
-      return { ...action, name: tidy(action.name) };
-    }
+  if (action.type === "create_campaign") return { ...action, name: tidy(action.name) };
+  if (action.type === "update_campaign") {
     return { ...action, name: action.name ? tidy(action.name) : undefined };
   }
   if (action.type === "upsert_keywords") {
@@ -206,6 +291,19 @@ function cleanAction(action: AdsAction): AdsAction {
         negative: Boolean(keyword.negative),
       })),
     };
+  }
+  if (action.type === "add_keyword") return { ...action, keywordText: tidy(action.keywordText) };
+  if (action.type === "add_negative") {
+    return {
+      ...action,
+      keywordText: action.keywordText ? tidy(action.keywordText) : undefined,
+      asin: action.asin?.toUpperCase(),
+    };
+  }
+  if (action.type === "apply_search_term") return { ...action, searchTerm: tidy(action.searchTerm) };
+  if (action.type === "upsert_product_target") return { ...action, asin: action.asin.toUpperCase() };
+  if (action.type === "manage_product_ad") {
+    return { ...action, asin: action.asin?.toUpperCase(), sku: action.sku ? tidy(action.sku) : undefined };
   }
   return action;
 }
@@ -226,7 +324,14 @@ function blockedActionType(input: unknown): ActionParse | null {
       deny: { rule: "analysis-write", message: `Refused. Sellerboard and Helium 10 are analysis only. ${BLOCKED_TOOL_MESSAGE}` },
     };
   }
-  if (/email|gmail|mail|listing|inventory|order|password|secret|credential|grok|bot/i.test(type)) {
+  if (/archive|delete|billing|sb_|sd_|sponsoredbrands|sponsoreddisplay/i.test(type)) {
+    const hit = {
+      rule: "archive",
+      message: `Refused. Archive, delete, billing, Sponsored Brands, and Sponsored Display writes are not available. ${BLOCKED_TOOL_MESSAGE}`,
+    };
+    return { ok: false, status: 403, error: hit.message, deny: hit };
+  }
+  if (/email|gmail|mail|listing|inventory|order|password|secret|credential|grok|bot|helium|sellerboard/i.test(type)) {
     const hit = {
       rule: "out-of-scope",
       message: `Refused. ${BLOCKED_TOOL_MESSAGE}`,
@@ -236,11 +341,98 @@ function blockedActionType(input: unknown): ActionParse | null {
   return null;
 }
 
+function containsArchived(value: unknown): boolean {
+  if (value === "ARCHIVED") return true;
+  if (Array.isArray(value)) return value.some((entry) => containsArchived(entry));
+  if (value && typeof value === "object") return Object.values(value).some((entry) => containsArchived(entry));
+  return false;
+}
+
+function budgetAmounts(action: AdsAction): number[] {
+  if (action.type === "create_campaign" || action.type === "set_budget") return [action.dailyBudget];
+  return [];
+}
+
+function bidAmounts(action: AdsAction): number[] {
+  if (action.type === "upsert_keywords") {
+    return action.keywords.filter((keyword) => !keyword.negative).map((keyword) => keyword.bid);
+  }
+  if (action.type === "add_keyword") return [action.bid];
+  if (action.type === "update_keyword" && action.bid != null) return [action.bid];
+  if (action.type === "upsert_product_target" && action.bid != null) return [action.bid];
+  if (action.type === "apply_search_term" && action.as === "KEYWORD" && action.bid != null) return [action.bid];
+  return [];
+}
+
+function shapeError(action: AdsAction): string | null {
+  if (action.type === "update_campaign" && !action.name && !action.state) return "Name or on/off state is required.";
+  if (action.type === "create_campaign" && !action.name) return "Name is empty.";
+  if (action.type === "create_campaign" && action.kitId && !findKit(action.kitId)) {
+    return "Pick Mermaid dough or Farm dough. This catalog does not have another kit.";
+  }
+  if (action.type === "upsert_keywords" && action.keywords.some((keyword) => !keyword.keywordText)) {
+    return "Keyword text is empty.";
+  }
+  if (action.type === "update_keyword" && action.bid == null && !action.state) return "Bid or on/off state is required.";
+  if (action.type === "add_keyword" && !action.keywordText) return "Keyword text is empty.";
+  if (action.type === "add_negative") {
+    if (action.kind === "KEYWORD" && (!action.keywordText || !action.matchType)) {
+      return "A negative keyword needs text and a negative match type.";
+    }
+    if (action.kind === "ASIN" && !action.asin) return "A negative ASIN target needs a 10-character ASIN.";
+    if (action.scope === "AD_GROUP" && action.adGroupId === "") return "Ad group id is empty.";
+  }
+  if (action.type === "apply_search_term") {
+    if (!action.searchTerm) return "Search term is empty.";
+    if (action.as === "KEYWORD") {
+      if (!isPositiveMatch(action.matchType) || action.bid == null) {
+        return "Applying a search term as a keyword needs an exact, phrase, or broad match and a bid.";
+      }
+    }
+    if (action.as === "NEGATIVE_KEYWORD" && !isNegativeMatch(action.matchType)) {
+      return "Applying a search term as a negative keyword needs a negative match type.";
+    }
+    if (action.as === "NEGATIVE_ASIN" && !/^B0[A-Z0-9]{8}$/i.test(action.searchTerm)) {
+      return "Only an ASIN-shaped search term can be applied as a negative ASIN.";
+    }
+  }
+  if (action.type === "upsert_product_target" && !action.targetId && action.bid == null) {
+    return "A new product target needs a bid.";
+  }
+  if (action.type === "manage_product_ad" && !action.adId && !action.asin && !action.sku) {
+    return "A product ad needs an ASIN or SKU to add, or an ad id to pause or enable.";
+  }
+  return null;
+}
+
+function isPositiveMatch(value: string): value is MatchType {
+  return (MATCH_TYPES as readonly string[]).includes(value);
+}
+
+function isNegativeMatch(value: string): value is NegativeMatchType {
+  return (NEGATIVE_MATCH_TYPES as readonly string[]).includes(value);
+}
+
+function capError(action: AdsAction): string | null {
+  const live = adsMode() === "live";
+  return (
+    capFailure(BUDGET_CAP_ENV, "Daily budget", budgetAmounts(action), readCap(BUDGET_CAP_ENV), live) ||
+    capFailure(BID_CAP_ENV, "Bid", bidAmounts(action), readCap(BID_CAP_ENV), live)
+  );
+}
+
 export function parseAction(input: unknown, rawText?: string): ActionParse {
   const textHit = rawText ? screenText(rawText) : null;
   if (textHit) return { ok: false, status: 403, error: redactSecrets(textHit.message), deny: textHit };
   const valueHit = screenValue(input);
   if (valueHit) return { ok: false, status: 403, error: redactSecrets(valueHit.message), deny: valueHit };
+  if (containsArchived(input)) {
+    const hit = {
+      rule: "archive",
+      message: `Refused. ARCHIVED is not a state this portal can send. Pause instead. ${BLOCKED_TOOL_MESSAGE}`,
+    };
+    return { ok: false, status: 403, error: hit.message, deny: hit };
+  }
   const blockedType = blockedActionType(input);
   if (blockedType) return blockedType;
 
@@ -253,14 +445,12 @@ export function parseAction(input: unknown, rawText?: string): ActionParse {
     };
   }
   const action = cleanAction(parsed.data);
-  if (action.type === "update_campaign" && !action.name && !action.state) {
-    return { ok: false, status: 400, error: "Name or on/off state is required." };
-  }
-  if (
-    (action.type === "create_campaign" && !action.name) ||
-    (action.type === "upsert_keywords" && action.keywords.some((k) => !k.keywordText))
-  ) {
-    return { ok: false, status: 400, error: "Name or keyword text is empty." };
+  const shape = shapeError(action);
+  if (shape) return { ok: false, status: 400, error: shape };
+  const capped = capError(action);
+  if (capped) {
+    const hit = { rule: "spend-cap", message: capped };
+    return { ok: false, status: 403, error: redactSecrets(capped), deny: hit };
   }
   return { ok: true, action };
 }
