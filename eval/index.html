@@ -6,8 +6,8 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#0b1020" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23121a2f'/%3E%3Cpath d='M8 20.5 13.2 10h2.2L20.6 20.5h-2.3l-1-2.4h-5.1l-1 2.4H8zm4.2-4.1h3.9L14.2 12.8h-.1l-1.9 3.6z' fill='%235eead4'/%3E%3C/svg%3E" />
-  <title>Amazon Product Eval</title>
-  <meta name="description" content="Shak's Amazon product evaluation scorecard for Sensationally OT. Human scores only — no Amazon API." />
+  <title>Product dossiers</title>
+  <meta name="description" content="Sensationally OT product dossiers for Amazon FBA sourcing. Manual inputs and Helium 10 paste. No live Amazon API." />
   <style>
     :root {
       color-scheme: dark;
@@ -35,167 +35,236 @@
         radial-gradient(900px 500px at 100% 0%, rgba(94, 234, 212, .12), transparent 55%),
         var(--bg);
       color: var(--text);
-      line-height: 1.55;
+      line-height: 1.5;
     }
     a { color: var(--accent); }
     button, input, textarea, select { font: inherit; color: inherit; }
     button { cursor: pointer; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .86em; }
     .skip {
       position: absolute; left: 1rem; top: 0; transform: translateY(-120%);
       background: var(--accent); color: #0b1020; padding: .6rem .9rem; border-radius: 10px;
-      z-index: 40; font-weight: 700; text-decoration: none;
+      z-index: 50; font-weight: 700; text-decoration: none;
     }
     .skip:focus { transform: none; top: .75rem; }
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
     }
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 1.25rem 1rem 5rem; }
+    .hero, .panel, .product-card, .side-card, .sticky-stack, .compare-bar {
+      border: 1px solid var(--line);
+      background: rgba(18, 26, 47, .92);
+    }
     .hero {
-      display: grid; gap: 1.25rem; padding: 1.5rem;
-      border: 1px solid var(--line); border-radius: 20px;
+      display: grid; gap: 1.25rem; padding: 1.4rem;
+      border-radius: 20px;
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
       box-shadow: var(--shadow);
     }
-    @media (min-width: 800px) {
-      .hero { grid-template-columns: 1.45fr .8fr; align-items: start; }
+    @media (min-width: 860px) {
+      .hero { grid-template-columns: 1.45fr .85fr; align-items: start; }
     }
     .eyebrow {
-      margin: 0; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase;
-      color: var(--accent-2); font-weight: 650;
+      margin: 0; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--accent-2); font-weight: 700;
     }
-    h1 { margin: .35rem 0 .5rem; font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.15; }
-    h2 { margin: 0 0 .75rem; font-size: 1.15rem; }
-    h3 { margin: 0; font-size: 1.02rem; line-height: 1.3; }
-    .subtitle { margin: 0; color: var(--muted); font-size: 1.05rem; }
-    .meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
-    .chip {
+    h1 { margin: .3rem 0 .45rem; font-size: clamp(1.8rem, 4vw, 2.5rem); line-height: 1.12; }
+    h2 { margin: 0 0 .7rem; font-size: 1.15rem; }
+    h3 { margin: 0; font-size: 1rem; line-height: 1.3; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 1.02rem; }
+    .meta, .hero-actions, .row-actions, .identity-actions, .toolbar { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .meta { margin-top: .9rem; }
+    .hero-actions { margin-top: 1rem; }
+    .chip, .band {
       display: inline-flex; align-items: center;
-      background: var(--chip); border: 1px solid var(--line); color: var(--text);
-      border-radius: 999px; padding: .28rem .7rem; font-size: .82rem; text-decoration: none;
+      border: 1px solid var(--line); border-radius: 999px;
+      padding: .22rem .65rem; font-size: .8rem; text-decoration: none; color: var(--text);
+      background: var(--chip);
     }
     a.chip:hover { border-color: var(--accent); }
-    .side-card {
-      background: rgba(11, 16, 32, .45); border: 1px solid var(--line);
-      border-radius: 14px; padding: 1rem 1.1rem;
-    }
+    .side-card { border-radius: 14px; padding: 1rem 1.05rem; background: rgba(11, 16, 32, .45); }
     .side-card h2 {
-      margin: 0 0 .65rem; font-size: .85rem; text-transform: uppercase;
-      letter-spacing: .05em; color: var(--muted); font-weight: 650;
+      margin: 0 0 .6rem; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted); font-weight: 700;
     }
-    .side-card ul { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+    .side-card ol, .side-card ul { margin: 0; padding-left: 1.15rem; color: var(--muted); }
     .side-card li { margin: .35rem 0; }
-    .side-card strong { color: var(--text); }
-    .fine { margin: .55rem 0 0; color: var(--muted); font-size: .85rem; }
+    .side-card strong, .fine strong, .banner strong { color: var(--text); }
+    .fine { margin: .4rem 0 0; color: var(--muted); font-size: .84rem; }
     .banner {
-      margin-top: 1rem; padding: .9rem 1rem; border-radius: 14px;
+      margin-top: 1rem; padding: .85rem 1rem; border-radius: 14px;
       border: 1px solid rgba(94, 234, 212, .35);
       background: linear-gradient(180deg, rgba(94, 234, 212, .1), transparent 70%), rgba(18, 26, 47, .95);
       color: var(--muted);
     }
-    .banner strong { color: var(--text); }
     .banner.error {
       border-color: rgba(251, 113, 133, .5);
       background: rgba(251, 113, 133, .1);
       color: var(--bad);
     }
-    .scorebar {
-      position: sticky; top: .5rem; z-index: 20; margin-top: 1rem;
-      background: rgba(18, 26, 47, .94); backdrop-filter: blur(16px);
-      border: 1px solid var(--line); border-radius: 16px; padding: .85rem 1rem .75rem;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, .28);
+    .banner button { margin-top: .55rem; }
+    button.btn, .row-actions button, .identity-actions button, .toolbar button, .card-actions button, .hero-actions button, .compare-bar button, .h10-actions button {
+      background: var(--chip); border: 1px solid var(--line); border-radius: 10px;
+      padding: .5rem .75rem; min-height: 44px; color: var(--text);
     }
-    .scorebar-row { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: center; justify-content: space-between; }
-    .score-main { display: flex; gap: .9rem; align-items: center; }
-    .avg { margin: 0; font-size: clamp(2rem, 6vw, 2.8rem); font-weight: 750; letter-spacing: -.03em; line-height: 1; color: var(--muted); }
+    button.btn:hover, .row-actions button:hover, .identity-actions button:hover, .toolbar button:hover, .card-actions button:hover, .hero-actions button:hover, .compare-bar button:hover, .h10-actions button:hover {
+      border-color: var(--accent);
+    }
+    button.primary { background: var(--accent); color: #0b1020; border-color: transparent; font-weight: 750; }
+    button.primary:hover { filter: brightness(1.06); }
+    button.lg { min-height: 48px; padding: .7rem 1.05rem; font-size: 1rem; }
+    button.danger:hover { border-color: #fb7185; color: var(--bad); }
+    button.texty {
+      background: transparent; border: 0; color: var(--accent); padding: 0; min-height: 0; font-weight: 650;
+    }
+    .card-grid {
+      display: grid; gap: .8rem; margin-top: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    }
+    .product-card {
+      border-radius: 16px; padding: .95rem 1rem 1rem;
+      display: flex; flex-direction: column; gap: .45rem; min-width: 0;
+    }
+    .product-card h3 { font-size: 1.05rem; }
+    .card-title {
+      background: none; border: 0; padding: 0; text-align: left; font-weight: 750; font-size: 1.05rem; line-height: 1.3;
+    }
+    .card-title:hover { color: var(--accent-2); }
+    .facts { color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; }
+    .facts div { margin: .12rem 0; }
+    .compare-bar {
+      position: sticky; bottom: .75rem; z-index: 25; margin-top: 1rem;
+      display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between;
+      padding: .75rem .9rem; border-radius: 14px;
+      background: rgba(18, 26, 47, .96); box-shadow: var(--shadow);
+    }
+    [hidden] { display: none !important; }
+    .sticky-stack {
+      position: sticky; top: 0; z-index: 30; margin: 0 -1rem; padding: .75rem 1rem .65rem;
+      border-width: 0 0 1px; border-radius: 0 0 16px 16px;
+      background: rgba(12, 18, 34, .94); backdrop-filter: blur(16px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
+    }
+    .identity { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .35rem .8rem; align-items: start; }
+    .identity-score { text-align: right; }
+    .identity-actions { grid-column: 1 / -1; }
+    .name-input {
+      width: 100%; font-size: clamp(1.25rem, 2.5vw, 1.55rem); font-weight: 750; line-height: 1.2;
+      background: transparent; border: 1px solid transparent; border-radius: 10px;
+      padding: .15rem .35rem; margin: .15rem 0 0 -.35rem;
+    }
+    .name-input:hover, .name-input:focus { border-color: var(--line); background: var(--chip); }
+    .avg { margin: 0; font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 750; letter-spacing: -.03em; line-height: 1; color: var(--muted); }
     .avg.go { color: var(--go); }
     .avg.conditional { color: var(--warn); }
     .avg.pass { color: var(--bad); }
-    .formula { margin: .2rem 0 0; color: var(--muted); font-size: .85rem; }
-    .band {
-      display: inline-flex; align-items: center; border-radius: 999px;
-      padding: .28rem .7rem; font-weight: 750; letter-spacing: .02em;
-      border: 1px solid var(--line); background: var(--chip);
-    }
+    .band { font-weight: 750; }
     .band.go { color: var(--go); border-color: rgba(94, 234, 212, .45); background: rgba(94, 234, 212, .12); }
     .band.conditional { color: var(--warn); border-color: rgba(252, 211, 77, .45); background: rgba(252, 211, 77, .1); }
     .band.pass { color: var(--bad); border-color: rgba(253, 164, 175, .45); background: rgba(253, 164, 175, .1); }
     .band.none { color: var(--muted); }
-    .band-key { margin: .25rem 0 0; color: var(--muted); font-size: .8rem; }
-    .score-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
-    .meter { height: 4px; background: #1c2744; border-radius: 99px; overflow: hidden; margin-top: .7rem; }
+    .meter { height: 4px; background: #1c2744; border-radius: 99px; overflow: hidden; margin: .55rem 0 .15rem; }
     .meter > span { display: block; height: 100%; width: 0; background: var(--line); }
     .meter > span.go { background: var(--go); }
     .meter > span.conditional { background: var(--warn); }
     .meter > span.pass { background: var(--bad); }
-    section.panel {
-      margin-top: 1rem; padding: 1.15rem 1.15rem 1.25rem;
-      border: 1px solid var(--line); border-radius: 16px; background: rgba(18, 26, 47, .9);
+    .section-nav { display: flex; gap: .35rem; overflow-x: auto; padding: .45rem 0 .1rem; }
+    .section-nav button {
+      background: transparent; border: 1px solid transparent; color: var(--muted);
+      border-radius: 999px; padding: .35rem .7rem; min-height: 40px; white-space: nowrap;
     }
-    .fields { display: grid; gap: .75rem; }
+    .section-nav button.is-on { color: #0b1020; background: var(--accent-2); border-color: transparent; font-weight: 750; }
+    .panel {
+      margin-top: 1rem; padding: 1.05rem 1rem 1.15rem; border-radius: 16px;
+      scroll-margin-top: 11rem;
+    }
+    .kicker { margin: 0 0 .35rem; color: var(--accent-2); font-size: .75rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+    .intro { margin: 0 0 .85rem; color: var(--muted); }
+    .decision { margin-top: 1rem; }
+    .decision p { margin: 0; }
+    .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .85rem; }
+    @media (min-width: 800px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 1040px) { .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .kpi { border: 1px solid var(--line); border-radius: 12px; padding: .6rem .65rem; background: rgba(11, 16, 32, .35); min-width: 0; }
+    .kpi span { display: block; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .kpi strong { display: block; margin-top: .15rem; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+    .kpi em { display: block; margin-top: .1rem; color: var(--muted); font-style: normal; font-size: .75rem; }
+    .kpi.go strong { color: var(--go); }
+    .kpi.conditional strong { color: var(--warn); }
+    .kpi.pass strong, .kpi.is-bad strong { color: var(--bad); }
+    .fields { display: grid; gap: .7rem; }
     @media (min-width: 800px) {
-      .fields { grid-template-columns: 1.3fr .9fr .7fr; }
+      .fields.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .span-2 { grid-column: span 2; }
       .span-3 { grid-column: 1 / -1; }
     }
-    label.field { display: grid; gap: .35rem; font-size: .82rem; color: var(--muted); font-weight: 650; }
+    label.field, .field { display: grid; gap: .3rem; font-size: .8rem; color: var(--muted); font-weight: 650; }
     input[type="text"], input[type="url"], input[type="date"], input[type="number"], textarea, select {
       width: 100%; background: var(--chip); border: 1px solid var(--line); border-radius: 10px;
-      padding: .65rem .75rem; color: var(--text);
+      padding: .6rem .7rem; color: var(--text); font-weight: 450;
     }
-    textarea { resize: vertical; min-height: 4.5rem; font-weight: 450; }
-    input[type="number"] { font-weight: 650; }
-    .listing-row { display: flex; flex-wrap: wrap; gap: .35rem .8rem; align-items: baseline; }
-    @media (min-width: 800px) { .link-slot { align-self: end; padding-bottom: .15rem; } }
-    .breakdown { display: grid; gap: 1rem; }
-    @media (min-width: 860px) {
-      .breakdown { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); align-items: center; }
+    input[type="number"] { font-variant-numeric: tabular-nums; font-weight: 650; }
+    textarea { resize: vertical; min-height: 4.4rem; }
+    .check { display: flex; gap: .5rem; align-items: center; font-weight: 550; color: var(--muted); }
+    .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+    .split { display: grid; gap: 1rem; }
+    @media (min-width: 960px) {
+      .split { grid-template-columns: minmax(0, 1.05fr) minmax(260px, .95fr); align-items: start; }
     }
-    .radar-wrap svg { width: 100%; height: auto; display: block; }
-    .radar-note { margin: 0; color: var(--muted); font-size: .85rem; text-align: center; }
-    .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .6rem; margin: .45rem 0; }
-    .bar-name { color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar-score { font-variant-numeric: tabular-nums; font-size: .82rem; color: var(--text); }
-    .bar-track { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 99px; background: #1c2744; }
-    .bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
-    .bar-fill.high { background: var(--go); }
-    .bar-fill.mid { background: var(--warn); }
-    .bar-fill.low { background: var(--bad); }
-    .avg-mark {
-      position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px;
-      background: #fff; border-radius: 2px; box-shadow: 0 0 0 1px #0b1020;
+    .result-card, .comp-card, .insight, .card {
+      border: 1px solid var(--line); border-radius: 14px; background: rgba(11, 16, 32, .35);
     }
-    .drag-list { margin: .8rem 0 0; padding-left: 1.2rem; }
-    .compare thead th:not(:first-child) { max-width: 14rem; white-space: normal; }
-    .drag-list li { margin: .35rem 0; color: var(--muted); font-size: .92rem; }
-    .drag-list strong { color: var(--text); }
-    .intro { margin: 0 0 .9rem; color: var(--muted); }
-    .card {
-      border: 1px solid var(--line); border-radius: 14px; padding: .9rem .95rem 1rem;
-      background: rgba(11, 16, 32, .35); margin-top: .75rem;
+    .result-card, .insight { padding: .85rem .9rem; }
+    .lines { list-style: none; margin: .4rem 0 0; padding: 0; }
+    .lines li {
+      display: flex; justify-content: space-between; gap: .8rem;
+      border-bottom: 1px solid var(--line); padding: .32rem 0; font-variant-numeric: tabular-nums;
     }
+    .lines li span:last-child { text-align: right; }
+    .lines li.total { font-weight: 750; }
+    .lines li.total span:last-child { color: var(--accent-2); }
+    .stamp {
+      display: inline-flex; align-items: center; border-radius: 999px; padding: .12rem .5rem;
+      font-size: .72rem; font-weight: 800; letter-spacing: .04em;
+      color: var(--warn); border: 1px solid rgba(252, 211, 77, .5); background: rgba(252, 211, 77, .1);
+    }
+    .comp-card { padding: .75rem; margin-top: .65rem; }
+    .comp-top { display: flex; justify-content: space-between; gap: .5rem; align-items: center; margin-bottom: .45rem; }
+    .comp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.2rem, 1fr)); gap: .45rem; }
+    @media (min-width: 980px) {
+      .comp-fields { grid-template-columns: 7.2rem minmax(9rem, 1.6fr) repeat(6, minmax(4.2rem, 1fr)); }
+    }
+    .share-row { margin: .45rem 0 .65rem; }
+    .share-top { display: flex; justify-content: space-between; gap: .6rem; font-size: .84rem; color: var(--muted); }
+    .share-top span:last-child { color: var(--text); font-variant-numeric: tabular-nums; }
+    .share-track { height: 8px; border-radius: 99px; background: #1c2744; overflow: hidden; margin-top: .25rem; }
+    .share-track > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+    .share-row.is-plan .share-track > span { background: var(--accent-2); }
+    .share-row.is-plan .share-top span:first-child { color: var(--accent-2); }
+    #rubric-insights { display: grid; gap: .7rem; }
+    @media (min-width: 900px) { #rubric-insights { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .insight { margin-top: .7rem; }
+    #rubric-insights .insight { margin-top: 0; }
+    .insight.is-gap { border-color: rgba(252, 211, 77, .55); }
+    .insight.is-match { border-color: rgba(94, 234, 212, .4); }
+    .insight h3 { margin-bottom: .3rem; }
+    .card { padding: .85rem .9rem .95rem; margin-top: .7rem; }
     .card.is-drag { box-shadow: inset 3px 0 0 #fb7185; }
     .card.is-hidden { opacity: .72; }
     .card.is-hidden .card-body { display: none; }
-    .card-top { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: space-between; align-items: flex-start; }
-    .badges { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+    .card.is-linked { border-color: rgba(122, 162, 255, .55); }
+    .card-top { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: space-between; align-items: flex-start; }
+    .badges, .card-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .badges { margin-top: .35rem; }
     .chip-core { border-color: rgba(122, 162, 255, .55); color: #c9d7ff; }
     .chip-inv { border-color: rgba(252, 211, 77, .45); color: var(--warn); }
-    .card-actions, .toolbar, .saved-actions, .score-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
-    button.btn, .card-actions button, .toolbar button, .saved-actions button, .score-actions button, .add-form button {
-      background: var(--chip); border: 1px solid var(--line); border-radius: 10px;
-      padding: .5rem .75rem; min-height: 44px; color: var(--text);
-    }
-    button.btn:hover, .card-actions button:hover, .toolbar button:hover, .saved-actions button:hover, .score-actions button:hover, .add-form button:hover {
-      border-color: var(--accent);
-    }
-    button.primary { background: var(--accent); color: #0b1020; border-color: transparent; font-weight: 750; }
-    button.primary:hover { filter: brightness(1.05); }
-    button.danger:hover { border-color: #fb7185; color: var(--bad); }
-    .why { margin: .7rem 0 0; color: var(--muted); font-size: .92rem; }
-    .card-body { margin-top: .8rem; display: grid; gap: .7rem; }
-    .weight-row { display: grid; grid-template-columns: 1fr 4.5rem; gap: .55rem .7rem; align-items: center; }
+    .chip-link { border-color: rgba(94, 234, 212, .45); color: var(--accent-2); }
+    .why { margin: .65rem 0 0; color: var(--muted); font-size: .9rem; }
+    .card-body { margin-top: .75rem; display: grid; gap: .65rem; }
+    .weight-row { display: grid; grid-template-columns: 1fr 4.5rem; gap: .45rem .6rem; align-items: center; }
     .weight-row .range { grid-column: 1 / -1; }
     @media (min-width: 640px) {
       .weight-row { grid-template-columns: 7rem minmax(0, 1fr) 4.5rem; }
@@ -205,1310 +274,82 @@
     .scores { display: flex; flex-wrap: wrap; gap: .35rem; }
     .scores button {
       min-width: 44px; min-height: 44px; border-radius: 10px;
-      border: 1px solid var(--line); background: var(--chip); color: var(--text); font-weight: 650;
+      border: 1px solid var(--line); background: var(--chip); font-weight: 700;
     }
     .scores button[aria-pressed="true"] { background: var(--accent); color: #0b1020; border-color: transparent; }
     .scores button[data-score="na"][aria-pressed="true"] { background: var(--line); color: var(--text); }
-    .status { margin: 0; color: var(--muted); font-size: .82rem; }
+    .status { margin: 0; color: var(--muted); font-size: .8rem; }
     .add-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
-    .add-grid { display: grid; gap: .7rem; align-items: end; }
-    @media (min-width: 800px) {
-      .add-grid { grid-template-columns: minmax(0, 1.4fr) 6rem auto; }
+    .breakdown { display: grid; gap: 1rem; }
+    @media (min-width: 860px) {
+      .breakdown { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); align-items: center; }
     }
-    .check { display: flex; gap: .5rem; align-items: center; margin-top: .7rem; font-weight: 550; }
-    .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
-    .toolbar { margin-top: 1rem; }
-    #dirty-flag { color: var(--warn); font-size: .85rem; align-self: center; }
+    .radar-wrap svg { width: 100%; height: auto; display: block; }
+    .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .6rem; margin: .4rem 0; }
+    .bar-name { color: var(--muted); font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-score { font-variant-numeric: tabular-nums; font-size: .8rem; }
+    .bar-track { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 99px; background: #1c2744; }
+    .bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+    .bar-fill.high { background: var(--go); }
+    .bar-fill.mid { background: var(--warn); }
+    .bar-fill.low { background: var(--bad); }
+    .avg-mark {
+      position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px;
+      background: #fff; border-radius: 2px;
+    }
+    .drag-list { margin: .35rem 0 0; padding-left: 1.15rem; color: var(--muted); }
+    .table-scroll { overflow-x: auto; margin-top: .7rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: .45rem .5rem; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 650; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    th.best, td.best { background: rgba(94, 234, 212, .08); }
+    .compare th:first-child, .compare td:first-child {
+      position: sticky; left: 0; background: #141c33; z-index: 1; min-width: 9rem;
+    }
     details.summary-box { margin-top: 1rem; color: var(--muted); }
-    details.summary-box summary { cursor: pointer; color: var(--text); }
+    details.summary-box summary { cursor: pointer; color: var(--text); font-weight: 650; }
     pre.summary {
       white-space: pre-wrap; word-break: break-word; margin: .7rem 0 0;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .8rem; color: var(--muted); background: rgba(11, 16, 32, .45);
-      border: 1px solid var(--line); border-radius: 12px; padding: .9rem;
+      font-size: .78rem; color: var(--muted); background: rgba(11, 16, 32, .45);
+      border: 1px solid var(--line); border-radius: 12px; padding: .85rem;
     }
-    .section-head { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: space-between; align-items: end; }
-    .section-head h2 { margin: 0; }
-    .section-head label { font-size: .82rem; color: var(--muted); font-weight: 650; display: grid; gap: .3rem; }
-    .section-head select { min-width: 5rem; }
-    .saved { display: grid; gap: .7rem; padding: .9rem 0; border-top: 1px solid var(--line); }
-    .saved:first-child { border-top: 0; padding-top: 0; }
-    @media (min-width: 720px) {
-      .saved { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-      .saved-actions { grid-column: 1 / -1; }
-    }
-    .saved.is-open { background: rgba(122, 162, 255, .06); margin: 0 -.4rem; padding-left: .4rem; padding-right: .4rem; border-radius: 12px; }
-    .saved h3 { font-size: 1rem; }
-    .saved-score { font-weight: 750; font-variant-numeric: tabular-nums; font-size: 1.15rem; }
-    .saved-score span { display: inline-block; margin-left: .35rem; font-size: .78rem; font-weight: 700; }
-    .empty { color: var(--muted); margin: .4rem 0; }
-    .table-scroll { overflow-x: auto; margin-top: .8rem; }
-    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-    th, td { border-bottom: 1px solid var(--line); padding: .5rem .55rem; text-align: left; vertical-align: top; white-space: nowrap; }
-    th { color: var(--muted); font-weight: 650; }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    th.best, td.best { background: rgba(94, 234, 212, .08); }
-    .compare th:first-child, .compare td:first-child {
-      position: sticky; left: 0; background: #141c33; z-index: 1; white-space: normal; min-width: 9.5rem;
-    }
-    footer { margin-top: 1.4rem; color: var(--muted); font-size: .85rem; text-align: center; }
+    .empty { color: var(--muted); margin: .35rem 0; }
+    .page-head { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: space-between; align-items: end; }
+    footer { margin-top: 1.4rem; color: var(--muted); font-size: .82rem; text-align: center; }
     #toast {
       position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(140%);
       background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
       border-radius: 999px; padding: .65rem 1rem; box-shadow: var(--shadow);
-      transition: transform .2s ease; z-index: 30; max-width: calc(100% - 2rem);
+      transition: transform .2s ease; z-index: 40; max-width: calc(100% - 2rem);
     }
     #toast.show { transform: translateX(-50%) translateY(0); }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       #toast { transition: none; }
     }
-    #criteria-heading { scroll-margin-top: 8rem; }
+    @media (max-width: 640px) {
+      .identity-actions button { flex: 1 1 auto; }
+      .sticky-stack { margin: 0 -.25rem; padding-left: .7rem; padding-right: .7rem; }
+    }
   </style>
 </head>
 <body>
-  <a class="skip" href="#criteria-heading">Skip to criteria</a>
-  <div class="wrap">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">Sensationally OT · Shak</p>
-        <h1>Amazon Product Eval</h1>
-        <p class="subtitle">A weighted scorecard for product ideas. Look at the listing yourself, then enter scores. This page does not call Amazon, Keepa, or any other product API.</p>
-        <div class="meta">
-          <span class="chip">Human scores only</span>
-          <span class="chip">Weights 0–5</span>
-          <span class="chip">Saved in this browser</span>
-          <a class="chip" href="../">Site home</a>
-        </div>
-      </div>
-      <aside class="side-card">
-        <h2>Verdict bands</h2>
-        <ul>
-          <li><strong>GO</strong> — 4.20 and up (Strong GO)</li>
-          <li><strong>Conditional</strong> — 3.40 to 4.19</li>
-          <li><strong>Pass</strong> — below 3.40</li>
-        </ul>
-        <p class="fine">Rounded half-up to two decimals. Average = sum of score × weight, divided by the sum of weights that count.</p>
-      </aside>
-    </header>
-
-    <div id="math-error" class="banner error" hidden></div>
-    <div id="storage-banner" class="banner error" hidden>This browser blocked local save. You can still score, but a refresh will clear it.</div>
-    <div id="sample-banner" class="banner" hidden>
-      <strong>Fictional sample.</strong> Pebble Calm Mini is not a real Amazon product. The scores are illustrative judgments for a first visit, not marketplace data. Replace the fields with a listing you actually viewed.
-    </div>
-
-    <div class="scorebar" id="scorebar">
-      <h2 class="sr-only">Verdict</h2>
-      <div class="scorebar-row">
-        <div class="score-main">
-          <div>
-            <p class="avg empty" id="avg-value">—</p>
-            <p class="formula" id="avg-formula">No scores yet</p>
-          </div>
-          <div>
-            <p class="band none" id="avg-band">Unscored</p>
-            <p class="band-key">4.2+ GO · 3.4–4.19 Conditional · below 3.4 Pass</p>
-          </div>
-        </div>
-        <div class="score-actions">
-          <button type="button" class="primary" id="save-btn-sticky">Save</button>
-          <button type="button" id="copy-btn-sticky">Copy summary</button>
-        </div>
-      </div>
-      <div class="meter" aria-hidden="true"><span id="meter-fill"></span></div>
-    </div>
-
-    <main>
-      <section class="panel" aria-labelledby="product-heading">
-        <h2 id="product-heading">Listing</h2>
-        <div class="fields">
-          <label class="field span-2">Product name
-            <input id="product-name" type="text" maxlength="140" autocomplete="off" placeholder="e.g. Weighted lap pad cover" />
-          </label>
-          <label class="field">Date
-            <input id="eval-date" type="date" />
-          </label>
-          <label class="field span-2">ASIN or URL
-            <input id="asin" type="text" maxlength="500" autocomplete="off" placeholder="ASIN or https://www.amazon.com/dp/…" />
-          </label>
-          <div class="field link-slot">
-            <span class="fine listing-row" style="margin:0">
-              <a id="open-listing" hidden target="_blank" rel="noopener noreferrer">Open listing in a new tab</a>
-            </span>
-            <p class="fine" id="listing-help">Link only. This page never reads Amazon.</p>
-          </div>
-          <label class="field span-3">Category notes
-            <textarea id="category-notes" maxlength="1000" rows="3" placeholder="Category, who it is for, price band — your notes, not scraped data"></textarea>
-          </label>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="criteria-heading">
-        <h2 id="criteria-heading">Criteria</h2>
-        <p class="intro">Score 1–5. Five is always the favorable case, including inverse criteria (size, returns, seasonality): 5 means compact, low returns, or year-round. Weight 0 or Hide drops that row from the average. Core rows stay in the list; hide them if you do not want them counted.</p>
-        <div id="criteria"></div>
-        <form id="add-form" class="add-form">
-          <h3>Add a custom criterion</h3>
-          <div class="add-grid">
-            <label class="field">Name
-              <input id="add-name" type="text" maxlength="80" placeholder="e.g. Bundle attach rate" />
-            </label>
-            <label class="field">Weight
-              <input id="add-weight" type="number" min="0" max="5" step="1" value="3" inputmode="numeric" />
-            </label>
-            <button type="submit" class="primary">Add criterion</button>
-          </div>
-          <label class="field" style="margin-top:.7rem">Why it matters
-            <input id="add-why" type="text" maxlength="600" placeholder="Optional. Score 5 means the favorable case." />
-          </label>
-          <label class="check"><input id="add-inverse" type="checkbox" /> Inverse — a high score means the risk is low</label>
-        </form>
-      </section>
-
-      <div class="toolbar">
-        <button type="button" class="primary" id="save-btn">Save evaluation</button>
-        <button type="button" id="new-btn">New evaluation</button>
-        <button type="button" id="copy-btn">Copy summary</button>
-        <button type="button" id="json-btn">Export JSON</button>
-        <button type="button" id="csv-btn">Export CSV</button>
-        <button type="button" id="reset-weights-btn">Reset weights</button>
-        <span id="dirty-flag" hidden>Unsaved changes</span>
-      </div>
-
-      <section class="panel" aria-labelledby="break-heading">
-        <h2 id="break-heading">Breakdown</h2>
-        <p class="fine" id="formula-line" style="margin-top:0">Score at least one criterion. N/A, Hide, and weight 0 stay out of both sums.</p>
-        <div class="breakdown" id="breakdown"></div>
-        <div id="drags"></div>
-      </section>
-
-      <details class="summary-box">
-        <summary>Summary preview</summary>
-        <pre class="summary" id="summary-preview"></pre>
-      </details>
-
-      <section class="panel" aria-labelledby="saved-heading">
-        <div class="section-head">
-          <h2 id="saved-heading">Saved evaluations</h2>
-          <label>Compare last
-            <select id="compare-n" aria-label="How many recent evaluations to compare">
-              <option value="2">2</option>
-              <option value="3" selected>3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-            </select>
-          </label>
-        </div>
-        <p class="fine">Stored in localStorage on this browser under <code>shak-sot-amazon-evals-v1</code>. Nothing is uploaded.</p>
-        <div id="saved-list"></div>
-        <h3 style="margin-top:1.1rem">Comparison</h3>
-        <p class="fine">Newest saved evaluations. Scores are 1–5. Each average uses that evaluation’s own weights. A dash means missing, N/A, hidden, or weight 0.</p>
-        <div id="compare"></div>
-      </section>
-    </main>
-
-    <footer>Human-scored prototype for Sensationally OT · No Amazon API · Fictional sample is not a real listing</footer>
-  </div>
+  <a class="skip" href="#main">Skip to content</a>
+  <div id="app"></div>
   <div id="toast" role="status"></div>
-
   <script>
-    // SCORE_LIB_START
-    const DEFAULTS = [
-      { id: "repeat", name: "Repeat purchase / repurchase cycle", short: "Repeat", weight: 5, inverse: false, core: true,
-        why: "High when it is a consumable, refill, or habit people buy again inside about 12 months (sooner is better). Low when it is a one-and-done durable with nothing to replenish. 5 = a clear repurchase story under 6 months. 3 = about 12 months. 1 = no repurchase story." },
-      { id: "gift", name: "Gift / buy-for-others", short: "Gift", weight: 5, inverse: false, core: true,
-        why: "High when it is a natural gift: parent for child, hostess, teacher, wedding, or a sensory gift kit — bought for someone else. Low when it is only personal utility. People spend more when they buy for others." },
-      { id: "size", name: "Size / weight (inverse)", short: "Size", weight: 4, inverse: true, core: true,
-        why: "Inverse: a high score is the favorable case. 5 = compact and light, small poly or mailer class, easier FBA and lower inbound cost. 1 = bulky, heavy, or dimensional-weight pain." },
-      { id: "repack", name: "Repack ease for resale", short: "Repack", weight: 4, inverse: false, core: true,
-        why: "High when you can rebrand or repack it into a private-label unit or kit without destroying the product. Low when packaging is sealed and complex, glass is fragile, or multipacks break apart." },
-      { id: "moat", name: "China exclusivity / custom moat", short: "Moat", weight: 5, inverse: false, core: true,
-        why: "High when a custom mold, formula, print, kit assembly, brand, or tool keeps the supplier from handing the same item to every seller. Low when it is a commodity anyone can reorder tomorrow. 5 = exclusive or custom MOQ, or IP-like differentiation. 1 = identical listing flood risk." },
-      { id: "reviews", name: "Review velocity / social proof trend", short: "Reviews", weight: 3, inverse: false, core: false,
-        why: "Your read of whether reviews and social proof are building. High when recent proof is accumulating. Low when the trail looks stalled or empty. Judgment after you view the listing — this page does not pull review data." },
-      { id: "competition", name: "Competition density / brand strength on search", short: "Compete", weight: 3, inverse: false, core: false,
-        why: "Lower competition scores higher. 5 = page one looks sparse or the brands look weak. 1 = entrenched brands own the search. Judge it from the results you looked at." },
-      { id: "margin", name: "Margin headroom after FBA + ads", short: "Margin", weight: 4, inverse: false, core: false,
-        why: "Room left after FBA fees and ads, from your own estimate. 5 = comfortable headroom. 1 = fees and ads likely eat the offer. Do not invent dollar figures; this score is not a calculated margin." },
-      { id: "returns", name: "Returns / damage risk (inverse)", short: "Returns", weight: 3, inverse: true, core: false,
-        why: "Inverse: 5 = low return and damage risk. 1 = fragile, messy, or a high-return category." },
-      { id: "season", name: "Seasonality risk (inverse)", short: "Season", weight: 2, inverse: true, core: false,
-        why: "Inverse: year-round demand scores higher unless the seasonal peak is huge. 5 = steady all year. 1 = a narrow season with a weak peak. Note a huge peak in the criterion notes if you are still scoring it up." },
-      { id: "sensory", name: "Sensory / OT / kids-adjacent fit", short: "OT fit", weight: 3, inverse: false, core: false,
-        why: "Fit for the Sensationally OT brand: sensory, occupational therapy, or kids-adjacent. 5 = obvious fit. 1 = off-brand." },
-      { id: "channel", name: "Cross-channel potential", short: "Channels", weight: 2, inverse: false, core: false,
-        why: "Can the same offer travel across Amazon, Walmart, and Shopify? 5 = strong cross-channel potential. 1 = structured for a single marketplace only." }
-    ];
-
-    const SAMPLE_SCORE = {
-      repeat: 5, gift: 5, size: 5, repack: 5, moat: 4, reviews: 3,
-      competition: 3, margin: 4, returns: 4, season: 3, sensory: 5, channel: 4
-    };
-
-    const SAMPLE_NOTES = {
-      repeat: "Judged as a consumable restock: stones plus a tin people could refill inside six months. Fictional sample.",
-      gift: "Reads as a gift for a child, teacher, or stocking. Not a personal-only tool.",
-      size: "Imagined as a small tin that fits a poly mailer. Compact and light.",
-      repack: "Loose stones can move into a branded tin without breaking a sealed unit.",
-      moat: "Custom stone shape and printed tin would need a mold or MOQ. Not a pure commodity, and not fully locked either.",
-      reviews: "Treated as a new listing with a thin review trail. No live review data was pulled.",
-      competition: "Worry-stone style searches feel crowded with generic sets. A lower score means more competition.",
-      margin: "A light item should leave some room after FBA and ads. Estimate only — no dollar math.",
-      returns: "Solid pieces, low breakage in this fictional read.",
-      season: "Gift demand would peak in Q4, with some year-round use. Not a pure seasonal.",
-      sensory: "Direct sensory / OT-adjacent fit for Sensationally OT.",
-      channel: "A small giftable kit could sit on Walmart and Shopify as well as Amazon."
-    };
-
-    function clampWeight(w) {
-      const n = Math.round(Number(w));
-      if (!Number.isFinite(n)) return 0;
-      return Math.min(5, Math.max(0, n));
-    }
-
-    function clampScore(s) {
-      if (s == null || s === "" || s === "na") return null;
-      const n = Math.round(Number(s));
-      if (!Number.isFinite(n) || n < 1 || n > 5) return null;
-      return n;
-    }
-
-    function hundredthsOf(num, den) {
-      if (!den) return null;
-      const scaled = num * 100;
-      const q = Math.trunc(scaled / den);
-      const rem = scaled % den;
-      return rem * 2 >= den ? q + 1 : q;
-    }
-
-    function formatHundredths(h) {
-      const whole = Math.floor(Math.abs(h) / 100);
-      const frac = String(Math.abs(h) % 100).padStart(2, "0");
-      return (h < 0 ? "-" : "") + whole + "." + frac;
-    }
-
-    function bandFor(h) {
-      if (h >= 420) return { id: "go", label: "GO", detail: "Strong GO" };
-      if (h >= 340) return { id: "conditional", label: "Conditional", detail: "Conditional" };
-      return { id: "pass", label: "Pass", detail: "Pass" };
-    }
-
-    function blankCriteria() {
-      return DEFAULTS.map(function (d) {
-        return {
-          id: d.id, name: d.name, short: d.short, why: d.why, weight: d.weight,
-          score: null, notes: "", inverse: d.inverse, core: d.core, custom: false, hidden: false
-        };
+    (function () {
+      var parts = location.pathname.split("/");
+      var last = parts[parts.length - 1];
+      if (last === "" || last === "index.html") parts.pop();
+      var dir = parts.join("/");
+      ["logic.js", "app.js"].forEach(function (file) {
+        document.write("<script src=\"" + dir + "/" + file + "\"><\/script>");
       });
-    }
-
-    function scoreSummary(criteria) {
-      let num = 0;
-      let den = 0;
-      const counted = [];
-      const list = Array.isArray(criteria) ? criteria : [];
-      for (let i = 0; i < list.length; i++) {
-        const c = list[i];
-        const weight = clampWeight(c.weight);
-        const score = clampScore(c.score);
-        const include = !c.hidden && weight > 0 && score != null;
-        if (include) {
-          num += score * weight;
-          den += weight;
-          counted.push({ id: c.id, name: c.name, short: c.short || c.name, weight: weight, score: score, inverse: !!c.inverse });
-        }
-      }
-      const hundredths = den ? hundredthsOf(num, den) : null;
-      const band = hundredths == null ? null : bandFor(hundredths);
-      const drags = [];
-      if (den > 0) {
-        const avg = num / den;
-        for (let i = 0; i < counted.length; i++) {
-          const c = counted[i];
-          if (c.score < avg) {
-            drags.push({
-              id: c.id, name: c.name, score: c.score, weight: c.weight,
-              pull: (avg - c.score) * c.weight / den
-            });
-          }
-        }
-        drags.sort(function (a, b) { return b.pull - a.pull; });
-      }
-      return { num: num, den: den, hundredths: hundredths, band: band, counted: counted, drags: drags };
-    }
-
-    function formatPull(pull) {
-      if (!(pull > 0)) return "0.00";
-      if (pull < 0.005) return "<0.01";
-      return pull.toFixed(2);
-    }
-
-    function sampleEval() {
-      const criteria = blankCriteria();
-      for (let i = 0; i < criteria.length; i++) {
-        const c = criteria[i];
-        c.score = SAMPLE_SCORE[c.id];
-        c.notes = SAMPLE_NOTES[c.id] || "";
-      }
-      return {
-        id: "sample-pebble-calm-mini",
-        productName: "Pebble Calm Mini — Sensory Worry Stone Set",
-        asinOrUrl: "B0SOTDEMO1",
-        categoryNotes: "Kids sensory gift / OT-adjacent kit. Fictional sample for the first visit — not a real Amazon listing and not scraped.",
-        date: "2026-09-18",
-        sample: true,
-        createdAt: "2026-09-18T15:00:00.000Z",
-        savedAt: "2026-09-18T15:00:00.000Z",
-        criteria: criteria
-      };
-    }
-
-    function selfCheck() {
-      const fails = [];
-      function check(name, cond) { if (!cond) fails.push(name); }
-      check("4.195 rounds to 4.20", hundredthsOf(4195, 1000) === 420);
-      check("4.194 rounds to 4.19", hundredthsOf(4194, 1000) === 419);
-      check("3.395 rounds to 3.40", hundredthsOf(3395, 1000) === 340);
-      check("3.394 rounds to 3.39", hundredthsOf(3394, 1000) === 339);
-      check("exact 4.20", hundredthsOf(42, 10) === 420);
-      check("exact 3.40", hundredthsOf(17, 5) === 340);
-      check("band 420 go", bandFor(420).id === "go");
-      check("band 419 conditional", bandFor(419).id === "conditional");
-      check("band 340 conditional", bandFor(340).id === "conditional");
-      check("band 339 pass", bandFor(339).id === "pass");
-      check("format 4.30", formatHundredths(430) === "4.30");
-      check("format 5.00", formatHundredths(500) === "5.00");
-      check("format 4.19", formatHundredths(419) === "4.19");
-
-      let handNum = 0;
-      let handDen = 0;
-      for (let i = 0; i < DEFAULTS.length; i++) {
-        const d = DEFAULTS[i];
-        handNum += SAMPLE_SCORE[d.id] * d.weight;
-        handDen += d.weight;
-      }
-      check("sample hand total 185/43", handNum === 185 && handDen === 43);
-
-      const sample = scoreSummary(sampleEval().criteria);
-      check("sample num", sample.num === 185);
-      check("sample den", sample.den === 43);
-      check("sample hundredths", sample.hundredths === 430);
-      check("sample band", sample.band && sample.band.id === "go");
-      check("sample drags", sample.drags.map(function (d) { return d.id; }).join(",") === "reviews,competition,season,moat,margin,returns,channel");
-
-      const all5 = blankCriteria();
-      for (let i = 0; i < all5.length; i++) all5[i].score = 5;
-      const s5 = scoreSummary(all5);
-      check("all fives", s5.num === 215 && s5.den === 43 && s5.hundredths === 500 && s5.band.id === "go");
-
-      const all4 = blankCriteria();
-      for (let i = 0; i < all4.length; i++) all4[i].score = 4;
-      const s4 = scoreSummary(all4);
-      check("all fours conditional", s4.hundredths === 400 && s4.band.id === "conditional");
-
-      const all3 = blankCriteria();
-      for (let i = 0; i < all3.length; i++) all3[i].score = 3;
-      const s3 = scoreSummary(all3);
-      check("all threes pass", s3.hundredths === 300 && s3.band.id === "pass");
-
-      const skipped = blankCriteria();
-      for (let i = 0; i < skipped.length; i++) skipped[i].score = 5;
-      const reviews = skipped.filter(function (c) { return c.id === "reviews"; })[0];
-      const competition = skipped.filter(function (c) { return c.id === "competition"; })[0];
-      const margin = skipped.filter(function (c) { return c.id === "margin"; })[0];
-      reviews.weight = 0;
-      reviews.score = 1;
-      competition.hidden = true;
-      margin.score = null;
-      const sk = scoreSummary(skipped);
-      check("skip weight 0, hidden, N/A", sk.num === 165 && sk.den === 33 && sk.hundredths === 500);
-
-      const none = blankCriteria();
-      const empty = scoreSummary(none);
-      check("no scores", empty.den === 0 && empty.hundredths == null && empty.band == null);
-
-      const partial = blankCriteria();
-      partial[0].score = 5;
-      const one = scoreSummary(partial);
-      check("single criterion", one.num === 25 && one.den === 5 && one.hundredths === 500 && one.band.id === "go");
-      return fails;
-    }
-    // SCORE_LIB_END
-
-    const STORAGE_KEY = "shak-sot-amazon-evals-v1";
-    const SAMPLE_NAME = "Pebble Calm Mini — Sensory Worry Stone Set";
-
-    function uid() {
-      if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-      return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
-    }
-
-    function todayISO() {
-      const d = new Date();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return d.getFullYear() + "-" + m + "-" + day;
-    }
-
-    function clone(o) { return JSON.parse(JSON.stringify(o)); }
-
-    function asString(v, max) {
-      const s = typeof v === "string" ? v : (v == null ? "" : String(v));
-      return s.slice(0, max);
-    }
-
-    function normalizeCriterion(raw) {
-      if (!raw || typeof raw !== "object") return null;
-      const name = asString(raw.name, 80).trim();
-      if (!name) return null;
-      const known = DEFAULTS.filter(function (d) { return d.id === raw.id; })[0];
-      return {
-        id: asString(raw.id, 80) || uid(),
-        name: name,
-        short: asString(raw.short, 16) || (known ? known.short : name.slice(0, 12)),
-        why: asString(raw.why, 600),
-        weight: clampWeight(raw.weight),
-        score: clampScore(raw.score),
-        notes: asString(raw.notes, 500),
-        inverse: raw.inverse === true,
-        core: raw.core === true,
-        custom: raw.custom === true,
-        hidden: raw.hidden === true
-      };
-    }
-
-    function normalizeEval(raw) {
-      if (!raw || typeof raw !== "object" || !Array.isArray(raw.criteria)) return null;
-      const criteria = raw.criteria.map(normalizeCriterion).filter(Boolean);
-      if (!criteria.length) return null;
-      const date = /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : todayISO();
-      return {
-        id: asString(raw.id, 80) || uid(),
-        productName: asString(raw.productName, 140),
-        asinOrUrl: asString(raw.asinOrUrl, 500),
-        categoryNotes: asString(raw.categoryNotes, 1000),
-        date: date,
-        sample: raw.sample === true,
-        createdAt: asString(raw.createdAt, 40),
-        savedAt: asString(raw.savedAt, 40),
-        criteria: criteria
-      };
-    }
-
-    function blankEval() {
-      return {
-        id: uid(),
-        productName: "",
-        asinOrUrl: "",
-        categoryNotes: "",
-        date: todayISO(),
-        sample: false,
-        createdAt: "",
-        savedAt: "",
-        criteria: blankCriteria()
-      };
-    }
-
-    function esc(s) {
-      return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
-      });
-    }
-
-    let storageBlocked = false;
-    let store = { version: 1, evals: [] };
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw == null) {
-        store = { version: 1, evals: [sampleEval()] };
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }
-        catch (err) { storageBlocked = true; }
-      } else {
-        const data = JSON.parse(raw);
-        const evals = data && Array.isArray(data.evals) ? data.evals.map(normalizeEval).filter(Boolean) : [];
-        store = { version: 1, evals: evals };
-      }
-    } catch (err) {
-      storageBlocked = true;
-      store = { version: 1, evals: [sampleEval()] };
-    }
-
-    function sortedEvals() {
-      return store.evals.slice().sort(function (a, b) {
-        return String(b.savedAt).localeCompare(String(a.savedAt));
-      });
-    }
-
-    let current = clone(sortedEvals()[0] || blankEval());
-    let dirty = false;
-    let toastTimer = 0;
-
-    function persist() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-        storageBlocked = false;
-        document.getElementById("storage-banner").hidden = true;
-        return true;
-      } catch (err) {
-        storageBlocked = true;
-        document.getElementById("storage-banner").hidden = false;
-        toast("Could not save in this browser.");
-        return false;
-      }
-    }
-
-    function toast(msg) {
-      const el = document.getElementById("toast");
-      el.textContent = msg;
-      el.classList.add("show");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2400);
-    }
-
-    function listingHref(value) {
-      const v = String(value || "").trim();
-      if (/^https?:\/\//i.test(v)) return v;
-      if (/^[A-Za-z0-9]{10}$/.test(v)) return "https://www.amazon.com/dp/" + v.toUpperCase();
-      return "";
-    }
-
-    function syncListingLink() {
-      const a = document.getElementById("open-listing");
-      const href = listingHref(current.asinOrUrl);
-      if (!href) { a.hidden = true; a.removeAttribute("href"); return; }
-      a.href = href;
-      a.hidden = false;
-    }
-
-    function syncBanner() {
-      document.getElementById("sample-banner").hidden = !current.sample;
-    }
-
-    function syncDirty() {
-      document.getElementById("dirty-flag").hidden = !dirty;
-    }
-
-    function syncSaveLabel() {
-      const exists = store.evals.some(function (e) { return e.id === current.id; });
-      document.getElementById("save-btn").textContent = exists ? "Update evaluation" : "Save evaluation";
-      document.getElementById("save-btn-sticky").textContent = exists ? "Update" : "Save";
-    }
-
-    function markDirty() {
-      dirty = true;
-      syncDirty();
-      renderPreview();
-    }
-
-    function fillFields() {
-      document.getElementById("product-name").value = current.productName;
-      document.getElementById("asin").value = current.asinOrUrl;
-      document.getElementById("category-notes").value = current.categoryNotes;
-      document.getElementById("eval-date").value = current.date || todayISO();
-    }
-
-    function summaryText(ev) {
-      const s = scoreSummary(ev.criteria);
-      const lines = [];
-      lines.push("Amazon Product Eval");
-      lines.push("Product: " + (ev.productName.trim() || "(untitled)"));
-      lines.push("ASIN/URL: " + (ev.asinOrUrl.trim() || "(none)"));
-      lines.push("Date: " + (ev.date || ""));
-      if (ev.categoryNotes.trim()) lines.push("Category notes: " + ev.categoryNotes.trim());
-      if (ev.sample) lines.push("Note: fictional sample — not a real Amazon listing.");
-      lines.push("");
-      if (s.hundredths == null) {
-        lines.push("Weighted average: not scored");
-        lines.push("Verdict: n/a");
-      } else {
-        const strong = s.band.id === "go" ? " (Strong GO)" : "";
-        lines.push("Weighted average: " + formatHundredths(s.hundredths) + " / 5 (" + s.num + " ÷ " + s.den + ")");
-        lines.push("Verdict: " + s.band.label + strong);
-      }
-      lines.push("Bands: 4.2+ GO (Strong GO) | 3.4–4.19 Conditional | <3.4 Pass");
-      lines.push("");
-      lines.push("Criteria:");
-      for (let i = 0; i < ev.criteria.length; i++) {
-        const c = ev.criteria[i];
-        if (c.hidden) { lines.push("- " + c.name + ": hidden — excluded"); continue; }
-        if (clampWeight(c.weight) <= 0) { lines.push("- " + c.name + ": weight 0 — excluded"); continue; }
-        if (c.score == null) { lines.push("- " + c.name + ": N/A — excluded"); continue; }
-        const note = c.notes.trim() ? " — " + c.notes.trim() : "";
-        lines.push("- " + c.name + ": " + c.score + "/5 × weight " + c.weight + " = " + (c.score * c.weight) + note);
-      }
-      lines.push("");
-      if (s.drags.length) {
-        lines.push("Pulling the score down:");
-        for (let i = 0; i < s.drags.length; i++) {
-          const d = s.drags[i];
-          lines.push("- " + d.name + ": " + d.score + "/5, weight " + d.weight + ", about " + formatPull(d.pull) + " points");
-        }
-      } else if (s.hundredths != null) {
-        lines.push("Pulling the score down: none. Every scored criterion is at or above the average.");
-      }
-      lines.push("");
-      lines.push("Human scores after viewing the listing. No Amazon API data.");
-      return lines.join("\n");
-    }
-
-    function renderPreview() {
-      document.getElementById("summary-preview").textContent = summaryText(current);
-    }
-
-    function renderScorebar(summary) {
-      const avgEl = document.getElementById("avg-value");
-      const formula = document.getElementById("avg-formula");
-      const bandEl = document.getElementById("avg-band");
-      const meter = document.getElementById("meter-fill");
-      avgEl.className = "avg";
-      bandEl.className = "band";
-      meter.className = "";
-      meter.style.width = "0%";
-      if (summary.hundredths == null) {
-        avgEl.textContent = "—";
-        avgEl.classList.add("empty");
-        formula.textContent = "No scores yet";
-        bandEl.textContent = "Unscored";
-        bandEl.classList.add("none");
-        return;
-      }
-      const shown = formatHundredths(summary.hundredths);
-      avgEl.textContent = shown;
-      avgEl.classList.add(summary.band.id);
-      formula.textContent = summary.num + " ÷ " + summary.den;
-      const detail = summary.band.id === "go" ? "Strong GO" : summary.band.label;
-      bandEl.textContent = summary.band.label;
-      bandEl.classList.add(summary.band.id);
-      bandEl.title = detail;
-      meter.className = summary.band.id;
-      meter.style.width = Math.max(0, Math.min(100, summary.hundredths / 5)) + "%";
-    }
-
-    function barClass(score) {
-      if (score >= 4) return "high";
-      if (score === 3) return "mid";
-      return "low";
-    }
-
-    function renderBreakdown(summary) {
-      const root = document.getElementById("breakdown");
-      const formula = document.getElementById("formula-line");
-      const dragRoot = document.getElementById("drags");
-      if (summary.hundredths == null) {
-        formula.textContent = "Score at least one criterion. N/A, Hide, and weight 0 stay out of both sums.";
-      } else {
-        formula.textContent = "Weighted average = " + summary.num + " ÷ " + summary.den + " = " + formatHundredths(summary.hundredths) + ". Counted " + summary.counted.length + " criteria.";
-      }
-      const scored = summary.counted;
-      let radar = "";
-      if (scored.length >= 3 && scored.length <= 14) {
-        radar = radarMarkup(scored);
-      } else if (scored.length > 14) {
-        radar = "<p class=\"radar-note\">Too many scored criteria for the radar. Use the bars.</p>";
-      } else {
-        radar = "<p class=\"radar-note\">Score at least 3 criteria to draw the radar.</p>";
-      }
-      const rows = current.criteria.filter(function (c) { return !c.hidden; });
-      const bars = rows.map(function (c) {
-        const weight = clampWeight(c.weight);
-        const score = clampScore(c.score);
-        const counted = weight > 0 && score != null;
-        const width = counted ? (score / 5) * 100 : 0;
-        const mark = summary.hundredths == null ? "" : "<i class=\"avg-mark\" style=\"left:" + (summary.hundredths / 5) + "%\"></i>";
-        const label = counted ? String(score) : (weight <= 0 ? "w0" : "N/A");
-        const fill = counted ? "<span class=\"bar-fill " + barClass(score) + "\" style=\"width:" + width + "%\"></span>" : "";
-        return "<div class=\"bar-row\"><span class=\"bar-name\">" + esc(c.name) + "</span><span class=\"bar-score\">" + esc(label) + "</span><span class=\"bar-track\">" + fill + mark + "</span></div>";
-      }).join("");
-      const legend = summary.hundredths == null ? "" : "<p class=\"fine\">The white line on each bar is the weighted average.</p>";
-      root.innerHTML = "<div class=\"radar-wrap\">" + radar + "</div><div>" + (bars || "<p class=\"empty\">All criteria are hidden.</p>") + legend + "</div>";
-
-      if (summary.hundredths == null) {
-        dragRoot.innerHTML = "";
-        return;
-      }
-      if (!summary.drags.length) {
-        dragRoot.innerHTML = "<p class=\"fine\">Nothing is pulling this below the average.</p>";
-        return;
-      }
-      const items = summary.drags.map(function (d) {
-        return "<li><strong>" + esc(d.name) + "</strong> scored " + d.score + "/5 at weight " + d.weight + " — about " + formatPull(d.pull) + " points off the average.</li>";
-      }).join("");
-      dragRoot.innerHTML = "<h3>Pulling the score down</h3><ol class=\"drag-list\">" + items + "</ol>";
-    }
-
-    function radarMarkup(items) {
-      const n = items.length;
-      const vb = 420;
-      const cx = 210;
-      const cy = 210;
-      const radius = 112;
-      function xy(i, mag) {
-        const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
-        return [cx + Math.cos(a) * radius * mag, cy + Math.sin(a) * radius * mag];
-      }
-      let rings = "";
-      for (let step = 1; step <= 5; step++) {
-        const pts = [];
-        for (let i = 0; i < n; i++) pts.push(xy(i, step / 5).map(function (v) { return v.toFixed(1); }).join(","));
-        rings += "<polygon points=\"" + pts.join(" ") + "\" fill=\"none\" stroke=\"#2a3555\" stroke-width=\"1\"/>";
-      }
-      let spokes = "";
-      for (let i = 0; i < n; i++) {
-        const p = xy(i, 1);
-        spokes += "<line x1=\"" + cx + "\" y1=\"" + cy + "\" x2=\"" + p[0].toFixed(1) + "\" y2=\"" + p[1].toFixed(1) + "\" stroke=\"#2a3555\"/>";
-      }
-      const poly = items.map(function (it, i) {
-        return xy(i, it.score / 5).map(function (v) { return v.toFixed(1); }).join(",");
-      }).join(" ");
-      let labels = "";
-      for (let i = 0; i < n; i++) {
-        const p = xy(i, 1.28);
-        const text = items[i].short || items[i].name;
-        labels += "<text x=\"" + p[0].toFixed(1) + "\" y=\"" + p[1].toFixed(1) + "\" text-anchor=\"middle\" dominant-baseline=\"middle\" fill=\"#a9b6d3\" font-size=\"11\">" + esc(text) + "</text>";
-      }
-      return "<svg viewBox=\"0 0 " + vb + " " + vb + "\" role=\"img\" aria-label=\"Radar of scored criteria\">" + rings + spokes + "<polygon points=\"" + poly + "\" fill=\"rgba(94,234,212,.28)\" stroke=\"#5eead4\" stroke-width=\"2\"/>" + labels + "</svg>";
-    }
-
-    function cardHtml(c) {
-      const badges = [
-        c.core ? "<span class=\"chip chip-core\">Core</span>" : "",
-        !c.core && !c.custom ? "<span class=\"chip\">Starter</span>" : "",
-        c.custom ? "<span class=\"chip\">Custom</span>" : "",
-        c.inverse ? "<span class=\"chip chip-inv\">Inverse</span>" : ""
-      ].join("");
-      const title = c.custom
-        ? "<input data-role=\"name\" type=\"text\" maxlength=\"80\" value=\"" + esc(c.name) + "\" aria-label=\"Custom criterion name\" />"
-        : "<h3>" + esc(c.name) + "</h3>";
-      const scores = [1, 2, 3, 4, 5].map(function (n) {
-        const pressed = c.score === n ? "true" : "false";
-        return "<button type=\"button\" data-score=\"" + n + "\" aria-pressed=\"" + pressed + "\">" + n + "</button>";
-      }).join("");
-      const naPressed = c.score == null ? "true" : "false";
-      const hideLabel = c.hidden ? "Include" : "Hide";
-      const remove = c.custom ? "<button type=\"button\" data-action=\"remove\">Remove</button>" : "";
-      const cls = "card" + (c.hidden ? " is-hidden" : "") + (!c.hidden && c.weight === 0 ? " is-zero" : "");
-      return "<article class=\"" + cls + "\" data-cid=\"" + esc(c.id) + "\">" +
-        "<div class=\"card-top\"><div class=\"card-title\">" + title + "<div class=\"badges\">" + badges + "</div></div>" +
-        "<div class=\"card-actions\">" +
-        "<button type=\"button\" data-action=\"why\" aria-expanded=\"false\">Why it matters</button>" +
-        "<button type=\"button\" data-action=\"hide\" aria-pressed=\"" + (c.hidden ? "true" : "false") + "\">" + hideLabel + "</button>" +
-        remove + "</div></div>" +
-        "<p class=\"why\" hidden>" + esc(c.why || "Score 5 as the strongest favorable case.") + "</p>" +
-        "<div class=\"card-body\">" +
-        "<div class=\"weight-row\"><label>Weight <strong data-role=\"weight-label\">" + c.weight + "</strong></label>" +
-        "<input class=\"range\" data-role=\"weight-range\" type=\"range\" min=\"0\" max=\"5\" step=\"1\" value=\"" + c.weight + "\" aria-label=\"Weight for " + esc(c.name) + "\" />" +
-        "<input data-role=\"weight-num\" type=\"number\" min=\"0\" max=\"5\" step=\"1\" value=\"" + c.weight + "\" inputmode=\"numeric\" aria-label=\"Weight number for " + esc(c.name) + "\" /></div>" +
-        "<div><span class=\"fine\" style=\"margin:0 0 .35rem; display:block\">Score</span><div class=\"scores\" role=\"group\" aria-label=\"Score for " + esc(c.name) + "\">" + scores +
-        "<button type=\"button\" data-score=\"na\" aria-pressed=\"" + naPressed + "\">N/A</button></div></div>" +
-        "<label class=\"field\">Notes<textarea data-role=\"notes\" maxlength=\"500\" rows=\"2\" placeholder=\"What you saw on the listing\">" + esc(c.notes) + "</textarea></label>" +
-        "<p class=\"status\" data-role=\"status\"></p></div></article>";
-    }
-
-    function renderCriteria() {
-      document.getElementById("criteria").innerHTML = current.criteria.map(cardHtml).join("");
-    }
-
-    function findCardCriterion(node) {
-      const card = node.closest("[data-cid]");
-      if (!card) return null;
-      const c = current.criteria.filter(function (x) { return x.id === card.dataset.cid; })[0];
-      if (!c) return null;
-      return { card: card, c: c };
-    }
-
-    function setWeight(card, c, weight) {
-      c.weight = clampWeight(weight);
-      const label = card.querySelector("[data-role=weight-label]");
-      const range = card.querySelector("[data-role=weight-range]");
-      const num = card.querySelector("[data-role=weight-num]");
-      if (label) label.textContent = String(c.weight);
-      if (range) range.value = String(c.weight);
-      if (num && document.activeElement !== num) num.value = String(c.weight);
-      card.classList.toggle("is-zero", !c.hidden && c.weight === 0);
-    }
-
-    function paintLive() {
-      const summary = scoreSummary(current.criteria);
-      renderScorebar(summary);
-      renderBreakdown(summary);
-      renderPreview();
-      const dragIds = {};
-      for (let i = 0; i < summary.drags.length; i++) dragIds[summary.drags[i].id] = true;
-      const cards = document.querySelectorAll("#criteria [data-cid]");
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i];
-        const c = current.criteria.filter(function (x) { return x.id === card.dataset.cid; })[0];
-        if (!c) continue;
-        card.classList.toggle("is-drag", !!dragIds[c.id]);
-        card.classList.toggle("is-hidden", !!c.hidden);
-        card.classList.toggle("is-zero", !c.hidden && clampWeight(c.weight) === 0);
-        const status = card.querySelector("[data-role=status]");
-        if (!status) continue;
-        if (c.hidden) status.textContent = "Hidden — not counted.";
-        else if (clampWeight(c.weight) === 0) status.textContent = "Weight 0 — not counted.";
-        else if (c.score == null) status.textContent = "N/A — not counted.";
-        else {
-          const extra = dragIds[c.id] ? " Below the average." : "";
-          status.textContent = "Counts: " + c.score + " × " + c.weight + " = " + (c.score * c.weight) + "." + extra;
-        }
-      }
-      document.body.dataset.liveScore = summary.hundredths == null ? "" : formatHundredths(summary.hundredths);
-      document.body.dataset.liveBand = summary.band ? summary.band.id : "";
-      document.body.dataset.liveNum = String(summary.num);
-      document.body.dataset.liveDen = String(summary.den);
-    }
-
-    function renderSaved() {
-      const root = document.getElementById("saved-list");
-      const evals = sortedEvals();
-      if (!evals.length) {
-        root.innerHTML = "<p class=\"empty\">No saved evaluations yet. Score a product and save it. Data stays in this browser.</p>";
-        renderCompare();
-        return;
-      }
-      root.innerHTML = evals.map(function (ev) {
-        const s = scoreSummary(ev.criteria);
-        const avg = s.hundredths == null ? "—" : formatHundredths(s.hundredths);
-        const band = s.band ? s.band.label : "Unscored";
-        const bandClass = s.band ? s.band.id : "none";
-        const open = ev.id === current.id ? " is-open" : "";
-        const meta = [
-          ev.date || "",
-          ev.sample ? "Fictional sample" : "",
-          ev.asinOrUrl || "No ASIN"
-        ].filter(Boolean).join(" · ");
-        return "<article class=\"saved" + open + "\" data-sid=\"" + esc(ev.id) + "\">" +
-          "<div><h3>" + esc(ev.productName || "Untitled") + "</h3><p class=\"fine\">" + esc(meta) + "</p></div>" +
-          "<div class=\"saved-score band-" + bandClass + "\">" + esc(avg) + " <span class=\"band " + bandClass + "\">" + esc(band) + "</span></div>" +
-          "<div class=\"saved-actions\">" +
-          "<button type=\"button\" data-action=\"load\">Open</button>" +
-          "<button type=\"button\" data-action=\"copy\">Copy</button>" +
-          "<button type=\"button\" class=\"danger\" data-action=\"delete\">Delete</button>" +
-          "</div></article>";
-      }).join("");
-      renderCompare();
-    }
-
-    function renderCompare() {
-      const root = document.getElementById("compare");
-      const n = Number(document.getElementById("compare-n").value) || 3;
-      const evals = sortedEvals().slice(0, n);
-      if (evals.length < 2) {
-        root.innerHTML = "<p class=\"empty\">Save at least two evaluations to compare the last ones.</p>";
-        return;
-      }
-      const order = [];
-      const names = {};
-      for (let i = 0; i < DEFAULTS.length; i++) {
-        order.push(DEFAULTS[i].id);
-        names[DEFAULTS[i].id] = DEFAULTS[i].name;
-      }
-      for (let i = 0; i < evals.length; i++) {
-        const criteria = evals[i].criteria;
-        for (let j = 0; j < criteria.length; j++) {
-          if (!names[criteria[j].id]) {
-            order.push(criteria[j].id);
-            names[criteria[j].id] = criteria[j].name;
-          }
-        }
-      }
-      let best = -1;
-      const summaries = evals.map(function (ev) { return scoreSummary(ev.criteria); });
-      for (let i = 0; i < summaries.length; i++) {
-        if (summaries[i].hundredths != null && summaries[i].hundredths > best) best = summaries[i].hundredths;
-      }
-      let head = "<th>Criterion</th>";
-      for (let i = 0; i < evals.length; i++) {
-        const klass = summaries[i].hundredths != null && summaries[i].hundredths === best ? " class=\"best\"" : "";
-        head += "<th" + klass + ">" + esc(evals[i].productName || "Untitled") + "</th>";
-      }
-      function row(label, cells) {
-        let html = "<tr><th>" + esc(label) + "</th>";
-        for (let i = 0; i < cells.length; i++) html += cells[i];
-        return html + "</tr>";
-      }
-      function td(i, text, extra) {
-        const klass = summaries[i].hundredths != null && summaries[i].hundredths === best ? " class=\"num best\"" : " class=\"num\"";
-        return "<td" + klass + ">" + text + (extra || "") + "</td>";
-      }
-      let body = row("Weighted average", summaries.map(function (s, i) {
-        const text = s.hundredths == null ? "—" : formatHundredths(s.hundredths);
-        return td(i, esc(text));
-      }));
-      body += row("Verdict", summaries.map(function (s, i) {
-        return td(i, esc(s.band ? s.band.label : "—"));
-      }));
-      for (let r = 0; r < order.length; r++) {
-        const id = order[r];
-        body += row(names[id], evals.map(function (ev, i) {
-          const c = ev.criteria.filter(function (x) { return x.id === id; })[0];
-          if (!c || c.hidden || clampWeight(c.weight) <= 0 || c.score == null) return td(i, "—");
-          return td(i, String(c.score));
-        }));
-      }
-      const bestNote = best >= 0 ? " The highlighted column is the highest average." : "";
-      root.innerHTML = "<p class=\"fine\">Showing the last " + evals.length + " saved." + bestNote + "</p>" +
-        "<div class=\"table-scroll\"><table class=\"compare\"><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
-    }
-
-    function loadIntoEditor(ev) {
-      current = clone(ev);
-      dirty = false;
-      fillFields();
-      syncListingLink();
-      syncBanner();
-      syncSaveLabel();
-      syncDirty();
-      renderCriteria();
-      renderSaved();
-      paintLive();
-    }
-
-    function saveCurrent() {
-      current.productName = current.productName.trim();
-      if (!current.productName) {
-        toast("Add a product name before saving.");
-        document.getElementById("product-name").focus();
-        return;
-      }
-      if (current.productName !== SAMPLE_NAME) current.sample = false;
-      for (let i = 0; i < current.criteria.length; i++) {
-        if (!current.criteria[i].name.trim()) current.criteria[i].name = "Custom criterion";
-      }
-      if (!current.date) current.date = todayISO();
-      const now = new Date().toISOString();
-      if (!current.createdAt) current.createdAt = now;
-      current.savedAt = now;
-      const copy = clone(current);
-      const idx = store.evals.findIndex(function (e) { return e.id === copy.id; });
-      if (idx >= 0) store.evals[idx] = copy;
-      else store.evals.unshift(copy);
-      if (!persist()) return;
-      dirty = false;
-      syncDirty();
-      syncBanner();
-      syncSaveLabel();
-      renderSaved();
-      paintLive();
-      toast(idx >= 0 ? "Evaluation updated" : "Evaluation saved in this browser");
-    }
-
-    function copyText(text) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).then(function () { toast("Summary copied"); }, function () { fallbackCopy(text); });
-      }
-      fallbackCopy(text);
-    }
-
-    function fallbackCopy(text) {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      let ok = false;
-      try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
-      ta.remove();
-      const details = document.querySelector("details.summary-box");
-      if (details) details.open = true;
-      toast(ok ? "Summary copied" : "Clipboard blocked. The summary preview is open so you can copy it.");
-    }
-
-    function csvCell(v) {
-      const s = String(v == null ? "" : v);
-      if (/[",\n\r]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
-      return s;
-    }
-
-    function exportEvals() {
-      return sortedEvals();
-    }
-
-    function toCsv(evals) {
-      const headers = ["product_name", "asin_or_url", "date", "category_notes", "fictional_sample", "saved_at", "weighted_average", "verdict", "points", "weight_total", "criterion", "weight", "score", "points_contributed", "notes", "excluded_reason"];
-      const rows = [headers.join(",")];
-      for (let i = 0; i < evals.length; i++) {
-        const ev = evals[i];
-        const s = scoreSummary(ev.criteria);
-        for (let j = 0; j < ev.criteria.length; j++) {
-          const c = ev.criteria[j];
-          let reason = "";
-          if (c.hidden) reason = "hidden";
-          else if (clampWeight(c.weight) <= 0) reason = "weight_0";
-          else if (c.score == null) reason = "na";
-          const contrib = reason ? "" : String(c.score * c.weight);
-          rows.push([
-            ev.productName, ev.asinOrUrl, ev.date, ev.categoryNotes, ev.sample ? "yes" : "no", ev.savedAt || "",
-            s.hundredths == null ? "" : formatHundredths(s.hundredths),
-            s.band ? s.band.label : "",
-            s.den ? String(s.num) : "",
-            s.den ? String(s.den) : "",
-            c.name, String(clampWeight(c.weight)), c.score == null ? "" : String(c.score), contrib, c.notes, reason
-          ].map(csvCell).join(","));
-        }
-      }
-      return rows.join("\n") + "\n";
-    }
-
-    function download(filename, mime, text) {
-      const blob = new Blob([text], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    }
-
-    function exportJson() {
-      const evals = exportEvals();
-      if (!evals.length) { toast("Save an evaluation before exporting."); return; }
-      const payload = {
-        app: "Amazon Product Eval",
-        brand: "Sensationally OT",
-        note: "Human scores entered after viewing a listing. This file is not Amazon data.",
-        bands: { go: "4.20 and above (Strong GO)", conditional: "3.40 to 4.19", pass: "below 3.40" },
-        formula: "sum(score * weight) / sum(weights of counted criteria), rounded half-up to 2 decimals",
-        exportedAt: new Date().toISOString(),
-        evaluations: evals.map(function (ev) {
-          const s = scoreSummary(ev.criteria);
-          const copy = clone(ev);
-          copy.weightedAverage = s.hundredths == null ? null : formatHundredths(s.hundredths);
-          copy.verdict = s.band ? s.band.label : null;
-          copy.points = s.num;
-          copy.weightTotal = s.den;
-          return copy;
-        })
-      };
-      download("amazon-product-evals.json", "application/json", JSON.stringify(payload, null, 2));
-      toast("JSON downloaded");
-    }
-
-    function exportCsv() {
-      const evals = exportEvals();
-      if (!evals.length) { toast("Save an evaluation before exporting."); return; }
-      download("amazon-product-evals.csv", "text/csv", toCsv(evals));
-      toast("CSV downloaded");
-    }
-
-    function bind() {
-      document.getElementById("product-name").addEventListener("input", function (e) {
-        current.productName = e.target.value;
-        if (current.sample && current.productName.trim() !== SAMPLE_NAME) current.sample = false;
-        syncBanner();
-        markDirty();
-      });
-      document.getElementById("asin").addEventListener("input", function (e) {
-        current.asinOrUrl = e.target.value;
-        syncListingLink();
-        markDirty();
-      });
-      document.getElementById("category-notes").addEventListener("input", function (e) {
-        current.categoryNotes = e.target.value;
-        markDirty();
-      });
-      document.getElementById("eval-date").addEventListener("input", function (e) {
-        current.date = e.target.value;
-        markDirty();
-      });
-
-      const criteriaRoot = document.getElementById("criteria");
-      criteriaRoot.addEventListener("input", function (e) {
-        const hit = findCardCriterion(e.target);
-        if (!hit) return;
-        if (e.target.matches("[data-role=weight-range]")) {
-          setWeight(hit.card, hit.c, e.target.value);
-          hit.card.querySelector("[data-role=weight-num]").value = String(hit.c.weight);
-          paintLive();
-          markDirty();
-        } else if (e.target.matches("[data-role=weight-num]")) {
-          if (e.target.value === "") return;
-          setWeight(hit.card, hit.c, e.target.value);
-          paintLive();
-          markDirty();
-        } else if (e.target.matches("[data-role=notes]")) {
-          hit.c.notes = e.target.value;
-          markDirty();
-        } else if (e.target.matches("[data-role=name]")) {
-          hit.c.name = e.target.value;
-          const trimmed = e.target.value.trim();
-          if (trimmed) hit.c.short = trimmed.replace(/\(inverse\)/ig, "").trim().slice(0, 12) || "Custom";
-          paintLive();
-          markDirty();
-        }
-      });
-      criteriaRoot.addEventListener("focusout", function (e) {
-        const hit = findCardCriterion(e.target);
-        if (!hit) return;
-        if (e.target.matches("[data-role=weight-num]")) {
-          const before = hit.c.weight;
-          setWeight(hit.card, hit.c, e.target.value === "" ? 0 : e.target.value);
-          e.target.value = String(hit.c.weight);
-          paintLive();
-          if (hit.c.weight !== before) markDirty();
-        } else if (e.target.matches("[data-role=name]")) {
-          const name = e.target.value.trim();
-          if (!name) {
-            e.target.value = hit.c.name.trim() || "Custom criterion";
-            hit.c.name = e.target.value;
-            return;
-          }
-          hit.c.name = name;
-          hit.c.short = name.replace(/\(inverse\)/ig, "").trim().slice(0, 12) || "Custom";
-        }
-      });
-      criteriaRoot.addEventListener("click", function (e) {
-        const scoreBtn = e.target.closest("[data-score]");
-        if (scoreBtn) {
-          const hit = findCardCriterion(scoreBtn);
-          if (!hit) return;
-          hit.c.score = scoreBtn.dataset.score === "na" ? null : clampScore(scoreBtn.dataset.score);
-          const buttons = hit.card.querySelectorAll("[data-score]");
-          for (let i = 0; i < buttons.length; i++) {
-            buttons[i].setAttribute("aria-pressed", buttons[i] === scoreBtn ? "true" : "false");
-          }
-          paintLive();
-          markDirty();
-          return;
-        }
-        const actionBtn = e.target.closest("[data-action]");
-        if (!actionBtn) return;
-        const hit = findCardCriterion(actionBtn);
-        if (!hit) return;
-        const action = actionBtn.dataset.action;
-        if (action === "why") {
-          const why = hit.card.querySelector(".why");
-          const open = why.hidden;
-          why.hidden = !open;
-          actionBtn.setAttribute("aria-expanded", open ? "true" : "false");
-        } else if (action === "hide") {
-          hit.c.hidden = !hit.c.hidden;
-          actionBtn.textContent = hit.c.hidden ? "Include" : "Hide";
-          actionBtn.setAttribute("aria-pressed", hit.c.hidden ? "true" : "false");
-          paintLive();
-          markDirty();
-        } else if (action === "remove") {
-          current.criteria = current.criteria.filter(function (x) { return x.id !== hit.c.id; });
-          renderCriteria();
-          paintLive();
-          markDirty();
-        }
-      });
-
-      document.getElementById("add-form").addEventListener("submit", function (e) {
-        e.preventDefault();
-        if (current.criteria.length >= 40) { toast("Limit is 40 criteria."); return; }
-        const name = document.getElementById("add-name").value.trim();
-        if (!name) { toast("Name the criterion first."); document.getElementById("add-name").focus(); return; }
-        const weight = clampWeight(document.getElementById("add-weight").value);
-        const why = document.getElementById("add-why").value.trim();
-        const inverse = document.getElementById("add-inverse").checked;
-        current.criteria.push({
-          id: "c-" + uid(),
-          name: name,
-          short: name.replace(/\(inverse\)/ig, "").trim().slice(0, 12),
-          why: why || "Custom criterion. Score 5 as the strongest favorable case.",
-          weight: weight,
-          score: null,
-          notes: "",
-          inverse: inverse,
-          core: false,
-          custom: true,
-          hidden: false
-        });
-        document.getElementById("add-name").value = "";
-        document.getElementById("add-why").value = "";
-        document.getElementById("add-inverse").checked = false;
-        renderCriteria();
-        paintLive();
-        markDirty();
-        const cards = document.querySelectorAll("#criteria [data-cid]");
-        if (cards.length) cards[cards.length - 1].scrollIntoView({ block: "nearest" });
-        toast("Criterion added");
-      });
-
-      document.getElementById("save-btn").addEventListener("click", saveCurrent);
-      document.getElementById("save-btn-sticky").addEventListener("click", saveCurrent);
-      document.getElementById("copy-btn").addEventListener("click", function () { copyText(summaryText(current)); });
-      document.getElementById("copy-btn-sticky").addEventListener("click", function () { copyText(summaryText(current)); });
-      document.getElementById("new-btn").addEventListener("click", function () {
-        if (dirty && !confirm("Discard unsaved changes and start a new evaluation?")) return;
-        loadIntoEditor(blankEval());
-        document.getElementById("product-name").focus();
-      });
-      document.getElementById("json-btn").addEventListener("click", exportJson);
-      document.getElementById("csv-btn").addEventListener("click", exportCsv);
-      document.getElementById("reset-weights-btn").addEventListener("click", function () {
-        if (!confirm("Reset weights to the defaults? Scores and notes stay.")) return;
-        const byId = {};
-        for (let i = 0; i < DEFAULTS.length; i++) byId[DEFAULTS[i].id] = DEFAULTS[i].weight;
-        for (let i = 0; i < current.criteria.length; i++) {
-          if (Object.prototype.hasOwnProperty.call(byId, current.criteria[i].id)) {
-            current.criteria[i].weight = byId[current.criteria[i].id];
-          }
-        }
-        renderCriteria();
-        paintLive();
-        markDirty();
-        toast("Weights reset to defaults");
-      });
-
-      document.getElementById("saved-list").addEventListener("click", function (e) {
-        const btn = e.target.closest("[data-action]");
-        if (!btn) return;
-        const card = btn.closest("[data-sid]");
-        if (!card) return;
-        const id = card.dataset.sid;
-        const found = store.evals.filter(function (ev) { return ev.id === id; })[0];
-        if (!found) return;
-        if (btn.dataset.action === "load") {
-          if (found.id === current.id && !dirty) return;
-          if (dirty && !confirm("Discard unsaved changes and open that evaluation?")) return;
-          loadIntoEditor(found);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        } else if (btn.dataset.action === "copy") {
-          copyText(summaryText(found));
-        } else if (btn.dataset.action === "delete") {
-          const label = found.productName || "Untitled";
-          if (!confirm("Delete “" + label + "” from this browser?")) return;
-          store.evals = store.evals.filter(function (ev) { return ev.id !== id; });
-          if (!persist()) return;
-          renderSaved();
-          syncSaveLabel();
-          toast("Removed from saved list. Save again if you want it back.");
-        }
-      });
-
-      document.getElementById("compare-n").addEventListener("change", renderCompare);
-    }
-
-    bind();
-    fillFields();
-    syncListingLink();
-    syncBanner();
-    syncSaveLabel();
-    syncDirty();
-    renderCriteria();
-    renderSaved();
-    paintLive();
-    if (storageBlocked) document.getElementById("storage-banner").hidden = false;
-
-    let mathFails = [];
-    try { mathFails = selfCheck(); }
-    catch (err) { mathFails = [String(err && err.message ? err.message : err)]; }
-    document.body.dataset.math = mathFails.length ? "fail" : "ok";
-    if (mathFails.length) {
-      const el = document.getElementById("math-error");
-      el.hidden = false;
-      el.textContent = "Scoring self-check failed: " + mathFails.join("; ");
-    }
+    })();
   </script>
-  <noscript>This scorecard needs JavaScript. It still does not call Amazon — scores are entered by you.</noscript>
+  <noscript>This dossier needs JavaScript. It still does not call Amazon or Helium 10.</noscript>
 </body>
 </html>
