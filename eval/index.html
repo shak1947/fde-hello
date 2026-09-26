@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23121a2f'/%3E%3Cpath d='M8 20.5 13.2 10h2.2L20.6 20.5h-2.3l-1-2.4h-5.1l-1 2.4H8zm4.2-4.1h3.9L14.2 12.8h-.1l-1.9 3.6z' fill='%235eead4'/%3E%3C/svg%3E" />
   <title>Amazon Product Eval</title>
   <meta name="description" content="Shak's Amazon product evaluation scorecard for Sensationally OT. Human scores only — no Amazon API." />
   <style>
@@ -146,6 +147,7 @@
     textarea { resize: vertical; min-height: 4.5rem; font-weight: 450; }
     input[type="number"] { font-weight: 650; }
     .listing-row { display: flex; flex-wrap: wrap; gap: .35rem .8rem; align-items: baseline; }
+    @media (min-width: 800px) { .link-slot { align-self: end; padding-bottom: .15rem; } }
     .breakdown { display: grid; gap: 1rem; }
     @media (min-width: 860px) {
       .breakdown { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); align-items: center; }
@@ -160,7 +162,10 @@
     .bar-fill.high { background: var(--go); }
     .bar-fill.mid { background: var(--warn); }
     .bar-fill.low { background: var(--bad); }
-    .avg-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; border-radius: 2px; }
+    .avg-mark {
+      position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px;
+      background: #fff; border-radius: 2px; box-shadow: 0 0 0 1px #0b1020;
+    }
     .drag-list { margin: .8rem 0 0; padding-left: 1.2rem; }
     .compare thead th:not(:first-child) { max-width: 14rem; white-space: normal; }
     .drag-list li { margin: .35rem 0; color: var(--muted); font-size: .92rem; }
@@ -327,7 +332,7 @@
           <label class="field span-2">ASIN or URL
             <input id="asin" type="text" maxlength="500" autocomplete="off" placeholder="ASIN or https://www.amazon.com/dp/…" />
           </label>
-          <div class="field">
+          <div class="field link-slot">
             <span class="fine listing-row" style="margin:0">
               <a id="open-listing" hidden target="_blank" rel="noopener noreferrer">Open listing in a new tab</a>
             </span>
@@ -916,7 +921,8 @@
         const fill = counted ? "<span class=\"bar-fill " + barClass(score) + "\" style=\"width:" + width + "%\"></span>" : "";
         return "<div class=\"bar-row\"><span class=\"bar-name\">" + esc(c.name) + "</span><span class=\"bar-score\">" + esc(label) + "</span><span class=\"bar-track\">" + fill + mark + "</span></div>";
       }).join("");
-      root.innerHTML = "<div class=\"radar-wrap\">" + radar + "</div><div>" + (bars || "<p class=\"empty\">All criteria are hidden.</p>") + "</div>";
+      const legend = summary.hundredths == null ? "" : "<p class=\"fine\">The white line on each bar is the weighted average.</p>";
+      root.innerHTML = "<div class=\"radar-wrap\">" + radar + "</div><div>" + (bars || "<p class=\"empty\">All criteria are hidden.</p>") + legend + "</div>";
 
       if (summary.hundredths == null) {
         dragRoot.innerHTML = "";
@@ -934,10 +940,10 @@
 
     function radarMarkup(items) {
       const n = items.length;
-      const vb = 360;
-      const cx = 180;
-      const cy = 180;
-      const radius = 104;
+      const vb = 420;
+      const cx = 210;
+      const cy = 210;
+      const radius = 112;
       function xy(i, mag) {
         const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
         return [cx + Math.cos(a) * radius * mag, cy + Math.sin(a) * radius * mag];
