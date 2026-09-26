@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -164,7 +164,7 @@
     var anySample = list.some(function (d) { return d.sample; });
     var sampleNote = "";
     if (anyBaseline) {
-      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on Products Cost $13.50. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. Both samples keep the live sell price $39.95. Fee Preview is not live, so the COGS Tracker (2026-07-22) is the fee default and does not replace those nets. Competitor tables stay empty until you paste Helium 10.</div>";
+      sampleNote = "<div class=\"banner\"><strong>Mermaid is the healthy baseline.</strong> Sep 2026 MTD Sellerboard net about +$8.90 per unit (~22% of $39.95) on Products Cost $13.50. <strong>Farm is Conditional and underwater</strong> at current ads and fees: net about −$3.77, Products Cost $14.00, blended fees about $18. Both samples keep the live sell price $39.95. Current EXW is $10.30 for Mermaid and $10.35 for Farm (GW20260123 only). Freight per unit is manual. Fee Preview is not live, so the COGS Tracker (2026-07-22) is the fee default and does not replace those nets. Competitor tables stay empty until you paste Helium 10.</div>";
     }
     if (anySample) {
       sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
@@ -330,17 +330,17 @@
     var c = d.china;
     var o = d.overview;
     var gw = L.GREATWALL;
-    var fee = L.FEE_MODEL;
+    var cur = L.GREATWALL_CURRENT;
     return "<section class=\"panel\" id=\"china\" data-section><p class=\"kicker\">C · Landed cost</p><h2>China / landed cost <span class=\"stamp\">ESTIMATE</span></h2>" +
-      "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Mode 2</strong> rebuilds Greatwall " + esc(gw.invoice) + " (Oct 2023): EXW + sea freight + Alibaba + duty + AWD/storage, then referral and FBA. Do not add Mode 2 freight on top of Products Cost. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed. Fee Preview is not live. The COGS Tracker (" + esc(L.COGS_TRACKER.asOf) + ") supplies the fee defaults, and both samples stay at the live sell price $39.95. Blended Amazon fees, when filled, replace that tracker split.</p>" +
-      "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button><button type=\"button\" data-action=\"preset-invoice\">Load Greatwall waterfall</button></div>" +
-      "<p class=\"fine\">Sellerboard presets fill Products Cost, blended fees, and reported net. They leave the invoice lines alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank. The Greatwall button fills EXW " + L.money(gw.exw) + ", sea freight " + L.money(gw.seaFreight) + ", Alibaba " + L.money(gw.alibabaFee) + " (" + L.money(gw.beforeDuty) + " before duty), clears duty back to blank, and sets FBA fulfillment to " + L.money(fee.fba) + ". It does not change Products Cost.</p>" +
+      "<p class=\"intro\">Two modes. <strong>Mode 1</strong> is Sellerboard Products Cost ($13.50 Mermaid / $14 Farm) and it is the cost in use when that field is filled. <strong>Current EXW</strong> is the parsed Greatwall kit price (" + esc(cur.parsed) + "): Mermaid " + L.money(cur.mermaid.exw) + " (was " + L.money(cur.mermaid.priorExw) + "), Farm " + L.money(cur.farm.exw) + " on " + esc(cur.farm.invoice) + " only. Unicorn " + L.money(cur.unicorn.exw) + " and Dino " + L.money(cur.dino.exw) + " are reference EXWs, not dossiers. Freight $/unit is a manual input. Shipment totals are mixed SKUs and are not allocated. EXW to Sellerboard is about " + esc(L.gapBandText()) + " for ocean, duty, and inbound together. The Oct 2023 invoice " + esc(gw.invoice) + " is history. Duty stays blank until HTS " + esc(gw.hts) + " is confirmed. Fee Preview is not live. The COGS Tracker (" + esc(L.COGS_TRACKER.asOf) + ") supplies the fee defaults, and both samples stay at the live sell price $39.95. Blended Amazon fees, when filled, replace that tracker split.</p>" +
+      "<div class=\"toolbar\"><button type=\"button\" data-action=\"preset-mermaid\">Use Mermaid Sellerboard costs</button><button type=\"button\" data-action=\"preset-farm\">Use Farm Sellerboard costs</button><button type=\"button\" data-action=\"preset-exw-mermaid\">Mermaid EXW $10.30</button><button type=\"button\" data-action=\"preset-exw-farm\">Farm EXW $10.35</button><button type=\"button\" data-action=\"preset-exw-unicorn\">Unicorn EXW $10.35</button><button type=\"button\" data-action=\"preset-exw-dino\">Dino EXW $10.30</button></div>" +
+      "<p class=\"fine\">Sellerboard presets fill Products Cost, blended fees, and reported net. They leave EXW and freight alone. A blank sell price becomes $39.95. Farm also fills compare-at $49.95 when that field is blank. EXW buttons set the kit EXW only. They do not fill freight, Alibaba, duty, or Products Cost. Farm $10.35 is invoice " + esc(cur.farm.invoice) + " only.</p>" +
       "<div class=\"split\"><div class=\"fields cols-3\">" +
       field("Mode 1 · Sellerboard Products Cost ($)", textInput("china.productsCost", c.productsCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Override: 13.50 Mermaid / 14 Farm" }), "span-3") +
-      field("Mode 2 · Kit EXW ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "10.65 Greatwall" })) +
+      field("Kit EXW ($)", textInput("china.unitCost", c.unitCost, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "10.30 Mermaid current" })) +
       field("Cost basis", selectBox("china.costBasis", c.costBasis, [["EXW", "EXW"], ["FOB", "FOB"]])) +
-      field("Sea freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "4.24" })) +
-      field("Alibaba fee / unit ($)", textInput("china.alibabaFee", c.alibabaFee, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "0.35" })) +
+      field("Freight / unit ($)", textInput("china.freightPerUnit", c.freightPerUnit, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Manual $/unit. Do not allocate a shipment." })) +
+      field("Alibaba fee / unit ($)", textInput("china.alibabaFee", c.alibabaFee, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "Optional. Oct 2023 was 0.35" })) +
       field("Duty %", textInput("china.dutyPct", c.dutyPct, { type: "number", kind: "percent", min: 0, maxNum: 100, step: "0.1", placeholder: "Blank until HTS confirmed" })) +
       field("Inbound placement ($)", textInput("china.inboundPlacement", c.inboundPlacement, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "0 in COGS tracker" })) +
       field("AWD/storage estimate ($)", textInput("china.amazonInbound", c.amazonInbound, { type: "number", kind: "money", min: 0, step: "0.01", placeholder: "No AWD Drive export" })) +
@@ -764,13 +764,20 @@
       "</ul>";
   }
 
+  function shipmentExamples() {
+    return L.GREATWALL_CURRENT.shipments.map(function (n) { return L.money(n); }).join(" / ");
+  }
+
   function econHtml(econ) {
     var gw = L.GREATWALL;
+    var cur = L.GREATWALL_CURRENT;
     var fee = L.FEE_MODEL;
     var html = "<h3>Two cost modes <span class=\"stamp\">ESTIMATE</span></h3>";
-    html += "<p class=\"fine\">Mode 1 is Sellerboard Products Cost. Mode 2 rebuilds the Oct 2023 Greatwall invoice, then referral and FBA. If Mode 1 is filled, Mode 2 freight is not added again.</p>";
+    html += "<p class=\"fine\">Mode 1 is Sellerboard Products Cost. The kit EXW is the parsed Greatwall price. Freight $/unit stays blank until you type it. If Products Cost is filled, EXW and a typed freight are not added on top.</p>";
     if (econ.doubleFreight) {
-      html += "<p class=\"callout-warn\"><strong>Do not add freight twice.</strong> Products Cost is the cost in use. The EXW, sea freight, and Alibaba lines are the invoice rebuild, not a second charge.</p>";
+      html += "<p class=\"callout-warn\"><strong>Do not add freight twice.</strong> Products Cost is the cost in use. A typed freight $/unit is not added on top. Products Cost minus EXW" + (econ.exwToSb == null ? "" : " stays " + L.money(econ.exwToSb)) + " and is not that freight line.</p>";
+    } else if (econ.productsCost != null && econ.unit != null) {
+      html += "<p class=\"callout-warn\" id=\"exw-not-added\"><strong>EXW is not added on top of Products Cost.</strong> Products Cost minus this EXW is " + L.money(econ.exwToSb) + ". That residual is ocean, duty, and inbound together (about " + esc(L.gapBandText()) + "). Typing a freight $/unit later does not change it.</p>";
     }
     html += "<h3>Mode 1 · Sellerboard" + (econ.activeMode === "sellerboard" ? " · in use" : "") + "</h3><ul class=\"lines\">";
     if (econ.productsCost != null) html += line("Products Cost override", L.money(econ.productsCost), true);
@@ -787,22 +794,36 @@
       if (econ.unexplainedGap != null) html += line("Gap vs contribution", L.money(econ.unexplainedGap) + " · not an ad cost");
     }
     html += "</ul>";
-    html += "<h3>Mode 2 · Invoice rebuild" + (econ.activeMode === "rebuild" ? " · in use" : "") + "</h3>";
-    html += "<p class=\"fine\">" + esc(gw.invoice) + ", Oct 2023. Kit EXW " + L.money(gw.exw) + " for Mermaid and Unicorn. Farm uses the same architecture. Sea " + L.money(gw.seaFreight) + " + Alibaba " + L.money(gw.alibabaFee) + " = " + L.money(gw.beforeDuty) + " before duty. Duty is not filled. HTS " + esc(gw.hts) + " is often 0% MFN and is not a rate on this page.</p>";
+    html += "<div id=\"exw-gap\"><h3>Parsed EXW · " + esc(cur.parsed) + "</h3>";
+    html += "<p class=\"fine\">Current kit prices from parsed Greatwall invoices. Sellerboard Products Cost stays the override. EXW to Sellerboard is about " + esc(L.gapBandText()) + " for ocean, duty, and inbound together. That band is not a split of those costs, and it is not a freight-per-unit rate.</p><ul class=\"lines\">";
+    html += line("Mermaid dough EXW", L.money(cur.mermaid.exw) + " current · was " + L.money(cur.mermaid.priorExw));
+    html += line("Farm kit EXW", L.money(cur.farm.exw) + " · invoice " + esc(cur.farm.invoice) + " only");
+    html += line("Unicorn EXW", L.money(cur.unicorn.exw) + " · reference, no dossier");
+    html += line("Dino EXW", L.money(cur.dino.exw) + " · reference, no dossier");
+    if (econ.exwToSb != null) html += line("Products Cost minus this EXW", L.money(econ.exwToSb) + " · not a freight allocation");
+    html += "</ul></div>";
+    html += "<div id=\"freight-manual\"><h3>Freight $/unit is manual</h3>";
+    html += "<p class=\"fine\">Freight is shipment-level and these shipments mix SKUs. Examples: " + esc(shipmentExamples()) + ". Type freight $/unit yourself. This page does not divide those totals.</p></div>";
+    html += "<div id=\"greatwall-2023\"><h3>Oct 2023 invoice · history</h3>";
+    html += "<p class=\"fine\">" + esc(gw.invoice) + ". Kit EXW " + L.money(gw.exw) + ", sea freight " + L.money(gw.seaFreight) + " per unit, Alibaba " + L.money(gw.alibabaFee) + " per unit, " + L.money(gw.beforeDuty) + " before duty. That stack is not the current sample default. Duty is not filled. HTS " + esc(gw.hts) + " is often 0% MFN and is not a rate on this page.</p></div>";
+    html += "<h3>Rebuild" + (econ.activeMode === "rebuild" ? " · in use" : "") + "</h3>";
+    html += "<p class=\"fine\">Uses the EXW, freight, and Alibaba you typed. Blank freight counts as $0 in this arithmetic only. That zero is not a freight quote and not an allocation of a shipment.</p>";
     if (econ.buildUp == null) {
-      html += "<p class=\"empty\">EXW, freight, and Alibaba are blank. Load the Greatwall waterfall to fill the invoice defaults.</p>";
+      html += "<p class=\"empty\">EXW, freight, and Alibaba are blank. Set a current EXW or type a kit price. Freight $/unit stays empty until you enter it.</p>";
     } else {
       html += "<ul class=\"lines\">";
       html += line(econ.costBasis + (econ.unit == null ? " · blank as $0" : ""), L.money(econ.unit || 0));
-      html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · blank as $0" : ""), L.money(econ.freight || 0));
+      html += line("Freight / unit (" + econ.shippingMode + ")" + (econ.freight == null ? " · not entered" : ""), econ.freight == null ? "Manual" : L.money(econ.freight));
       html += line("Alibaba fee" + (econ.alibaba == null ? " · blank as $0" : ""), L.money(econ.alibaba || 0));
       html += line("All-in before duty", L.money(econ.beforeDuty), true);
       html += line("Duty " + (econ.dutyPct == null ? "blank, counted as $0 — confirm HTS" : L.pct(econ.dutyPct)), L.money(econ.duty));
       html += line("AWD/storage" + (econ.inbound == null ? " · blank as $0" : ""), L.money(econ.inbound || 0));
       html += line("Packaging" + (econ.packaging == null ? " · blank as $0" : ""), L.money(econ.packaging || 0));
       html += line("Rebuild product cost", L.money(econ.buildUp), econ.activeMode === "rebuild");
-      html += line("Versus Mermaid $13.50", L.money(econ.gapVsMermaidCost) + " · not reconciled");
-      html += line("Versus Farm $14.00", L.money(econ.gapVsFarmCost) + " · not reconciled");
+      if (econ.freight != null) {
+        html += line("Rebuild minus Mermaid $13.50", L.money(econ.gapVsMermaidCost) + " · not the EXW residual");
+        html += line("Rebuild minus Farm $14.00", L.money(econ.gapVsFarmCost) + " · not the EXW residual");
+      }
       html += "</ul>";
     }
     html += trackerHtml();
@@ -830,7 +851,7 @@
     }
     if (econ.feeSource === "blended") html += "<p class=\"fine\">Referral and FBA fulfillment are not added on top of blended Amazon fees.</p>";
     if (econ.blanksAsZero) html += "<p class=\"fine\">Unfilled EXW, freight, Alibaba, duty, AWD/storage, packaging, or spoilage count as zero in the rebuild. A blank duty rate is not a confirmed 0% HTS.</p>";
-    html += "<p class=\"fine\">Not a live freight quote and not a customs ruling. $13.50 and $14.00 stay Sellerboard overrides. $15.24 is the invoice before duty.</p>";
+    html += "<p class=\"fine\">Not a live freight quote and not a customs ruling. $13.50 and $14.00 stay Sellerboard overrides. About " + esc(L.gapBandText()) + " is the EXW-to-Sellerboard band for ocean, duty, and inbound together. " + L.money(gw.beforeDuty) + " is the Oct 2023 invoice before duty, and it is not the current build-up.</p>";
     return html;
   }
 
@@ -1185,22 +1206,18 @@
       toast(spec.productName + " costs applied");
       return;
     }
-    if (action === "preset-invoice") {
-      var hostInvoice = current();
-      if (!hostInvoice) return;
-      var gw = L.GREATWALL;
-      var feeModel = L.FEE_MODEL;
-      var differs = (hostInvoice.china.unitCost != null && hostInvoice.china.unitCost !== gw.exw) ||
-        (hostInvoice.china.freightPerUnit != null && hostInvoice.china.freightPerUnit !== gw.seaFreight) ||
-        (hostInvoice.china.alibabaFee != null && hostInvoice.china.alibabaFee !== gw.alibabaFee) ||
-        hostInvoice.china.dutyPct != null ||
-        (hostInvoice.overview.fbaFees != null && hostInvoice.overview.fbaFees !== feeModel.fba);
-      if (differs && !confirm("Replace EXW, sea freight, Alibaba, package dims, and FBA fulfillment with the Oct 2023 Greatwall invoice, and clear duty back to blank? Products Cost stays. Duty is not set to a rate.")) return;
-      L.applyInvoicePreset(hostInvoice);
-      touch(hostInvoice);
+    if (action === "preset-exw-mermaid" || action === "preset-exw-farm" || action === "preset-exw-unicorn" || action === "preset-exw-dino") {
+      var exwKey = action.replace("preset-exw-", "");
+      var exwRow = L.GREATWALL_CURRENT[exwKey];
+      var hostExw = current();
+      if (!hostExw || !exwRow) return;
+      var exwLabel = exwKey === "farm" ? "Farm kit EXW " + L.money(exwRow.exw) + " (" + exwRow.invoice + " only)" : exwKey.charAt(0).toUpperCase() + exwKey.slice(1) + " EXW " + L.money(exwRow.exw);
+      if (hostExw.china.unitCost != null && hostExw.china.unitCost !== exwRow.exw && !confirm("Set kit EXW to " + L.money(exwRow.exw) + "? Freight per unit, Alibaba, and Products Cost stay as they are.")) return;
+      L.applyCurrentExw(hostExw, exwKey);
+      touch(hostExw);
       persist();
       render();
-      toast("Greatwall waterfall loaded. It does not replace Products Cost.");
+      toast(exwLabel + " set. Freight per unit was not filled.");
       return;
     }
     if (action === "export-json") { exportJson(exportList(sorted())); return; }

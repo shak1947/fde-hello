@@ -22,9 +22,22 @@ Dollar outputs on the China section are labeled **ESTIMATE**. They are not freig
 
 ## Two cost modes
 
-**Mode 1 — Sellerboard Products Cost.** Mermaid $13.50 and Farm $14.00. When this field is filled it is the cost in use. Sep 2026 blended Amazon fees replace referral plus FBA.
+**Mode 1 — Sellerboard Products Cost.** Mermaid $13.50 and Farm $14.00. When this field is filled it is the cost in use. Sep 2026 blended Amazon fees replace referral plus FBA. Current EXW is not added on top of it.
 
-**Mode 2 — Oct 2023 Greatwall invoice `SENSORY KITGW20231012`.** Same kit architecture for Mermaid, Unicorn, and Farm:
+**Current EXW — parsed Greatwall invoices, 2026-09-26.** Freight $/unit is not filled from these invoices.
+
+| Kit | Current EXW |
+| --- | --- |
+| Mermaid dough | $10.30 (prior $10.25, not the default) |
+| Farm kit | $10.35, invoice `GW20260123` only |
+| Unicorn | $10.35, reference only. No dossier. |
+| Dino | $10.30, reference only. No dossier. |
+
+Products Cost minus current EXW is $3.20 on Mermaid and $3.65 on Farm. That residual sits in about **$3–$3.70** for ocean, duty, and inbound together. It is not split into those pieces, and it is not a freight-per-unit rate. Typing a freight $/unit later does not change it.
+
+Freight on later shipments is a mixed-SKU total. Examples: $2,950 / $6,850 / $9,307 / $10,800. The page does not divide those totals. Type freight $/unit yourself.
+
+**History — Oct 2023 Greatwall invoice `SENSORY KITGW20231012`.** Not the current sample default:
 
 | Line | Amount |
 | --- | --- |
@@ -35,7 +48,7 @@ Dollar outputs on the China section are labeled **ESTIMATE**. They are not freig
 | Duty | Blank. Confirm HTS `3407.00.20` (often 0% MFN). That rate is not entered. |
 | AWD/storage | Blank until you type an estimate |
 
-Do not add Mode 2 freight on top of Products Cost. The gap between $15.24 and the Sellerboard Products Cost is not reconciled.
+Do not add a typed freight on top of Products Cost. The 2023 sea freight is not copied onto the current EXW.
 
 **Fee model** for a 3.3 lb Large Standard at $39.95 (about 13.39×8.47×2.76 in): referral about $5.99 (15%) + FBA fulfillment about $7.38 = about $13.37. On the baselines this size-tier line is visible and is not added on top of the Sep MTD blended fees.
 
@@ -53,7 +66,7 @@ Inbound placement is **$0** in the tracker. There is no AWD Drive export, so AWD
 
 ## First visit
 
-A new browser gets two Sellerboard baselines dated **2026-09-26** (Pricing & Inventory / Listings / Shopify / Sellerboard). They are real listings. Mode 1 uses Products Cost. Mode 2 shows the Oct 2023 Greatwall waterfall and does not add it on top.
+A new browser gets two Sellerboard baselines dated **2026-09-26** (Pricing & Inventory / Listings / Shopify / Sellerboard). They are real listings. Mode 1 uses Products Cost. Current EXW is $10.30 on Mermaid and $10.35 on Farm (`GW20260123` only). Freight per unit starts blank. The Oct 2023 Greatwall invoice stays on the page as history.
 
 | Dossier | Locked snapshot |
 | --- | --- |
@@ -70,7 +83,7 @@ The rubric counts that measured margin (Mermaid 4, Farm 1) plus three product-ty
 
 1. **Overview** — name, ASIN or URL (link only), SKU, sell price, compare-at/list, category, BSR, reviews, rating, notes.
 2. **Competition** — add or paste leaders. The revenue bars and a suggested competition score read only the rows you entered. Baselines start with an empty table.
-3. **China / landed cost** — Mode 1 Sellerboard Products Cost, or Mode 2 Greatwall EXW, sea freight, Alibaba, duty (blank until HTS is confirmed), AWD/storage, then FBA fulfillment and referral. Sellerboard presets fill cost, blended fees, and net. The Greatwall button fills the invoice lines and does not replace Products Cost.
+3. **China / landed cost** — Mode 1 Sellerboard Products Cost, plus current kit EXW, a manual freight $/unit, Alibaba, duty (blank until HTS is confirmed), and AWD/storage, then FBA fulfillment and referral. Sellerboard presets fill cost, blended fees, and net. EXW buttons set the kit price only and do not fill freight or replace Products Cost.
 4. **Maker opportunity** — why, white space, kit angle, gift / OT angle, price band, monthly units. Annual profit is units × 12 × unit profit when those inputs exist.
 5. **Moat and barriers** — eight scores (5 is the favorable case), plus “barriers for others” and “our moat plan.” The barrier index uses the same rounding as the rubric. Mermaid and Farm carry a public-Alibaba note, not a score: no 1:1 3-jar-plus-accessories clone with transparent list pricing. Stock theme clay/slime kits list about $0.50–$3.50 FOB (MOQ often 1.4k–3k) and are not SOT-spec. Credible like-for-like remains Greatwall 2023 EXW $10.65 and Sellerboard $13.50–$14 landed. Commodity kits underprice SOT because they are not the same product. Customization (jars, accessories, and the brand kit) is the barrier. That note is not a negotiated quote and is not a Helium 10 row.
 6. **Rubric** — the original weighted scorecard. Suggestions from competition, landed margin, and the barrier index can be applied onto the linked rows. They do not overwrite a score until you click Apply.
@@ -104,7 +117,7 @@ fees = blended Amazon fees, if filled; otherwise referral % × price + FBA fulfi
 contribution = sell price − cost used − fees
 ```
 
-Blank duty, AWD/storage, packaging, and spoilage count as zero once EXW, freight, or Alibaba is entered. A blank duty rate is not a confirmed 0% HTS. The invoice defaults sum to $15.24 before duty. Products Cost overrides that rebuild, and the page warns not to add the freight a second time. The difference between contribution and Sellerboard net is shown as not broken out.
+Blank duty, AWD/storage, packaging, and spoilage count as zero once EXW, freight, or Alibaba is entered. A blank freight counts as zero in that rebuild only. That zero is not a freight quote. A blank duty rate is not a confirmed 0% HTS. The Oct 2023 invoice still sums to $15.24 before duty and is not the current sample. Products Cost overrides the rebuild. When a freight $/unit is also filled, the page warns not to add that freight a second time. Products Cost minus the current EXW stays the ocean/duty/inbound residual. The difference between contribution and Sellerboard net is shown as not broken out.
 
 ## Library, compare, export
 
