@@ -11,19 +11,18 @@ export default function InviteOnlyPage() {
       <p className="eyebrow">Sensationally OT</p>
       <h1>This desk is invite-only</h1>
       <p className="muted">
-        The desk opens only after the shared password. There is no public sign-up. Shakeel Amir can also
-        invite the offshore consultant from the Clerk dashboard for the existing fde-hello application.
+        The desk opens only after the shared password set in <code>ADS_PORTAL_PASSWORD</code>. There is no
+        public sign-up. Share that password with the consultant out of band. Do not put it in git or in this
+        page.
       </p>
-      <h2>Invite a consultant</h2>
+      <h2>Open the desk</h2>
       <ol className="muted">
-        <li>Open the Clerk dashboard for the fde-hello instance.</li>
-        <li>Turn on Restricted mode so only invited people can join (Configure → Restrictions).</li>
-        <li>Users → Invite, and send the consultant’s email.</li>
-        <li>They open <a href="/ads/enter">/ads/enter</a>, enter the shared password, then sign in with that email if Clerk is enabled.</li>
-        <li>Optional: set <code>ADS_PORTAL_ALLOWED_EMAILS</code> to a comma-separated list. With <code>CLERK_SECRET_KEY</code> set, anyone else with a session is rejected.</li>
+        <li>Set <code>ADS_PORTAL_PASSWORD</code> on the Vercel project for Production and Preview, then redeploy.</li>
+        <li>The consultant opens <a href="/ads/enter">/ads/enter</a> and enters that password.</li>
+        <li>A match sets an httpOnly session cookie and opens <a href="/ads">/ads</a>. A wrong password is rejected.</li>
       </ol>
       <p>
-        <a href="/ads">Back to sign-in</a>
+        <a href="/ads/enter">Back to sign-in</a>
       </p>
     </main>
   );
