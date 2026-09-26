@@ -78,6 +78,7 @@ export type Campaign = {
   impressions: number | null;
   simulated: boolean;
   adGroupId: string;
+  kitId?: string;
   keywords: Keyword[];
   negatives: NegativeEntry[];
   productTargets: ProductTarget[];
@@ -90,6 +91,7 @@ export type CreateCampaignAction = {
   dailyBudget: number;
   targetingType: TargetingType;
   state: DeliveryState;
+  kitId?: string;
 };
 
 export type UpdateCampaignAction = {
@@ -215,6 +217,51 @@ export type ApplyResult = {
   mode: "dry-run" | "live";
 };
 
+export type DecisionChallenge = {
+  intent: string;
+  expectedSpend: number;
+  expectedAcos: number | null;
+  expectedTacos: number | null;
+  expectedOrders: number;
+  timelineDays: number;
+  defense: string;
+  strength: "stated" | "thin";
+  question: string | null;
+};
+
+export type FeedbackActual = {
+  spend: number;
+  acos: number | null;
+  tacos: number | null;
+  orders: number;
+  note: string;
+  recordedAt: string;
+};
+
+export type FeedbackComparison = {
+  verdict: "met" | "missed" | "mixed";
+  early: boolean;
+  lines: string[];
+  stub: true;
+};
+
+export type FeedbackCheck = {
+  id: string;
+  proposalId: string;
+  at: string;
+  reviewAfter: string;
+  actorId: string;
+  actorLabel: string;
+  kitId: string | null;
+  kitName: string;
+  summary: string;
+  mode: AdsMode;
+  challenge: DecisionChallenge;
+  status: "awaiting" | "recorded";
+  actual: FeedbackActual | null;
+  comparison: FeedbackComparison | null;
+};
+
 export type Proposal = {
   id: string;
   createdAt: string;
@@ -224,6 +271,7 @@ export type Proposal = {
   status: ProposalStatus;
   summary: string;
   action: AdsAction;
+  challenge?: DecisionChallenge;
   result?: ApplyResult;
   error?: string;
 };
@@ -239,6 +287,9 @@ export type AuditEvent = {
   actionType: string;
   status: AuditStatus;
   summary: string;
+  intent: string;
+  expected: string;
+  challengeStrength: "" | "stated" | "thin";
   detail: unknown;
 };
 

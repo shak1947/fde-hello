@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BID_CAP_ENV, BUDGET_CAP_ENV, capFailure, readCap } from "./caps";
+import { findKit } from "./catalog";
 import { adsMode } from "./mode";
 import { redactSecrets } from "./redact";
 import {
@@ -191,6 +192,7 @@ const actionSchema = z.discriminatedUnion("type", [
     dailyBudget: money,
     targetingType: z.enum(TARGETING_TYPES),
     state: z.enum(DELIVERY_STATES),
+    kitId: z.string().min(1).max(40).optional(),
   }),
   z.object({
     type: z.literal("update_campaign"),
@@ -365,6 +367,9 @@ function bidAmounts(action: AdsAction): number[] {
 function shapeError(action: AdsAction): string | null {
   if (action.type === "update_campaign" && !action.name && !action.state) return "Name or on/off state is required.";
   if (action.type === "create_campaign" && !action.name) return "Name is empty.";
+  if (action.type === "create_campaign" && action.kitId && !findKit(action.kitId)) {
+    return "Pick Mermaid dough or Farm dough. This catalog does not have another kit.";
+  }
   if (action.type === "upsert_keywords" && action.keywords.some((keyword) => !keyword.keywordText)) {
     return "Keyword text is empty.";
   }

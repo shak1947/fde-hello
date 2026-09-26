@@ -31,6 +31,7 @@ export function applySimulated(campaigns: Campaign[], action: AdsAction): {
       clicks: 0,
       impressions: 0,
       simulated: true,
+      kitId: action.kitId,
       adGroupId: `sim-ag-${campaignId}`,
       keywords: [],
       negatives: [],

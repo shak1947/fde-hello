@@ -38,7 +38,7 @@ export default function ConnectPage() {
       <h2>What live mode calls</h2>
       <p className="muted">
         Sponsored Products v3: campaigns, ad groups, keywords, negative keywords, campaign negatives, product targets,
-        negative ASIN targets, and product ads. Search terms use the async <code>spSearchTerm</code> report. Sponsored
+        negative ASIN targets, and product ads. The desk groups those writes under the Mermaid dough and Farm dough kits, and confirm stores the manager’s intent plus expected spend, ACoS or TACOS, orders, and timeline. Search terms use the async <code>spSearchTerm</code> report. Sponsored
         Brands and Sponsored Display are a follow-up and are refused. Archive, delete, billing, credentials, and Helium
         10 Manage writes are refused in the API.
       </p>

@@ -89,6 +89,18 @@ th { color: var(--muted); font-weight: 650; font-size: 0.75rem; text-transform: 
 .pill { display: inline-flex; border-radius: 999px; padding: 0.1rem 0.5rem; border: 1px solid var(--line); font-size: 0.75rem; }
 .pill.live { color: var(--accent-2); }
 .pill.sim { color: var(--warn); }
+.kits { display: grid; gap: 0.75rem; }
+@media (min-width: 800px) {
+  .kits { grid-template-columns: 1fr 1fr; }
+}
+.kit {
+  border: 1px solid var(--line); border-radius: 16px; padding: 0.8rem 0.85rem; background: rgba(11, 16, 32, 0.35);
+}
+.kit h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+.kit.loose { grid-column: 1 / -1; border-color: rgba(252, 211, 77, 0.45); }
+.question { color: var(--warn); margin: 0.35rem 0; }
+.challenge { padding-top: 0.4rem; }
+.metrics label { min-width: 8.5rem; flex: 1; }
 .tag {
   display: inline-flex; margin-left: 0.35rem; border-radius: 999px; padding: 0.05rem 0.4rem;
   border: 1px solid rgba(252, 211, 77, 0.45); color: var(--warn); font-size: 0.72rem; font-weight: 700;

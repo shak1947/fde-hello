@@ -2,10 +2,13 @@
 
 Invite-only desk for an offshore consultant on Shakeel Amir’s Sensationally OT account. Access is limited to **Amazon PPC**, **Sellerboard** analysis, and **Helium 10** analysis. The app is the Next.js project at the repository root. The portal is served at `/ads`.
 
-Spend on ads is Shak’s. Every create, budget change, keyword change, and on/off switch is prepared first and runs only after **Confirm**. Sellerboard and Helium 10 stay read-only. The consultant never sees Shak’s passwords or API keys; those stay in server environment variables.
+Spend on ads is Shak’s. The catalog is two sensory kits: **Mermaid dough** (`KIT-MERMAID`, `B0CFT7YF1L`) and **Farm dough** (`35-ZREI-MJZW`, `B0GCTV28TN`). The desk groups campaigns under those kits. Shak does not manage performance in Amazon’s Ads console; this desk is the record for him and the offshore PPC manager.
+
+Every create, budget change, keyword change, and on/off switch is prepared first. Confirm requires a bet: what is changing, expected spend, an ACoS or TACOS target, expected orders, and a timeline in days. A thin bet (no kit named, a vague intent, a window under 7 or over 45 days, or a loose efficiency target) is questioned and is stored only after the manager answers. The audit log keeps that bet. A later result check compares the bet with numbers entered on the desk. That comparison does not pull a live Amazon report yet. Sellerboard and Helium 10 stay read-only. The consultant never sees Shak’s passwords or API keys; those stay in server environment variables.
 
 ## What the consultant can do
 
+- Kits: Mermaid dough and Farm dough, with the campaigns, budgets, and sample or live spend that sit on each ASIN
 - Amazon PPC (Sponsored Products): list campaigns, keywords, negatives, product targets, and product ads
 - Amazon PPC writes, each after Confirm, and each checked against server spend caps:
   1. Pause or enable a campaign
@@ -17,9 +20,9 @@ Spend on ads is Shak’s. Every create, budget change, keyword change, and on/of
   7. Add or edit a product target, and add, pause, or enable a product ad ASIN
 - Sellerboard: read sample profit analysis (not a live account change)
 - Helium 10: read sample keyword research (not a live account change, and not Helium 10 Manage)
-- Download CSV for campaigns, keywords, and the mutation audit log
+- Download CSV for campaigns, keywords, and the mutation audit log (the audit CSV includes the intent and expected outcome)
 
-PPC reads run immediately. PPC writes become a pending card. Cancel drops the change. The audit log stores applied, cancelled, failed, and refused attempts.
+PPC reads run immediately. PPC writes become a pending card with the bet. Cancel drops the change. The audit log stores applied, cancelled, failed, and refused attempts, including the intent and the expected spend, ACoS or TACOS, orders, and timeline when a write was confirmed.
 
 ## Hard deny
 
@@ -66,7 +69,7 @@ Allowed tool names:
 
 ## API not connected
 
-If client id, secret, refresh token, or profile id is missing, the banner says **API not connected**. Three sample campaigns (`SOT Brand Defense`, `SOT Sensory Chews`, `SOT Auto Discovery`), plus sample keywords, negatives, search terms, product targets, and product ads, stand in for the account. Every sample row is labeled Sample. Confirm updates that local state and the audit log. It does not call Amazon, does not pretend the data is live, and does not spend money.
+If client id, secret, refresh token, or profile id is missing, the banner says **API not connected**. Three sample campaigns (`SOT Brand Defense` and `SOT Auto Discovery` on Mermaid dough, `SOT Sensory Chews` on Farm dough), plus sample keywords, negatives, search terms, product targets, and product ads, stand in for the account. The product ads use the real listing ids so the kit grouping matches the catalog. Every sample row is labeled Sample. Spend figures are sample. Confirm updates that local state, the bet, and the audit log. It does not call Amazon, does not pretend the data is live, and does not spend money.
 
 The in-process store is written to `/tmp/sot-ads-portal-state.json` (or `ADS_PORTAL_STATE_FILE`). On Vercel that file lives for the life of the instance, not across a fresh deploy. Connect the Ads API for a real account of record. The audit CSV is still the mutation trail for the running instance.
 

@@ -24,6 +24,7 @@ export function seedCampaigns(): Campaign[] {
       clicks: 86,
       impressions: 12400,
       simulated: true,
+      kitId: "mermaid",
       adGroupId: "sim-ag-sim-cmp-brand",
       keywords: [
         keyword({
@@ -80,8 +81,8 @@ export function seedCampaigns(): Campaign[] {
           adId: "sim-ad-brand-1",
           campaignId: "sim-cmp-brand",
           adGroupId: "sim-ag-sim-cmp-brand",
-          asin: "B0SAMPLE03",
-          sku: "SOT-SAMPLE",
+          asin: "B0CFT7YF1L",
+          sku: "KIT-MERMAID",
           state: "ENABLED",
         },
       ],
@@ -97,6 +98,7 @@ export function seedCampaigns(): Campaign[] {
       clicks: 41,
       impressions: 5300,
       simulated: true,
+      kitId: "farm",
       adGroupId: "sim-ag-sim-cmp-chews",
       keywords: [
         keyword({
@@ -110,7 +112,16 @@ export function seedCampaigns(): Campaign[] {
       ],
       negatives: [],
       productTargets: [],
-      productAds: [],
+      productAds: [
+        {
+          adId: "sim-ad-chew-1",
+          campaignId: "sim-cmp-chews",
+          adGroupId: "sim-ag-sim-cmp-chews",
+          asin: "B0GCTV28TN",
+          sku: "35-ZREI-MJZW",
+          state: "PAUSED",
+        },
+      ],
     },
     {
       campaignId: "sim-cmp-auto",
@@ -123,6 +134,7 @@ export function seedCampaigns(): Campaign[] {
       clicks: 40,
       impressions: 8000,
       simulated: true,
+      kitId: "mermaid",
       adGroupId: "sim-ag-sim-cmp-auto",
       keywords: [],
       negatives: [],

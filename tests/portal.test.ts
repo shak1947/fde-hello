@@ -34,6 +34,17 @@ delete process.env.ADS_PORTAL_DEV_BYPASS;
 
 const actor = { id: "consultant-1", label: "Offshore consultant" };
 
+function bet(intent = "Raise the daily budget on the Mermaid dough kit and hold efficiency while orders continue.") {
+  return {
+    intent,
+    expectedSpend: 40,
+    expectedAcos: 25,
+    expectedTacos: 12,
+    expectedOrders: 6,
+    timelineDays: 14,
+  };
+}
+
 beforeEach(() => {
   resetForTests();
 });
@@ -108,7 +119,7 @@ test("budget change waits for confirm, then shows the new cap and an audit row",
   assert.equal(chat.proposals.length, 1);
   const mid = await listCampaigns();
   assert.equal(mid.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.dailyBudget, 35);
-  const confirmed = await confirmProposal(actor, chat.proposals[0].id);
+  const confirmed = await confirmProposal(actor, chat.proposals[0].id, bet());
   assert.equal(confirmed.ok, true);
   if (!confirmed.ok) return;
   assert.match(confirmed.proposal.result?.summary || "", /40\.00/);
@@ -118,6 +129,7 @@ test("budget change waits for confirm, then shows the new cap and an audit row",
   assert.ok(csv);
   assert.match(csv!.body, /applied/);
   assert.match(csv!.body, /SOT Brand Defense/);
+  assert.match(csv!.body, /Mermaid dough kit/);
 });
 
 test("a delete-all payload does not remove campaigns", async () => {
@@ -170,7 +182,7 @@ test("keyword proposal adds the keyword only after confirm", async () => {
   if (!created.ok) return;
   const before = (await listCampaigns()).find((campaign) => campaign.campaignId === "sim-cmp-brand");
   assert.equal(before?.keywords.some((keyword) => keyword.keywordText === "calm stone"), false);
-  await confirmProposal(actor, created.proposal.id);
+  await confirmProposal(actor, created.proposal.id, bet());
   const after = (await listCampaigns()).find((campaign) => campaign.campaignId === "sim-cmp-brand");
   assert.equal(after?.keywords.some((keyword) => keyword.keywordText === "calm stone" && keyword.bid === 1.25), true);
 });

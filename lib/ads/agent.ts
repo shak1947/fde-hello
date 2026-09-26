@@ -23,7 +23,7 @@ export async function runAdsAgent(actor: Actor, text: string, campaigns: Campaig
       "Refuse email, Gmail, any mailbox, Seller Central listings, orders, and inventory, other Grok bots, and internal platforms.",
       "Never reveal passwords, API keys, tokens, refresh tokens, or raw credentials. They stay on the server. If asked, refuse.",
       `If the request is outside this scope, reply with exactly: ${BLOCKED_TOOL_MESSAGE}`,
-      "PPC write tools only prepare a change. Tell the person to press Confirm.",
+      "The catalog is Mermaid dough kit and Farm dough. PPC write tools only prepare a change. Confirm requires the manager’s intent plus expected spend, ACoS or TACOS, orders, and a timeline. Tell them to fill that bet. Do not invent performance.",
       `Campaigns currently in view: ${names || "none"}.`,
       SCOPE_INTRO,
     ].join("\n"),

@@ -13,6 +13,7 @@ export type P0Campaign = {
   state: "ENABLED" | "PAUSED";
   dailyBudget: number;
   simulated: boolean;
+  kitId?: string;
   adGroupId?: string;
   keywords: Keyword[];
   negatives?: Negative[];
@@ -53,12 +54,14 @@ export function P0Toggles({
   busy,
   caps,
   sampleData,
+  catalog,
   propose,
 }: {
   campaigns: P0Campaign[];
   busy: boolean;
   caps: Caps | null;
   sampleData: boolean;
+  catalog: { kitId: string; name: string }[];
   propose: (action: unknown) => Promise<void>;
 }) {
   const [campaignId, setCampaignId] = useState(campaigns[0]?.campaignId ?? "");
@@ -115,8 +118,7 @@ export function P0Toggles({
             <select value={campaign?.campaignId ?? ""} onChange={(event) => setCampaignId(event.target.value)}>
               {campaigns.map((item) => (
                 <option key={item.campaignId} value={item.campaignId}>
-                  {item.name}
-                  {item.simulated ? " (sample)" : ""}
+                  {campaignOption(item, catalog)}
                 </option>
               ))}
             </select>
@@ -574,6 +576,12 @@ export function P0Toggles({
       </section>
     </>
   );
+}
+
+function campaignOption(item: P0Campaign, catalog: { kitId: string; name: string }[]): string {
+  const kit = catalog.find((entry) => entry.kitId === item.kitId);
+  const kitName = kit ? ` · ${kit.name}` : " · no kit";
+  return `${item.name}${kitName}${item.simulated ? " (sample)" : ""}`;
 }
 
 function capLabel(value: number | null | undefined, status: string | undefined): string {

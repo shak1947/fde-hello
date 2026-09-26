@@ -1,3 +1,4 @@
+import { attachKits } from "./catalog";
 import { readCap } from "./caps";
 import { amazonEnv, type AmazonEnv } from "./mode";
 import { redactSecrets } from "./redact";
@@ -352,7 +353,7 @@ export async function amazonListCampaigns(deps?: {
     campaign.productTargets = targets.filter((entry) => entry.campaignId === campaign.campaignId);
     campaign.productAds = productAds.filter((entry) => entry.campaignId === campaign.campaignId);
   }
-  return campaigns;
+  return attachKits(campaigns);
 }
 
 function mutationError(payload: unknown, key: string): string | null {

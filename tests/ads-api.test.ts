@@ -19,12 +19,23 @@ import {
 } from "../lib/ads/oauth";
 import { clearSearchTermJobs, loadSearchTerms } from "../lib/ads/search-terms";
 import { seedCampaigns } from "../lib/ads/seed";
-import { confirmProposal, proposeAction, workspace } from "../lib/ads/service";
+import { confirmProposal, proposeAction, recordFeedback, workspace } from "../lib/ads/service";
 import { resetForTests } from "../lib/ads/store";
 
 process.env.ADS_PORTAL_STATE_FILE = path.join(mkdtempSync(path.join(tmpdir(), "sot-ads-api-")), "state.json");
 
 const actor = { id: "consultant-1", label: "Offshore consultant" };
+
+function bet(intent = "Raise the daily budget on the Mermaid dough kit and hold efficiency while orders continue.") {
+  return {
+    intent,
+    expectedSpend: 40,
+    expectedAcos: 25,
+    expectedTacos: 12,
+    expectedOrders: 6,
+    timelineDays: 14,
+  };
+}
 const SECRET = "unit-secret-value";
 
 function clearAmazonEnv() {
@@ -49,6 +60,72 @@ beforeEach(() => {
 
 afterEach(() => {
   clearAmazonEnv();
+});
+
+test("kits group the sample catalog and a write cannot confirm without a bet", async () => {
+  const view = await workspace(actor);
+  const mermaid = view.kits.find((kit) => kit.kitId === "mermaid");
+  const farm = view.kits.find((kit) => kit.kitId === "farm");
+  assert.ok(mermaid);
+  assert.ok(farm);
+  assert.deepEqual(
+    mermaid!.campaigns.map((campaign) => campaign.campaignId).sort(),
+    ["sim-cmp-auto", "sim-cmp-brand"],
+  );
+  assert.deepEqual(farm!.campaigns.map((campaign) => campaign.campaignId), ["sim-cmp-chews"]);
+  assert.equal(view.checks.length, 0);
+
+  const proposed = await proposeAction(actor, { type: "set_budget", campaignId: "sim-cmp-brand", dailyBudget: 28 });
+  assert.equal(proposed.ok, true);
+  if (!proposed.ok) return;
+  const missing = await confirmProposal(actor, proposed.proposal.id);
+  assert.equal(missing.ok, false);
+  if (!missing.ok) assert.equal(missing.status, 400);
+  const thinBody = {
+    intent: "Adjust Mermaid dough a bit today",
+    expectedSpend: 28,
+    expectedAcos: 30,
+    expectedOrders: 4,
+    timelineDays: 3,
+  };
+  const thin = await confirmProposal(actor, proposed.proposal.id, thinBody);
+  assert.equal(thin.ok, false);
+  if (!thin.ok) assert.equal(thin.status, 409);
+  assert.equal((await workspace(actor)).campaigns.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.dailyBudget, 35);
+
+  const confirmed = await confirmProposal(actor, proposed.proposal.id, {
+    ...thinBody,
+    defense: "Brand queries on Mermaid dough still convert, so this short clock is the case.",
+  });
+  assert.equal(confirmed.ok, true);
+  if (!confirmed.ok) return;
+  assert.equal(confirmed.proposal.challenge?.strength, "thin");
+  const after = await workspace(actor);
+  assert.equal(after.campaigns.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.dailyBudget, 28);
+  assert.equal(after.checks.length, 1);
+  assert.equal(after.checks[0]?.kitName, "Mermaid dough kit");
+  assert.equal(after.checks[0]?.status, "awaiting");
+  assert.match(after.audit[0]?.intent || "", /Mermaid dough/);
+
+  const recorded = await recordFeedback(actor, {
+    id: after.checks[0]!.id,
+    spend: 20,
+    acos: 22,
+    tacos: 10,
+    orders: 7,
+    note: "Sample window stayed inside the Mermaid bet.",
+  });
+  assert.equal(recorded.ok, true);
+  if (!recorded.ok) return;
+  assert.equal(recorded.check.comparison?.verdict, "met");
+  assert.equal(recorded.check.comparison?.stub, true);
+  const again = await recordFeedback(actor, {
+    id: after.checks[0]!.id,
+    spend: 20,
+    orders: 7,
+    note: "Sample window stayed inside the Mermaid bet.",
+  });
+  assert.equal(again.ok, false);
 });
 
 test("dry-run search terms are labeled sample and say API not connected", async () => {
@@ -144,7 +221,7 @@ test("negative, search term, and product ad confirms change only the sample stor
     (await workspace(actor)).campaigns.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.negatives.some((entry) => entry.value === "cheap"),
     false,
   );
-  const confirmed = await confirmProposal(actor, negative.proposal.id);
+  const confirmed = await confirmProposal(actor, negative.proposal.id, bet());
   assert.equal(confirmed.ok, true);
   if (!confirmed.ok) return;
   assert.match(confirmed.proposal.result?.summary || "", /API not connected/);
@@ -165,7 +242,7 @@ test("negative, search term, and product ad confirms change only the sample stor
   });
   assert.equal(ad.ok, true);
   if (!ad.ok) return;
-  await confirmProposal(actor, ad.proposal.id);
+  await confirmProposal(actor, ad.proposal.id, bet());
   const ads = (await workspace(actor)).campaigns.find((campaign) => campaign.campaignId === "sim-cmp-brand")?.productAds;
   assert.equal(ads?.some((item) => item.asin === "B0NEWAD123" && item.state === "PAUSED"), true);
 });

@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChallengeCard, type ChallengeBody } from "./challenge-card";
+import { FeedbackPanel, type FeedbackCheckView } from "./feedback-panel";
 import { P0Toggles, type P0Campaign } from "./p0-toggles";
+import { SkuDesk, type KitCard } from "./sku-desk";
 
 type Campaign = P0Campaign & {
   targetingType: "MANUAL" | "AUTO";
@@ -27,7 +30,12 @@ type AuditEvent = {
   status: string;
   summary: string;
   mode: string;
+  intent?: string;
+  expected?: string;
+  challengeStrength?: string;
 };
+
+type CatalogKit = { kitId: string; name: string; sku: string; asin: string };
 
 type Workspace = {
   mode: "dry-run" | "live";
@@ -43,9 +51,12 @@ type Workspace = {
     budgetStatus: string;
     bidStatus: string;
   };
+  catalog?: CatalogKit[];
+  kits?: KitCard[];
   campaigns: Campaign[];
   proposals: Proposal[];
   audit: AuditEvent[];
+  checks?: FeedbackCheckView[];
 };
 
 type ChatLine = { role: "user" | "desk"; text: string };
@@ -66,7 +77,7 @@ export function AdsPortal() {
   const [lines, setLines] = useState<ChatLine[]>([
     {
       role: "desk",
-      text: "Access is limited to Amazon PPC, Sellerboard, and Helium 10. Spend on ads is Shakeel Amir’s. PPC writes wait for confirmation. Sellerboard and Helium 10 are analysis only. Passwords and API keys stay on the server.",
+      text: "Access is limited to Amazon PPC, Sellerboard, and Helium 10. This desk is the record for Mermaid dough and Farm dough. Spend is Shakeel Amir’s. A write needs a bet — intent, spend, ACoS or TACOS, orders, and a timeline — then confirmation. Sellerboard and Helium 10 are analysis only.",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -76,6 +87,7 @@ export function AdsPortal() {
   const [newBudget, setNewBudget] = useState("25");
   const [targeting, setTargeting] = useState("MANUAL");
   const [newState, setNewState] = useState("PAUSED");
+  const [newKit, setNewKit] = useState("mermaid");
   const [latest, setLatest] = useState<Proposal | null>(null);
 
   const authed = phase === "ready";
@@ -164,28 +176,75 @@ export function AdsPortal() {
     }
   }
 
-  async function resolve(id: string, decision: "confirm" | "reject") {
+  async function confirm(id: string, challenge: ChallengeBody): Promise<string | null> {
     setBusy(true);
     setError("");
     try {
       const headers = await authHeaders();
-      const response = await fetch(`/api/ads/proposals/${id}/${decision}`, { method: "POST", headers });
+      const response = await fetch(`/api/ads/proposals/${id}/confirm`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(challenge),
+      });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Could not update that change.");
-      if (decision === "confirm") setLatest(body.proposal);
+      if (response.status === 409 && body.question) return String(body.question);
+      if (!response.ok) throw new Error(body.error || "Could not confirm that change.");
+      setLatest(body.proposal);
       setLines((current) => [
         ...current,
-        {
-          role: "desk",
-          text:
-            decision === "confirm"
-              ? body.proposal.result?.summary || body.proposal.summary
-              : `Cancelled. ${body.proposal.summary}`,
-        },
+        { role: "desk", text: body.proposal.result?.summary || body.proposal.summary },
       ]);
       await refresh();
+      return null;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update that change.");
+      setError(err instanceof Error ? err.message : "Could not confirm that change.");
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reject(id: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const headers = await authHeaders();
+      const response = await fetch(`/api/ads/proposals/${id}/reject`, { method: "POST", headers });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Could not cancel that change.");
+      setLines((current) => [...current, { role: "desk", text: `Cancelled. ${body.proposal.summary}` }]);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not cancel that change.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function recordResult(body: {
+    id: string;
+    spend: number;
+    acos: number | null;
+    tacos: number | null;
+    orders: number;
+    note: string;
+  }) {
+    setBusy(true);
+    setError("");
+    try {
+      const headers = await authHeaders();
+      const response = await fetch("/api/ads/feedback", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Could not record that result.");
+      const verdict = payload.check?.comparison?.verdict || "recorded";
+      setLines((current) => [...current, { role: "desk", text: `Result recorded: ${verdict}.` }]);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not record that result.");
     } finally {
       setBusy(false);
     }
@@ -277,7 +336,8 @@ export function AdsPortal() {
           <section className="panel">
             <h2>Allowed</h2>
             <ul className="deny">
-              <li>Amazon PPC: pause/enable, budget, keyword bid, negatives, search terms, product targets and ads</li>
+              <li>Amazon PPC on Mermaid dough and Farm dough: pause/enable, budget, bids, keywords, negatives, search terms, product targets and ads</li>
+              <li>A written bet before every confirm, then a later result check</li>
               <li>Sellerboard analysis and profit data</li>
               <li>Helium 10 analysis and keyword research</li>
               <li>Export CSV and read the audit log</li>
@@ -359,17 +419,14 @@ export function AdsPortal() {
             <section className="panel proposal">
               <h2>Confirm before it runs</h2>
               {pending.map((item) => (
-                <div key={item.id} className="stack" style={{ marginBottom: "0.8rem" }}>
-                  <strong>{item.summary}</strong>
-                  <div className="row">
-                    <button className="btn" type="button" disabled={busy} onClick={() => resolve(item.id, "confirm")}>
-                      Confirm — {item.summary}
-                    </button>
-                    <button className="btn-bad" type="button" disabled={busy} onClick={() => resolve(item.id, "reject")}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
+                <ChallengeCard
+                  key={item.id}
+                  id={item.id}
+                  summary={item.summary}
+                  busy={busy}
+                  onConfirm={confirm}
+                  onCancel={reject}
+                />
               ))}
             </section>
           ) : null}
@@ -383,40 +440,16 @@ export function AdsPortal() {
             </section>
           ) : null}
 
-          <section className="panel">
-            <h2>Campaigns</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>State</th>
-                  <th>Budget</th>
-                  <th>Spend</th>
-                  <th>Sales</th>
-                </tr>
-              </thead>
-              <tbody>
-                {workspace?.campaigns.map((campaign) => (
-                  <tr key={campaign.campaignId}>
-                    <td>
-                      {campaign.name}
-                      {campaign.simulated ? <span className="tag">Sample</span> : null}
-                      <div className="muted">{campaign.campaignId}</div>
-                    </td>
-                    <td>{campaign.state}</td>
-                    <td>${campaign.dailyBudget.toFixed(2)}</td>
-                    <td>{campaign.spend == null ? "—" : `$${campaign.spend.toFixed(2)}`}</td>
-                    <td>{campaign.sales == null ? "—" : `$${campaign.sales.toFixed(2)}`}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <SkuDesk
+            kits={workspace?.kits ?? []}
+            sampleData={workspace?.sampleData !== false && workspace?.mode !== "live"}
+          />
 
           <P0Toggles
             campaigns={workspace?.campaigns ?? []}
             busy={busy}
             caps={workspace?.caps ?? null}
+            catalog={workspace?.catalog ?? []}
             sampleData={workspace?.sampleData !== false && workspace?.mode !== "live"}
             propose={propose}
           />
@@ -433,9 +466,20 @@ export function AdsPortal() {
                   dailyBudget: Number(newBudget),
                   targetingType: targeting,
                   state: newState,
+                  kitId: newKit,
                 });
               }}
             >
+              <label>
+                Kit
+                <select value={newKit} onChange={(event) => setNewKit(event.target.value)}>
+                  {(workspace?.catalog ?? []).map((kit) => (
+                    <option key={kit.kitId} value={kit.kitId}>
+                      {kit.name} · {kit.sku}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label>
                 Name
                 <input value={newName} onChange={(event) => setNewName(event.target.value)} />
@@ -464,6 +508,8 @@ export function AdsPortal() {
             </form>
           </section>
 
+          <FeedbackPanel checks={workspace?.checks ?? []} busy={busy} onRecord={recordResult} />
+
           <section className="panel">
             <h2>Audit log</h2>
             {workspace?.audit.length ? (
@@ -474,6 +520,7 @@ export function AdsPortal() {
                     <th>Who</th>
                     <th>Status</th>
                     <th>Summary</th>
+                    <th>Bet</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -483,6 +530,17 @@ export function AdsPortal() {
                       <td>{event.actorLabel}</td>
                       <td>{event.status}</td>
                       <td>{event.summary}</td>
+                      <td>
+                        {event.intent ? (
+                          <>
+                            {event.challengeStrength === "thin" ? "Thin. " : ""}
+                            {event.intent}
+                            {event.expected ? <div className="muted">{event.expected}</div> : null}
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
