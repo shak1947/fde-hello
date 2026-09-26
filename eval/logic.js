@@ -575,6 +575,153 @@
     return [sampleMermaid(), sampleFarm()];
   }
 
+  /* Stone NPD briefs. Comp ASINs are real listings. China cost is blank.
+     Filled rubric rows are assumptions. CapEx is parked. The sub-$20 rule
+     is Shak's: park a product that must sell under $20 unless it can do
+     about 1000 units a month. That rate is not assumed. */
+  var STONE_NPD = {
+    asOf: "2026-09-26",
+    rule: "Park products that must sell under $20 if we cannot hit about 1000 units a month.",
+    stepping: {
+      id: "npd-stepping-stones",
+      slug: "stepping-stones",
+      productName: "Stepping stones",
+      asin: "B0F3FFQ1CD",
+      compPrice: 49.99,
+      nests: ["B0F28QP7JC", "B0CR9TP188", "B0BQ2QFGDT"]
+    },
+    stacking: {
+      id: "npd-stacking-rocks",
+      slug: "stacking-rocks",
+      productName: "Stacking rocks",
+      asin: "B09BCMP8XX",
+      compPrice: 26.99,
+      weightLb: 1.1
+    }
+  };
+
+  function assumptionCriteria(scoreMap, noteMap) {
+    var criteria = criteriaFromScores(scoreMap, noteMap);
+    var unknown = "Not in this brief. Left unscored. Not an assumption.";
+    for (var i = 0; i < criteria.length; i++) {
+      if (criteria[i].score == null && !criteria[i].notes) criteria[i].notes = unknown;
+    }
+    return criteria;
+  }
+
+  function sampleSteppingStones() {
+    var spec = STONE_NPD.stepping;
+    var d = blankDossier();
+    d.id = spec.id;
+    d.productName = spec.productName;
+    d.asinOrUrl = spec.asin;
+    d.date = STONE_NPD.asOf;
+    d.sample = false;
+    d.baseline = false;
+    d.npd = true;
+    d.createdAt = "2026-09-26T19:00:00.000Z";
+    d.updatedAt = "2026-09-26T19:00:00.000Z";
+    d.overview.price = spec.compPrice;
+    d.overview.category = "Stepping stones";
+    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. Comp ASIN " + spec.asin + " at about $49.99. That figure is the comp price, not our sell price. Full foot-size only. Nest for compact FBA. Nest comps are ASIN only, with no price, sales, or reviews: " + spec.nests.join(", ") + ". CapEx PARKED. Filled rubric scores are ASSUMPTIONS. Unscored rows were not assumed. China cost is blank.";
+    d.competitors = spec.nests.map(function (asin) {
+      return compRow({
+        id: "nest-" + asin,
+        asin: asin,
+        title: "Nest comp. ASIN only. Price, sales, and reviews were not in the brief."
+      });
+    });
+    d.china.referralPct = null;
+    d.china.notes = "ASSUMPTION: none. China EXW, freight per unit, duty, Alibaba, AWD, and Sellerboard Products Cost are blank. A blank is not a $0 quote and is not a landed cost. CapEx PARKED. Do not fund a mold from this page.";
+    d.maker.why = "Stepping stones with a nestable storage pack-out. Full foot-size only. Nest so the FBA carton can be compact. CapEx PARKED.";
+    d.maker.whitespace = "The brief is the nest and storage pack-out, not a smaller stepping surface.";
+    d.maker.kitAngle = "Nest for storage and pack-out. Keep a full foot-size stepping surface.";
+    d.maker.giftOtAngle = "ASSUMPTION: balance and proprioception play can fit Sensationally OT. That fit is not a sales measure.";
+    d.maker.shareNote = "Monthly units were not in this brief, so 1000 a month is not assumed. " + STONE_NPD.rule + " This comp is about $49.99, not a sub-$20 offer.";
+    d.moat.ourPlan = "CapEx PARKED. The nest is the pack-out brief, not a funded tool. The moat checklist is unscored.";
+    d.criteria = assumptionCriteria({
+      repeat: 2, gift: 3, size: 3, repack: 3, returns: 3, season: 3, sensory: 4
+    }, {
+      repeat: "ASSUMPTION: a foot-size stone set is a durable, not a refill. Score 2. Repurchase was not measured.",
+      gift: "ASSUMPTION: it can be a kids gift. Score 3. Gift rate was not measured.",
+      size: "ASSUMPTION: full foot-size is bulky. Nesting is the plan for compact FBA. Carton dims were not measured. Score 3 is the middle, not a size tier.",
+      repack: "ASSUMPTION: the nestable pack-out is the design brief, not a finished repack. Score 3.",
+      returns: "ASSUMPTION: a hard foot-size product has ordinary chip and damage risk. Score 3. Returns were not measured.",
+      season: "ASSUMPTION: outdoor play can be seasonal and indoor use can be year-round. Score 3. Seasonality was not measured.",
+      sensory: "ASSUMPTION: balance and proprioception fit OT. Score 4. Not a sales measure."
+    });
+    return d;
+  }
+
+  function sampleStackingRocks() {
+    var spec = STONE_NPD.stacking;
+    var d = blankDossier();
+    d.id = spec.id;
+    d.productName = spec.productName;
+    d.asinOrUrl = spec.asin;
+    d.date = STONE_NPD.asOf;
+    d.sample = false;
+    d.baseline = false;
+    d.npd = true;
+    d.createdAt = "2026-09-26T19:10:00.000Z";
+    d.updatedAt = "2026-09-26T19:10:00.000Z";
+    d.overview.price = spec.compPrice;
+    d.overview.category = "Stacking rocks";
+    d.overview.notes = "NPD brief, not a Sellerboard baseline and not our listing. Wood kit preferred. Comp ASIN " + spec.asin + " at about $26.99, 1.1 lb, wood. That price and weight are the comp, not our costed unit. Sub-$20 ABS or silicone is PARKED unless about 1000 units a month. That volume is not in this brief, so it is not assumed. CapEx PARKED. China cost is blank. Filled rubric scores are ASSUMPTIONS.";
+    d.competitors = [];
+    d.china.referralPct = null;
+    d.china.weightLb = spec.weightLb;
+    d.china.notes = "ASSUMPTION: none. EXW, freight, duty, and Products Cost are blank. The 1.1 lb figure is the wood comp listing, not a carton we measured and not a freight allocation. CapEx PARKED. Sub-$20 ABS or silicone is parked unless about 1000 units a month, and that rate was not given.";
+    d.maker.why = "Stacking rocks. Wood kit is the preferred build. CapEx PARKED. Sub-$20 ABS or silicone is parked unless the offer can do about 1000 units a month. That rate is not in this brief.";
+    d.maker.whitespace = "Prefer wood over a sub-$20 plastic kit. The plastic path stays parked without the volume.";
+    d.maker.kitAngle = "Wood kit. ABS and silicone under $20 are parked.";
+    d.maker.giftOtAngle = "ASSUMPTION: stacking and balance fit OT and gifting. Not a sales measure.";
+    d.maker.shareNote = "Monthly units were not in this brief. " + STONE_NPD.rule + " About 1000 a month is the bar for a sub-$20 offer, not a forecast.";
+    d.moat.ourPlan = "CapEx PARKED. Wood kit is the preference, not a funded tool. Sub-$20 ABS or silicone stays parked without about 1000 units a month. The moat checklist is unscored.";
+    d.criteria = assumptionCriteria({
+      repeat: 2, gift: 4, size: 4, repack: 3, returns: 3, season: 3, sensory: 4
+    }, {
+      repeat: "ASSUMPTION: a stacking set is a durable, not a refill. Score 2. Repurchase was not measured.",
+      gift: "ASSUMPTION: stacking rocks are a familiar gift. Score 4. Gift rate was not measured.",
+      size: "ASSUMPTION: the comp is 1.1 lb wood, which is lighter than a foot-size stone. Score 4. Our carton was not measured.",
+      repack: "ASSUMPTION: a wood kit can be branded. Score 3. No repack trial is in this brief.",
+      returns: "ASSUMPTION: wood has ordinary damage risk. Score 3. Returns were not measured.",
+      season: "ASSUMPTION: indoor stacking can be year-round, with a gift peak. Score 3. Seasonality was not measured.",
+      sensory: "ASSUMPTION: stacking and balance fit OT. Score 4. Not a sales measure."
+    });
+    return d;
+  }
+
+  function stoneLibrary() {
+    return [sampleSteppingStones(), sampleStackingRocks()];
+  }
+
+  function seededLibrary() {
+    return sampleLibrary().concat(stoneLibrary());
+  }
+
+  function addMissingStones(list) {
+    var out = Array.isArray(list) ? list.slice() : [];
+    var lib = stoneLibrary();
+    var added = false;
+    for (var i = 0; i < lib.length; i++) {
+      var exists = false;
+      for (var k = 0; k < out.length; k++) if (out[k].id === lib[i].id) exists = true;
+      if (!exists) { out.push(lib[i]); added = true; }
+    }
+    return { dossiers: out, added: added };
+  }
+
+  function dossierByAsin(dossiers, value) {
+    var want = extractAsin(value);
+    if (!isListingAsin(want)) return null;
+    var list = Array.isArray(dossiers) ? dossiers : [];
+    for (var i = 0; i < list.length; i++) {
+      if (extractAsin(list[i] && list[i].asinOrUrl) === want) return list[i];
+    }
+    return null;
+  }
+
   function applySellerboardPreset(dossier, key) {
     var spec = BASELINES[key];
     if (!spec || !dossier || !dossier.china || !dossier.overview) return null;
@@ -1061,6 +1208,7 @@
     var parts = [];
     if (d.baseline) parts.push("Sellerboard baseline dated " + BASELINES.asOf + ". Mode 1 uses Products Cost. Current EXW is the parsed Greatwall kit price and is not added on top. Freight per unit is manual. Competitor rows are empty until a Helium 10 paste.");
     if (d.sample) parts.push("Fictional sample.");
+    if (d.npd) parts.push("NPD brief. CapEx is PARKED. Filled rubric scores are ASSUMPTIONS, not Sellerboard measures. China cost is blank. " + STONE_NPD.rule);
     if (econ.commercial && econ.commercial.id === "healthy") {
       parts.push("Healthy baseline: Sellerboard net " + money(econ.reportedNet) + " per unit (" + pct(econ.marginPctUsed) + " of the sell price).");
     } else if (econ.commercial && econ.commercial.id === "underwater" && econ.reportedNet != null) {
@@ -1306,6 +1454,7 @@
       date: date,
       sample: raw.sample === true,
       baseline: raw.baseline === true,
+      npd: raw.npd === true,
       createdAt: asString(raw.createdAt, 40) || base.createdAt,
       updatedAt: asString(raw.updatedAt || raw.savedAt, 40) || base.updatedAt,
       overview: {
@@ -1416,23 +1565,29 @@
               if (patchExwParsed(dossiers[x])) patched = true;
             }
           }
-          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
+          if (data.stoneNpdSeeded !== true) {
+            var stones = addMissingStones(dossiers);
+            dossiers = stones.dossiers;
+            if (stones.added) patched = true;
+          }
+          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
         }
         var seeded = seedBaselines(dossiers);
+        var seededStones = addMissingStones(seeded.dossiers);
         return {
           version: 1,
-          dossiers: seeded.dossiers,
+          dossiers: seededStones.dossiers,
           baselinesSeeded: true,
           waterfallSeeded: true,
           cogsTrackerSeeded: true,
-          moatCompsSeeded: true, exwParsedSeeded: true,
+          moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true,
           migrated: false,
           upgraded: true,
           fresh: false,
           replacedFiction: seeded.replaced
         };
       } catch (err) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
     if (rawV1 != null && rawV1 !== "") {
@@ -1447,14 +1602,15 @@
           if (d) kept.push(d);
         }
         if (!kept.length) {
-          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
+          return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
         }
-        return { version: 1, dossiers: kept, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: true, fresh: false, replacedFiction: false };
+        var keptStones = addMissingStones(kept);
+        return { version: 1, dossiers: keptStones.dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: true, fresh: false, replacedFiction: false };
       } catch (err2) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
-    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, migrated: false, fresh: true };
+    return { version: 1, dossiers: seededLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, migrated: false, fresh: true };
   }
 
   function duplicateDossier(d) {
@@ -1925,13 +2081,13 @@
       asinOrUrl: "", categoryNotes: "old", date: "2026-09-18", sample: true,
       criteria: criteriaFromScores(SAMPLE_SCORE, {})
     }] }));
-    check("legacy pebble replaced", legacy.migrated && legacy.baselinesSeeded && legacy.dossiers.length === 2 && legacy.dossiers[0].id === "baseline-mermaid-dough" && legacy.dossiers[1].id === "baseline-farm-dough");
+    check("legacy pebble replaced", legacy.migrated && legacy.baselinesSeeded && legacy.stoneNpdSeeded && legacy.dossiers.length === 4 && legacy.dossiers[0].id === "baseline-mermaid-dough" && legacy.dossiers[1].id === "baseline-farm-dough" && legacy.dossiers[2].id === "npd-stepping-stones" && legacy.dossiers[3].id === "npd-stacking-rocks");
     var legacyKept = storeFromStorage(null, JSON.stringify({ version: 1, evals: [{
       id: "real-1", productName: "My scoop", asinOrUrl: "", categoryNotes: "notes stay",
       date: "2026-09-01", sample: false, criteria: criteriaFromScores({ repeat: 4 }, {})
     }] }));
-    check("legacy real kept", legacyKept.dossiers.length === 1 && legacyKept.baselinesSeeded && legacyKept.dossiers[0].productName === "My scoop" && legacyKept.dossiers[0].overview.notes === "notes stay");
-    check("fresh seeds", storeFromStorage(null, null).fresh && storeFromStorage(null, null).baselinesSeeded && storeFromStorage(null, null).dossiers.length === 2);
+    check("legacy real kept", legacyKept.dossiers.length === 3 && legacyKept.baselinesSeeded && legacyKept.stoneNpdSeeded && legacyKept.dossiers[0].productName === "My scoop" && legacyKept.dossiers[0].overview.notes === "notes stay" && legacyKept.dossiers[1].id === "npd-stepping-stones");
+    check("fresh seeds", storeFromStorage(null, null).fresh && storeFromStorage(null, null).baselinesSeeded && storeFromStorage(null, null).stoneNpdSeeded && storeFromStorage(null, null).dossiers.length === 4);
     var upgraded = storeFromStorage(JSON.stringify({
       version: 1,
       dossiers: [
@@ -1939,12 +2095,13 @@
         { id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }
       ]
     }), null);
-    check("upgrade drops fiction once", upgraded.upgraded && upgraded.replacedFiction && upgraded.baselinesSeeded && upgraded.dossiers.length === 3 && upgraded.dossiers[0].id === "baseline-mermaid-dough" && upgraded.dossiers[2].id === "kept-real");
-    var deleted = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    check("upgrade drops fiction once", upgraded.upgraded && upgraded.replacedFiction && upgraded.baselinesSeeded && upgraded.stoneNpdSeeded && upgraded.dossiers.length === 5 && upgraded.dossiers[0].id === "baseline-mermaid-dough" && upgraded.dossiers[2].id === "kept-real" && upgraded.dossiers[3].id === "npd-stepping-stones");
+    var deleted = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, stoneNpdSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
     check("seed flag sticks", deleted.baselinesSeeded && !deleted.upgraded && deleted.dossiers.length === 1 && deleted.dossiers[0].id === "kept-real");
     var waterfallOld = storeFromStorage(JSON.stringify({
       version: 1,
       baselinesSeeded: true,
+      stoneNpdSeeded: true,
       dossiers: [{
         id: "baseline-mermaid-dough",
         productName: "Mermaid dough kit",
@@ -1963,7 +2120,7 @@
     waterfallOld.dossiers[0].china.unitCost = null;
     waterfallOld.dossiers[0].china.freightPerUnit = null;
     waterfallOld.dossiers[0].china.alibabaFee = null;
-    var waterfallAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, dossiers: waterfallOld.dossiers }), null);
+    var waterfallAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, stoneNpdSeeded: true, dossiers: waterfallOld.dossiers }), null);
     check("waterfall flag sticks", !waterfallAgain.upgraded && waterfallAgain.dossiers[0].china.unitCost == null && waterfallAgain.cogsTrackerSeeded && waterfallAgain.dossiers[0].china.inboundPlacement === 0);
     var trackerOld = storeFromStorage(JSON.stringify({
       version: 1,
@@ -1998,7 +2155,7 @@
       }]
     }), null);
     check("exw leaves custom freight", exwCustom.exwParsedSeeded && exwCustom.dossiers[0].china.unitCost === 10.65 && exwCustom.dossiers[0].china.freightPerUnit === 3.1 && exwCustom.dossiers[0].china.alibabaFee === 0.2 && exwCustom.dossiers[0].china.notes === "edited freight");
-    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, dossiers: [{
+    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, dossiers: [{
       id: "baseline-farm-dough", productName: "Farm dough", baseline: true, date: "2026-09-26",
       overview: { price: 39.95, fbaFees: 8 }, china: { inboundPlacement: 0, unitCost: 10.65, notes: "edited" }
     }] }), null);
@@ -2026,10 +2183,23 @@
     var scrubbedDemo = normalizeDossier({ productName: "Old pebble", asinOrUrl: demoId, date: "2026-09-18", sample: true });
     check("demo listing blocked", demoId.length === 10 && listingHref(demoId) === "" && listingHref("https://www.amazon.com/dp/" + demoId) === "" && scrubbedDemo.asinOrUrl === "" && listingHref(scrubbedDemo.asinOrUrl) === "");
     var staleDemo = storeFromStorage(JSON.stringify({
-      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true,
+      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true,
       dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01", asinOrUrl: demoId }]
     }), null);
     check("stale demo asin cleared", staleDemo.upgraded && staleDemo.dossiers.length === 1 && staleDemo.dossiers[0].asinOrUrl === "" && listingHref(staleDemo.dossiers[0].asinOrUrl) === "");
+    var stepping = sampleSteppingStones();
+    var stacking = sampleStackingRocks();
+    var steppingScore = scoreSummary(stepping.criteria);
+    var stackingScore = scoreSummary(stacking.criteria);
+    var steppingEcon = economics(stepping);
+    var stackingEcon = economics(stacking);
+    check("stepping dossier", stepping.npd === true && stepping.sample === false && stepping.asinOrUrl === "B0F3FFQ1CD" && listingHref(stepping.asinOrUrl) === "https://www.amazon.com/dp/B0F3FFQ1CD" && stepping.overview.price === 49.99 && stepping.china.unitCost == null && stepping.china.freightPerUnit == null && stepping.china.productsCost == null && stepping.competitors.length === 3 && stepping.competitors[0].asin === "B0F28QP7JC" && stepping.competitors[1].asin === "B0CR9TP188" && stepping.competitors[2].asin === "B0BQ2QFGDT" && stepping.competitors[0].monthlySales == null && steppingEcon.cogs == null && steppingEcon.reportedNet == null && stepping.overview.notes.indexOf("CapEx PARKED") >= 0 && stepping.overview.notes.indexOf("Full foot-size") >= 0 && stepping.maker.why.indexOf("Nest") >= 0 && steppingScore.hundredths === 292 && steppingScore.band.id === "pass");
+    check("stacking dossier", stacking.npd === true && stacking.asinOrUrl === "B09BCMP8XX" && listingHref(stacking.asinOrUrl) === "https://www.amazon.com/dp/B09BCMP8XX" && stacking.overview.price === 26.99 && stacking.china.weightLb === 1.1 && stacking.china.productsCost == null && stacking.china.unitCost == null && stacking.competitors.length === 0 && stackingEcon.cogs == null && stacking.overview.notes.indexOf("Wood kit") >= 0 && stacking.overview.notes.indexOf("PARKED") >= 0 && stacking.maker.why.indexOf("1000") >= 0 && stackingScore.hundredths === 327 && stackingScore.band.id === "pass");
+    check("stone asin route", dossierByAsin(seededLibrary(), "B0F3FFQ1CD").id === "npd-stepping-stones" && dossierByAsin(seededLibrary(), "https://www.amazon.com/dp/B09BCMP8XX").id === "npd-stacking-rocks" && dossierByAsin(seededLibrary(), "") == null);
+    var stoneOld = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    check("stone npd seeds once", stoneOld.upgraded && stoneOld.stoneNpdSeeded && stoneOld.dossiers.length === 3 && stoneOld.dossiers[1].asinOrUrl === "B0F3FFQ1CD" && stoneOld.dossiers[2].asinOrUrl === "B09BCMP8XX");
+    var stoneAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, dossiers: [{ id: "kept-real", productName: "Kept scoop", sample: false, date: "2026-09-01" }] }), null);
+    check("stone flag sticks", !stoneAgain.upgraded && stoneAgain.dossiers.length === 1);
     check("margin bands", marginScoreFromPct(32) === 5 && marginScoreFromPct(24) === 4 && marginScoreFromPct(19.9) === 3 && marginScoreFromPct(6) === 2 && marginScoreFromPct(5.9) === 1);
     return fails;
   }
@@ -2066,6 +2236,11 @@
     sampleMermaid: sampleMermaid,
     sampleFarm: sampleFarm,
     sampleLibrary: sampleLibrary,
+    STONE_NPD: STONE_NPD,
+    sampleSteppingStones: sampleSteppingStones,
+    sampleStackingRocks: sampleStackingRocks,
+    stoneLibrary: stoneLibrary,
+    dossierByAsin: dossierByAsin,
     applySellerboardPreset: applySellerboardPreset,
     applyCurrentExw: applyCurrentExw,
     applyInvoicePreset: applyInvoicePreset,

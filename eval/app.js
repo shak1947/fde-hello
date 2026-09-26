@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, exwParsedSeeded: store.exwParsedSeeded === true, stoneNpdSeeded: store.stoneNpdSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary().concat(L.stoneLibrary()), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, exwParsedSeeded: true, stoneNpdSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -56,6 +56,17 @@
       return { name: "compare", ids: q.get("compare").split(",").filter(Boolean).slice(0, 3) };
     }
     if (q.get("id")) return { name: "product", id: q.get("id") };
+    var asin = q.get("asin");
+    if (!asin) {
+      var slug = location.pathname.replace(/\/+$/, "").split("/").pop();
+      if (L.STONE_NPD && L.STONE_NPD.stepping.slug === slug) asin = L.STONE_NPD.stepping.asin;
+      if (L.STONE_NPD && L.STONE_NPD.stacking.slug === slug) asin = L.STONE_NPD.stacking.asin;
+    }
+    if (asin) {
+      var found = L.dossierByAsin(store.dossiers, asin);
+      if (found) return { name: "product", id: found.id };
+      return { name: "missing", asin: asin };
+    }
     return { name: "library" };
   }
 
@@ -169,6 +180,9 @@
     if (anySample) {
       sampleNote += "<div class=\"banner\"><strong>A dossier is still marked fictional.</strong> Those rows are not marketplace data.</div>";
     }
+    if (list.some(function (d) { return d.npd; })) {
+      sampleNote += "<div class=\"banner\"><strong>Stepping stones and stacking rocks are NPD briefs.</strong> CapEx is parked. Comp links are real ASINs. China cost is blank. Filled rubric scores are assumptions. Open <a href=\"/eval/?asin=B0F3FFQ1CD\">stepping stones</a> or <a href=\"/eval/?asin=B09BCMP8XX\">stacking rocks</a>.</div>";
+    }
     return "<div class=\"wrap\"><main id=\"main\">" +
       "<header class=\"hero\"><div>" +
       "<p class=\"eyebrow\">Sensationally OT · sourcing desk</p>" +
@@ -215,6 +229,7 @@
       (status ? "<span class=\"band " + status.id + "\">" + esc(status.label) + "</span>" : "") +
       "<span class=\"band " + band + "\">Rubric " + esc(bandLabel) + " " + esc(avg) + "</span>" +
       (d.baseline ? "<span class=\"chip\">Sellerboard " + esc(L.BASELINES.asOf) + "</span>" : "") +
+      (d.npd ? "<span class=\"chip\">CapEx parked</span>" : "") +
       (d.sample ? "<span class=\"chip\">Fictional sample</span>" : "") +
       "</div><h3><button type=\"button\" class=\"card-title\" data-action=\"open\" data-id=\"" + esc(d.id) + "\">" + esc(d.productName || "Untitled product") + "</button></h3>" +
       "<div class=\"facts\"><div>" + esc(asin) + (sku ? " · " + esc(sku) : "") + "</div><div>" + esc(netLine) + " · " + esc(costLine) + "</div><div>" + esc(moatLine) + "</div><div>Updated " + esc(formatWhen(d.updatedAt)) + "</div></div>" +
@@ -248,6 +263,7 @@
       "</nav></div><main id=\"main\">" + banners() +
       "<div class=\"banner\" id=\"sample-banner\"><strong>Fictional sample.</strong> ASINs, sales, reviews, and costs on this page were written for the demo. They are not a Helium 10 or Amazon pull. Replace them before you treat the file as a sourcing decision. <div><button type=\"button\" data-action=\"clear-sample\">This is a real product</button></div></div>" +
       "<div class=\"banner\" id=\"baseline-banner\"><strong>Sellerboard baseline, 2026-09-26.</strong> Mode 1 uses Products Cost. Mode 2 is the Oct 2023 Greatwall invoice and is not added on top of that cost. Blended Amazon fees replace referral plus FBA fulfillment. Duty is blank until the HTS is confirmed. The gap to reported net is not an ad cost. Competitor rows stay empty until you paste Helium 10.</div>" +
+      "<div class=\"banner\" id=\"npd-banner\" hidden><strong>NPD brief. CapEx PARKED.</strong> The Amazon link is the comp listing, not an SOT SKU. China EXW, freight, and Products Cost are blank. Filled rubric scores are assumptions. A product that must sell under $20 stays parked unless it can do about 1000 units a month. That volume is not assumed.</div>" +
       "<section class=\"panel decision\" aria-label=\"Decision\"><p class=\"kicker\">Decision</p><p id=\"decision-text\"></p>" +
       "<div class=\"kpis\">" +
       kpi("kpi-cogs", "Products cost") + kpi("kpi-fees", "Amazon fees") + kpi("kpi-contrib", "Contribution") +
@@ -301,7 +317,9 @@
   function competitorRowsHtml(d) {
     if (!d.competitors.length) return "<p class=\"empty\" id=\"comp-empty\">No competitor rows. Paste a Helium 10 export or add listings you looked up. The Sellerboard baselines do not include competitor sales.</p>";
     return d.competitors.map(function (row, index) {
-      return "<article class=\"comp-card\" data-row=\"" + esc(row.id) + "\"><div class=\"comp-top\"><strong>Competitor " + (index + 1) + "</strong>" +
+      var compHref = L.listingHref(row.asin);
+      var compLink = compHref ? "<a href=\"" + esc(compHref) + "\" target=\"_blank\" rel=\"noopener noreferrer\">Open listing</a>" : "";
+      return "<article class=\"comp-card\" data-row=\"" + esc(row.id) + "\"><div class=\"comp-top\"><strong>Competitor " + (index + 1) + "</strong>" + compLink +
         "<button type=\"button\" class=\"danger\" data-action=\"remove-comp\" data-comp-id=\"" + esc(row.id) + "\">Remove</button></div>" +
         "<div class=\"comp-fields\">" +
         compField(row, "ASIN", "asin", "text", row.asin, "B0…") +
@@ -670,6 +688,8 @@
     if (sample) sample.hidden = !d.sample;
     var baseline = document.getElementById("baseline-banner");
     if (baseline) baseline.hidden = !d.baseline;
+    var npd = document.getElementById("npd-banner");
+    if (npd) npd.hidden = !d.npd;
     var skuSlot = document.getElementById("sku-slot");
     if (skuSlot) skuSlot.textContent = (d.overview.sku || "").trim() ? "SKU " + d.overview.sku.trim() : "No SKU";
     var decision = document.getElementById("decision-text");
@@ -828,7 +848,7 @@
     }
     html += trackerHtml();
     html += "<p class=\"fine\">Size-tier fee model for " + fee.weightLb + " lb " + esc(fee.sizeTier) + " at " + L.money(fee.price) + ". Dims about " + fee.lengthIn + "×" + fee.widthIn + "×" + fee.heightIn + " in. Referral about " + L.money(fee.referral) + " (15%) + FBA fulfill about " + L.money(fee.fba) + " = about " + L.money(fee.combined) + ". Farm's tracker FBA is " + L.money(L.COGS_TRACKER.farm.fba) + " instead. Neither number is a live Fee Preview, and neither is added on top of Sep MTD blended fees.</p>";
-    if (econ.componentFees != null) {
+    if (econ.componentFees != null && econ.cogs != null) {
       html += "<ul class=\"lines\">";
       html += line("Referral on this price" + (econ.referralPct == null ? " (blank as 0%)" : " " + L.pct(econ.referralPct)), L.money(econ.componentReferral));
       html += line("FBA fulfillment" + (econ.componentFba == null ? " · blank" : ""), econ.componentFba == null ? "—" : L.money(econ.componentFba));
@@ -1179,12 +1199,13 @@
       return;
     }
     if (action === "restore-samples") {
-      var samples = L.sampleLibrary();
+      var samples = L.sampleLibrary().concat(L.stoneLibrary());
       var added = 0;
       for (var i = 0; i < samples.length; i++) {
         if (!byId(samples[i].id)) { store.dossiers.push(samples[i]); added++; }
       }
       store.baselinesSeeded = true;
+      store.stoneNpdSeeded = true;
       if (!added) { toast("Baselines are already in the library"); return; }
       persist();
       toast("Baselines restored");
@@ -1395,7 +1416,12 @@
     } else if (r.name === "compare") {
       document.title = "Compare · Product dossiers";
       app.innerHTML = compareHtml(r.ids);
+    } else if (r.name === "missing") {
+      document.title = "Product not found · Sensationally OT";
+      app.innerHTML = productHtml(null);
     } else {
+      var opened = byId(r.id);
+      document.title = (opened && opened.productName ? opened.productName + " · " : "") + "Product dossiers";
       app.innerHTML = productHtml(r.id);
     }
     paint();

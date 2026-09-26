@@ -66,6 +66,15 @@ Inbound placement is **$0** in the tracker. There is no AWD Drive export, so AWD
 
 ## First visit
 
+Stone NPD briefs are seeded beside the baselines. CapEx is parked. China cost is blank. Filled rubric scores are assumptions.
+
+| Page | Comp listing |
+| --- | --- |
+| [Stepping stones](/eval/?asin=B0F3FFQ1CD) | `B0F3FFQ1CD` at about $49.99. Full foot-size, nested for compact FBA. Nest comps `B0F28QP7JC`, `B0CR9TP188`, `B0BQ2QFGDT` (ASIN only). |
+| [Stacking rocks](/eval/?asin=B09BCMP8XX) | `B09BCMP8XX` at about $26.99, 1.1 lb wood. Wood kit preferred. Sub-$20 ABS or silicone stays parked unless about 1000 units a month. That volume is not assumed. |
+
+Short paths `/eval/stepping-stones` and `/eval/stacking-rocks` open the same dossiers. Shak’s rule: park a product that must sell under $20 if it cannot hit about 1000 units a month.
+
 A new browser gets two Sellerboard baselines dated **2026-09-26** (Pricing & Inventory / Listings / Shopify / Sellerboard). They are real listings. Mode 1 uses Products Cost. Current EXW is $10.30 on Mermaid and $10.35 on Farm (`GW20260123` only). Freight per unit starts blank. The Oct 2023 Greatwall invoice stays on the page as history.
 
 | Dossier | Locked snapshot |
