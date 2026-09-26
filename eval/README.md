@@ -66,12 +66,12 @@ Inbound placement is **$0** in the tracker. There is no AWD Drive export, so AWD
 
 ## First visit
 
-Stone NPD briefs are seeded beside the baselines. CapEx is parked. China cost is blank. Filled rubric scores are assumptions.
+Stone NPD briefs are seeded beside the baselines. CapEx is parked. Sell targets and landed costs below are **ASSUMPTIONS**, not Sellerboard Products Cost. Duty 0% is an assumption, not an HTS ruling. Filled rubric scores are assumptions.
 
-| Page | Comp listing |
-| --- | --- |
-| [Stepping stones](/eval/?asin=B0F3FFQ1CD) | `B0F3FFQ1CD` at about $49.99. Full foot-size, nested for compact FBA. Nest comps `B0F28QP7JC`, `B0CR9TP188`, `B0BQ2QFGDT` (ASIN only). |
-| [Stacking rocks](/eval/?asin=B09BCMP8XX) | `B09BCMP8XX` at about $26.99, 1.1 lb wood. Wood kit preferred. Sub-$20 ABS or silicone stays parked unless about 1000 units a month. That volume is not assumed. |
+| Page | Comp listing | ASSUMPTION fields |
+| --- | --- | --- |
+| [Stepping stones](/eval/?asin=B0F3FFQ1CD) | `B0F3FFQ1CD`. Full foot-size, nest pack-out. Nest comps `B0F28QP7JC`, `B0CR9TP188`, `B0BQ2QFGDT` (ASIN only). Comp listings about $22.99–$49.99. | Sell target **$44.99** (range $39.99–$49.99). Alibaba EXW basic PP $5.80–$7.50; crab/nest $13.80–$20/set. Landed midpoint **$16** (range $14–$18) in the kit field. Duty 0%. |
+| [Stacking rocks](/eval/?asin=B09BCMP8XX) | `B09BCMP8XX` at about $26.99, 1.1 lb wood. Wood kit preferred. Sub-$20 ABS or silicone stays parked unless about 1000 units a month. That volume is not assumed. | Sell price **$26.99** (range $24.99–$29.99). Alibaba FOB about $3.50–$3.70 for 16pc (10pc $2.30–$2.60). Landed midpoint **$6** (range $5–$7) in the kit field. Duty 0%. |
 
 Short paths `/eval/stepping-stones` and `/eval/stacking-rocks` open the same dossiers. Shak’s rule: park a product that must sell under $20 if it cannot hit about 1000 units a month.
 
