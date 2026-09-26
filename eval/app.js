@@ -21,7 +21,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, dossiers: store.dossiers }));
+      localStorage.setItem(L.STORAGE_KEY, JSON.stringify({ version: 1, baselinesSeeded: store.baselinesSeeded === true, waterfallSeeded: store.waterfallSeeded === true, cogsTrackerSeeded: store.cogsTrackerSeeded === true, moatCompsSeeded: store.moatCompsSeeded === true, dossiers: store.dossiers }));
       storageBlocked = false;
       return true;
     } catch (err) {
@@ -34,7 +34,7 @@
     var rawV2 = readStorage(L.STORAGE_KEY);
     var rawV1 = readStorage(L.LEGACY_KEY);
     if (storageBlocked && rawV2 == null && rawV1 == null) {
-      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, fresh: true, blocked: true };
+      store = { version: 1, dossiers: L.sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, fresh: true, blocked: true };
     } else {
       store = L.storeFromStorage(rawV2, rawV1);
       if ((store.fresh || store.migrated || store.upgraded) && !storageBlocked) persist();
@@ -386,8 +386,17 @@
         "<div class=\"card-body\"><div class=\"scores\" role=\"group\" aria-label=\"" + esc(item.name) + " score\">" + scoreBtns("data-moat", item.id, score) + "</div>" +
         "<label class=\"field\">Note<textarea data-bind=\"moat.notes." + item.id + "\" data-kind=\"text\" maxlength=\"400\" rows=\"2\">" + esc(note) + "</textarea></label></div></article>";
     }).join("");
+    var comps = L.PUBLIC_COMPS;
     return "<section class=\"panel\" id=\"moat\" data-section><p class=\"kicker\">E · Barriers</p><h2>Moat and barriers</h2>" +
-      "<p class=\"intro\">Score 1–5. Five is the favorable case: easier to defend, lighter capital, lower copy risk, less review catch-up. The index is an equal-weight average, rounded like the rubric. It suggests the China-exclusivity row; it does not overwrite it.</p>" +
+      "<p class=\"intro\">Score 1–5. Five is the favorable case: easier to defend, lighter capital, lower copy risk, less review catch-up. The index is an equal-weight average, rounded like the rubric. It suggests the China-exclusivity row; it does not overwrite it. The public-comp note below is not a score.</p>" +
+      "<div class=\"result-card\" id=\"public-comps\"><h3>Public Alibaba comps <span class=\"stamp\">NOT NEGOTIATED</span></h3>" +
+      "<p>For the Mermaid and Farm 3-jar kits. " + esc(L.publicCompsNote()) + "</p>" +
+      "<ul class=\"lines\">" +
+      line("1:1 clone with transparent list pricing", "None found on public Alibaba") +
+      line("Stock theme clay/slime kits", "$" + comps.fobLow.toFixed(2) + "–$" + comps.fobHigh.toFixed(2) + " FOB · MOQ often " + esc(comps.moqOften) + " · not SOT-spec") +
+      line("Like-for-like", "Greatwall 2023 EXW $" + comps.exw.toFixed(2) + " · Sellerboard $" + comps.landedLow.toFixed(2) + "–$" + comps.landedHigh.toFixed(0) + " landed") +
+      line("Barrier", esc(comps.barrier)) +
+      "</ul></div>" +
       "<div class=\"result-card\" id=\"moat-out\"></div>" + blocks +
       "<div class=\"fields\" style=\"margin-top:.8rem\">" +
       field("Barriers for others", area("moat.barriersForOthers", d.moat.barriersForOthers, "What would stop the next seller")) +

@@ -173,6 +173,31 @@
     };
   }
 
+  /* Public Alibaba listings only. Not a negotiated quote.
+     Stock theme kits are not a 1:1 Mermaid/Farm clone. */
+  var PUBLIC_COMPS = {
+    source: "Public Alibaba",
+    negotiated: false,
+    fobLow: 0.5,
+    fobHigh: 3.5,
+    moqOften: "1.4k–3k",
+    exw: 10.65,
+    landedLow: 13.5,
+    landedHigh: 14,
+    barrier: "Commodity Alibaba kits underprice SOT because they are not the same product. Customization (jars, accessories, and the brand kit) is the barrier."
+  };
+
+  function publicCompsNote() {
+    var c = PUBLIC_COMPS;
+    return "Public Alibaba only, not a negotiated quote. No public 1:1 Mermaid or Farm 3-jar-plus-accessories clone with transparent list pricing. Stock theme clay/slime kits list about $" + c.fobLow.toFixed(2) + "–$" + c.fobHigh.toFixed(2) + " FOB (MOQ often " + c.moqOften + "). Those are simpler, lighter SKUs, not SOT-spec. Credible like-for-like remains Greatwall 2023 EXW $" + c.exw.toFixed(2) + " and Sellerboard $" + c.landedLow.toFixed(2) + "–$" + c.landedHigh.toFixed(0) + " landed. " + c.barrier;
+  }
+
+  function writePublicComps(moat) {
+    if (!moat) return;
+    moat.barriersForOthers = publicCompsNote();
+    moat.notes.custom = "Customization is the barrier: jars, accessories, and the brand kit. Commodity Alibaba kits underprice SOT because they are not the same product. No public 1:1 clone with transparent list pricing. Not scored.";
+  }
+
   var FICTIONAL_IDS = {
     "sample-pebble-calm-mini": true,
     "sample-calm-bin-kit": true,
@@ -447,7 +472,7 @@
     d.maker.priceBandLow = null;
     d.maker.priceBandHigh = null;
     d.moat = blankMoat();
-    d.moat.barriersForOthers = "Not scored. Competitor review walls, supplier exclusivity, and copy risk are not in the 2026-09-26 cost snapshot.";
+    writePublicComps(d.moat);
   }
 
   function sampleMermaid() {
@@ -459,7 +484,7 @@
     d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $13.50. Do not add sea freight on top of it. Mode 2 is Greatwall " + GREATWALL.invoice + " (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. AWD/storage is blank — no AWD Drive export. Fee Preview is not live. COGS Tracker " + COGS_TRACKER.asOf + " at the live $39.95: modeled profit $11.69 (29.3%) before ads, $8.09 (20.2%) with CPA, on COGS $13.50. Implied fees are $14.76 (price minus COGS minus profit before ads), not an FBA versus referral split. June 2025 Inventory had older COGS $13.03, fees per unit $13.39, profit $11.74. Inbound placement is $0 in the tracker. Size-tier fee model remains referral about $5.99 + FBA about $7.38. Sep MTD blended fees about $14.12 stay the fees in use. The $13.50 versus $15.24 difference is not reconciled. The gap to reported net is not an ad cost.";
     d.maker.why = "Healthy baseline. Sep 2026 MTD Sellerboard net about +$8.90 per unit on a $39.95 sell price after Products Cost $13.50 and Amazon fees about $14.12. The Greatwall invoice rebuild is a second mode and is not added to that cost.";
     d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
-    d.moat.ourPlan = "Use this listing as the healthy comparison unit: net about +$8.90 per unit. Products Cost $13.50 stays the cost in use. The Oct 2023 invoice waterfall is visible beside it and is not a second freight charge.";
+    d.moat.ourPlan = "Use this listing as the healthy comparison unit: net about +$8.90 per unit. Products Cost $13.50 stays the cost in use. The Oct 2023 invoice waterfall is visible beside it and is not a second freight charge. " + PUBLIC_COMPS.barrier;
     d.criteria = baselineCriteria(4, "Sep 2026 MTD Sellerboard net +$8.90 on a $39.95 sell price (about 22% of price). Products Cost $13.50 all-in. Amazon fees about $14.12 per unit blended. Score 4 is the 20%+ band on that net. The gap versus price minus cost minus blended fees is not an ad-cost measure.");
     return d;
   }
@@ -473,7 +498,7 @@
     d.china.notes = "Mode 1 is in use: Sellerboard Products Cost $14.00. Do not add sea freight on top of it. Mode 2 is the same Greatwall " + GREATWALL.invoice + " architecture as Mermaid (Oct 2023): EXW $10.65 + sea $4.24 + Alibaba $0.35 = $15.24 before duty. Duty stays blank. HTS " + GREATWALL.hts + " is often 0% MFN and is not entered as a rate. AWD/storage is blank — no AWD Drive export. Fee Preview is not live. COGS Tracker " + COGS_TRACKER.asOf + " modeled this SKU at $35.95 (not the live $39.95): FBA fulfill $7.55, referral $5.39, profit $9.01 (25.1%), 0 units. Sample sell price stays $39.95. Referral scaled to 15% is about $5.99. FBA fulfill stays $7.55. Inbound placement is $0. Sep MTD blended fees about $18 stay the fees in use. Ads are high only — there is no TACOS dollar. The $14.00 versus $15.24 difference is not reconciled. The gap versus reported net is not an ad-cost measure.";
     d.maker.why = "Underwater at current ads and fees. Sep 2026 MTD Sellerboard net about −$3.77 per unit on a $39.95 sell price (compare-at $49.95) after Products Cost $14.00 and Amazon fees about $18 per unit. A reorder is Conditional until that stack changes. The Greatwall invoice rebuild is not added on top of Products Cost.";
     d.maker.shareNote = "Monthly units are not in this snapshot, so annual profit stays blank.";
-    d.moat.ourPlan = "At current ads and fees the unit is underwater (net about −$3.77). Treat a reorder as Conditional until the fee and ad stack changes. Products Cost $14.00 stays the cost in use. The invoice waterfall is the same kit architecture as Mermaid and is not a second freight charge.";
+    d.moat.ourPlan = "At current ads and fees the unit is underwater (net about −$3.77). Treat a reorder as Conditional until the fee and ad stack changes. Products Cost $14.00 stays the cost in use. The invoice waterfall is the same kit architecture as Mermaid and is not a second freight charge. " + PUBLIC_COMPS.barrier;
     d.criteria = baselineCriteria(1, "Sep 2026 MTD Sellerboard net −$3.77 on a $39.95 sell price (compare-at $49.95). Products Cost $14.00 all-in. Amazon fees about $18 per unit blended. Ads are high; ad dollars are not broken out. Score 1 because the net is under 6% of price.");
     return d;
   }
@@ -561,6 +586,23 @@
       changed = true;
     }
     return changed;
+  }
+
+  function patchMoatComps(d) {
+    if (!d || (d.id !== BASELINES.mermaid.id && d.id !== BASELINES.farm.id)) return false;
+    if (!d.moat) d.moat = blankMoat();
+    var barriers = d.moat.barriersForOthers || "";
+    if (barriers.indexOf("$0.50") >= 0) return false;
+    var shipped = barriers.indexOf("Not scored.") === 0 || barriers.trim() === "";
+    if (!shipped) return false;
+    var fresh = d.id === BASELINES.mermaid.id ? sampleMermaid() : sampleFarm();
+    d.moat.barriersForOthers = fresh.moat.barriersForOthers;
+    if (!d.moat.notes) d.moat.notes = {};
+    d.moat.notes.custom = fresh.moat.notes.custom;
+    if ((d.moat.ourPlan || "").indexOf("not the same product") < 0) {
+      d.moat.ourPlan = ((d.moat.ourPlan || "").trim() + " " + PUBLIC_COMPS.barrier).trim();
+    }
+    return true;
   }
 
   function scoreSummary(criteria) {
@@ -923,7 +965,7 @@
       var strong = rubric.band.id === "go" ? " (Strong GO)" : "";
       parts.push("Verdict " + rubric.band.label + strong + " at " + formatHundredths(rubric.hundredths) + ".");
     }
-    if (d.baseline) parts.push("Repeat, gift, and OT-fit on this baseline are product-type starters, not Sellerboard measures. The measured margin row is the Sellerboard net. Fee Preview is not live, so the COGS Tracker defaults do not replace that net. Competition, reviews, size, repack, and moat are unknown. Duty is blank until the HTS is confirmed.");
+    if (d.baseline) parts.push("Repeat, gift, and OT-fit on this baseline are product-type starters, not Sellerboard measures. The measured margin row is the Sellerboard net. Fee Preview is not live, so the COGS Tracker defaults do not replace that net. Competition, reviews, size, and repack are unknown. The rubric moat row is unscored. Public Alibaba comps are a note, not a score: no 1:1 clone with transparent list pricing, and stock theme kits about $0.50–$3.50 FOB are not SOT-spec. Duty is blank until the HTS is confirmed.");
     var coreBits = [];
     ["repeat", "gift", "size", "repack", "moat"].forEach(function (id) {
       var c = findCriterion(d, id);
@@ -1250,7 +1292,12 @@
               if (patchCogsTracker(dossiers[t])) patched = true;
             }
           }
-          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
+          if (data.moatCompsSeeded !== true) {
+            for (var m = 0; m < dossiers.length; m++) {
+              if (patchMoatComps(dossiers[m])) patched = true;
+            }
+          }
+          return { version: 1, dossiers: dossiers, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: false, fresh: false, upgraded: patched, replacedFiction: false };
         }
         var seeded = seedBaselines(dossiers);
         return {
@@ -1259,13 +1306,14 @@
           baselinesSeeded: true,
           waterfallSeeded: true,
           cogsTrackerSeeded: true,
+          moatCompsSeeded: true,
           migrated: false,
           upgraded: true,
           fresh: false,
           replacedFiction: seeded.replaced
         };
       } catch (err) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
     if (rawV1 != null && rawV1 !== "") {
@@ -1280,14 +1328,14 @@
           if (d) kept.push(d);
         }
         if (!kept.length) {
-          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
+          return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: true, fresh: false, replacedSample: sawPebble, replacedFiction: sawPebble };
         }
-        return { version: 1, dossiers: kept, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: true, fresh: false, replacedFiction: false };
+        return { version: 1, dossiers: kept, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: true, fresh: false, replacedFiction: false };
       } catch (err2) {
-        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true, corrupt: true };
+        return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: false, fresh: true, corrupt: true };
       }
     }
-    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, migrated: false, fresh: true };
+    return { version: 1, dossiers: sampleLibrary(), baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, migrated: false, fresh: true };
   }
 
   function duplicateDossier(d) {
@@ -1723,7 +1771,8 @@
     check("invoice preset", invoiceBlank.china.unitCost === 10.65 && invoiceBlank.china.freightPerUnit === 4.24 && invoiceBlank.china.alibabaFee === 0.35 && invoiceBlank.china.dutyPct == null && invoiceBlank.overview.fbaFees === 7.38 && invoiceBlank.overview.price === 39.95 && invoiceBlank.china.productsCost === 13.5 && invoiceEcon.cogsSource === "sellerboard" && Math.abs(invoiceEcon.beforeDuty - GREATWALL.beforeDuty) < 1e-9 && Math.abs((GREATWALL.exw + GREATWALL.seaFreight + GREATWALL.alibabaFee) - GREATWALL.beforeDuty) < 1e-9);
     check("fee model locked sum", roundCents(FEE_MODEL.referral + FEE_MODEL.fba) === FEE_MODEL.combined && roundCents(39.95 * 0.15) === 5.99);
     var moatBlank = moatSummary(mermaid.moat);
-    check("baseline moat unscored", moatBlank.hundredths == null);
+    check("baseline moat unscored", moatBlank.hundredths == null && mermaid.moat.scores.custom == null && farm.moat.scores.custom == null);
+    check("public alibaba comps", mermaid.competitors.length === 0 && mermaid.moat.barriersForOthers.indexOf("not a negotiated quote") >= 0 && mermaid.moat.barriersForOthers.indexOf("$0.50–$3.50") >= 0 && mermaid.moat.barriersForOthers.indexOf("1.4k–3k") >= 0 && mermaid.moat.barriersForOthers.indexOf("not SOT-spec") >= 0 && mermaid.moat.barriersForOthers.indexOf("$10.65") >= 0 && mermaid.moat.barriersForOthers.indexOf("$13.50–$14") >= 0 && mermaid.moat.barriersForOthers.indexOf("not the same product") >= 0 && mermaid.moat.notes.custom.indexOf("jars, accessories, and the brand kit") >= 0 && farm.moat.barriersForOthers === mermaid.moat.barriersForOthers && mermaid.moat.ourPlan.indexOf("not the same product") >= 0 && farm.moat.ourPlan.indexOf("Conditional") >= 0);
 
     var tsv = "ASIN\tProduct Title\tPrice\tMonthly Sales\tASIN Revenue\tReview Count\tRating\tSales Rank\nB0TEST12345\tRainbow Oats\t$19.99\t1,200\t23988\t50\t4.5\t1,200";
     var parsed = parseHeliumPaste(tsv);
@@ -1804,11 +1853,21 @@
       }]
     }), null);
     check("cogs tracker patch", trackerOld.upgraded && trackerOld.cogsTrackerSeeded && trackerOld.dossiers[0].overview.price === 39.95 && trackerOld.dossiers[0].overview.fbaFees === 7.55 && trackerOld.dossiers[0].china.inboundPlacement === 0 && trackerOld.dossiers[0].china.amazonInbound == null && trackerOld.dossiers[0].china.notes.indexOf("COGS Tracker") >= 0 && trackerOld.dossiers[0].china.notes.indexOf("$35.95") >= 0);
-    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, dossiers: [{
+    var trackerAgain = storeFromStorage(JSON.stringify({ version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true, moatCompsSeeded: true, dossiers: [{
       id: "baseline-farm-dough", productName: "Farm dough", baseline: true, date: "2026-09-26",
       overview: { price: 39.95, fbaFees: 8 }, china: { inboundPlacement: 0, unitCost: 10.65, notes: "edited" }
     }] }), null);
     check("cogs tracker flag sticks", !trackerAgain.upgraded && trackerAgain.dossiers[0].overview.fbaFees === 8 && trackerAgain.dossiers[0].china.notes === "edited");
+    var moatOld = storeFromStorage(JSON.stringify({
+      version: 1, baselinesSeeded: true, waterfallSeeded: true, cogsTrackerSeeded: true,
+      dossiers: [{
+        id: "baseline-mermaid-dough", productName: "Mermaid dough kit", baseline: true, date: "2026-09-26",
+        overview: { price: 39.95 },
+        china: { productsCost: 13.5, unitCost: 10.65, inboundPlacement: 0 },
+        moat: { barriersForOthers: "Not scored. Competitor review walls stay empty.", ourPlan: "Keep the healthy net.", scores: {} }
+      }]
+    }), null);
+    check("moat comps patch", moatOld.upgraded && moatOld.moatCompsSeeded && moatOld.dossiers[0].moat.barriersForOthers.indexOf("$0.50") >= 0 && moatOld.dossiers[0].moat.scores.custom == null && moatOld.dossiers[0].moat.ourPlan.indexOf("Keep the healthy net.") >= 0 && moatOld.dossiers[0].moat.ourPlan.indexOf("not the same product") >= 0 && moatOld.dossiers[0].competitors.length === 0);
 
     var blankEcon = economics(blankDossier());
     check("blank landed null", blankEcon.landed == null && blankEcon.contribution == null);
@@ -1833,6 +1892,8 @@
     GREATWALL: GREATWALL,
     FEE_MODEL: FEE_MODEL,
     COGS_TRACKER: COGS_TRACKER,
+    PUBLIC_COMPS: PUBLIC_COMPS,
+    publicCompsNote: publicCompsNote,
     cogsTrackerMath: cogsTrackerMath,
     clampWeight: clampWeight,
     clampScore: clampScore,
